@@ -8,7 +8,7 @@ var meta = require('./package.json')
 var watch = require('gulp-watch')
 
 var banner = ['/**',
-              '* Reve v${version}',
+              '* Real v${version}',
               '* (c) 2015 ${author}',
               '* Released under the ${license} License.',
               '*/',
@@ -31,12 +31,12 @@ gulp.task('default', function() {
             output: {
                 library: 'Reve',
                 libraryTarget: 'umd',
-                filename: 'reve.js'
+                filename: 'real.js'
             }
         }))
         .pipe(header(banner, bannerVars))
         .pipe(gulp.dest('dist/'))
-        .pipe(uglify('reve.min.js', {
+        .pipe(uglify('real.min.js', {
             mangle: true,
             compress: true
         }))
