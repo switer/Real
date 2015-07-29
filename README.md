@@ -1,5 +1,5 @@
 # reve
-Declarative DOM manipulations. Play happy with server-side render architecture, such as [scrat-seo](https://github.com/scrat-team/scrat-swig).
+It's Reve, but support IE6......[About Reve](https://github.com/scrat-team/reve).
 
 ## Downloads
 
