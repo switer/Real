@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="format-detection" content="telphone=no, email=no" />
+	<title>REVE</title>
+	<script src="../dist/reve.js"></script>
+	<style>
+		body {padding: 0px;margin: 0;}
+		.hl {color: cornflowerblue}
+		.c-header {background-color: #f0f0f0;line-height: 50px;position: relative;}
+			.c-header .c-button {position: absolute;top: 10px;height: 20px;right: 5px;}
+		.content {text-align: center;height: 100px;margin-top: 50px;}
+		.button-group {text-align: center;}
+			.button-group button {line-height: 28px;color: white;background-color: cornflowerblue;border: 0;padding: 6px;
+				outline: 0;border-radius: 4px;margin: 5px;}
+	</style>
+</head>
+<body>
+	<div id="app" r-show="{show}" r-class="{hl: hl}">
+		<div class="c-header" 
+			r-component="c-header" 
+			r-ref="header"
+			r-data="{
+				title: header;
+			}"
+			r-methods="{
+				onRefresh: onRefresh;
+			}"
+			r-autorefresh="{onRefresh}"
+		>
+			<center r-html="{title}"></center>
+			<button class="c-button" 
+				r-component="c-button" 
+				r-ref="button"
+			>Home</button>
+		</div>
+		
+		<h1 class="content">Hello world</h1>
+		<div class="button-group">
+			<button r-on="{
+				click: onDisableHightlight
+			}">disable hightlight</button>
+
+			<button r-on="{
+				click: onChangeHeader
+			}">change child component's title</button>
+		</div>
+	</div>
+	<script>
+		Reve.directive('autorefresh', {
+			bind: function (fn) {
+				setInterval(function () {
+					this.$el.style.opacity = 0.2
+					fn(function () {
+						this.$el.style.opacity = 1
+					}.bind(this))
+				}.bind(this), 2000)
+			}
+		})
+		Reve.component('c-header' ,{
+			data: function () {
+				return {
+					title: ''
+				}
+			},
+			ready: function () {
+				this.title = this.$data.title
+			},
+			shouldUpdate: function () {
+				if (this.$data.title == this.title) return false
+				this.title = this.$data.title
+			}
+		})
+		Reve.component('c-button' ,{
+			ready: function () {
+			}
+		})
+		var $app = new Reve({
+			el: '#app',
+			data: function () {
+				return {
+					show: true,
+					hl: true,
+					header: 'Hi, Reve'
+				}
+			},
+			ready: function () {
+				// console.log(this.$refs)
+			},
+			methods: {
+				onDisableHightlight: function () {
+					this.$data.hl = false
+					this.$update()
+				},
+				onChangeHeader: function () {
+					this.$data.header = 'Hi, fouber'
+					this.$update()
+				},
+				onRefresh: function (cb) {
+					setTimeout(function () {
+						cb()
+					}, 1000)
+				}
+			}
+		})
+	</script>
+</body>
+</html>
