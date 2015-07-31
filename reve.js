@@ -9,8 +9,7 @@ var _execute = require('./lib/execute')
 var _components = {}
 var _globalDirectives = {}
 var _did = 0
-// var supportQuerySelector = document.querySelector && document.querySelectorAll
-var supportQuerySelector = false
+var supportQuerySelector = document.querySelector && document.querySelectorAll
 /**
  * Constructor Function and Class.
  * @param {Object} options Instance options
@@ -50,8 +49,10 @@ function Reve(options) {
         var sel = el
         if (supportQuerySelector)
             el = document.querySelector(sel)
-        else if (/^\./.test(sel))
+        else if (/^\./.test(sel)) {
             el = document.getElementsByClassName(sel.replace(/^\./, ''))
+            el && (el = el[0])
+        }
         else if (/^#/.test(sel))
             el = document.getElementById(sel.replace(/^#/, ''))
         else el = null
@@ -66,7 +67,7 @@ function Reve(options) {
     this.$refs = {}
 
     util.objEach(options.methods, function (key, m) {
-        vm.$methods[key] = vm[key] = m.bind(vm)
+        vm.$methods[key] = vm[key] =util.bind(m, vm)
     })
 
     _created && _created.call(vm)
@@ -104,10 +105,10 @@ Reve.prototype.$compile = function (el) {
     var childs = util.slice(querySelectorAll(componentSel))
 
     // compile components
-    util.forEach(childs, function (tar) {
+    util.forEach(childs, util.bind(function (tar) {
         // prevent cross level component parse and repeat parse
         if (tar._component) return
-        if (supportQuerySelector && ~grandChilds.indexOf(tar)) return
+        if (supportQuerySelector && ~util.indexOf(grandChilds, tar)) return
 
         var cname = _getAttribute(tar, componentDec)
         if (!cname) {
@@ -158,7 +159,7 @@ Reve.prototype.$compile = function (el) {
         }
         $components.push(c)
 
-    }.bind(this))
+    }, this))
 
     util.forEach(util.keys(_diretives), function (dname) {
 
@@ -174,7 +175,7 @@ Reve.prototype.$compile = function (el) {
             var drefs = tar._diretives || []
             var expr = _getAttribute(tar, dname) || ''
             // prevent repetitive binding
-            if (drefs && ~drefs.indexOf(dname)) return
+            if (drefs && ~util.indexOf(drefs, dname)) return
 
             _removeAttribute(tar, dname)
 
@@ -186,7 +187,7 @@ Reve.prototype.$compile = function (el) {
                     _strip(expr).split(sep), 
                     function(item) {
                         // discard empty expression 
-                        if (!item.trim()) return
+                        if (!util.trim(item)) return
                         d = new Directive(vm, tar, def, dname, '{' + item + '}')
                     })
             } else {
@@ -254,9 +255,10 @@ function Directive(vm, tar, def, name, expr) {
             return console.error('Invalid expression of "{' + expr + '}", it should be in this format: ' + name + '="{ key: expression }".')
         }
         expr = expr.replace(keyRE, function(m) {
-            key = m.replace(/:$/, '').trim()
+            key = util.trim(m.replace(/:$/, ''))
             return ''
-        }).trim()
+        })
+        expr = util.trim(expr)
 
         bindParams.push(key)
     }
@@ -315,10 +317,10 @@ function Directive(vm, tar, def, name, expr) {
 }
 
 function _isExpr(c) {
-    return c ? !!c.trim().match(/^\{[\s\S]*?\}$/m) : false
+    return c ? !!util.trim(c).match(/^\{[\s\S]*?\}$/m) : false
 }
 function _strip (expr) {
-    return expr.trim()
+    return util.trim(expr)
             .match(/^\{([\s\S]*)\}$/m)[1]
             .replace(/^- /, '')
 }

@@ -70,8 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _components = {}
 	var _globalDirectives = {}
 	var _did = 0
-	// var supportQuerySelector = document.querySelector && document.querySelectorAll
-	var supportQuerySelector = false
+	var supportQuerySelector = document.querySelector && document.querySelectorAll
 	/**
 	 * Constructor Function and Class.
 	 * @param {Object} options Instance options
@@ -111,8 +110,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var sel = el
 	        if (supportQuerySelector)
 	            el = document.querySelector(sel)
-	        else if (/^\./.test(sel))
+	        else if (/^\./.test(sel)) {
 	            el = document.getElementsByClassName(sel.replace(/^\./, ''))
+	            el && (el = el[0])
+	        }
 	        else if (/^#/.test(sel))
 	            el = document.getElementById(sel.replace(/^#/, ''))
 	        else el = null
@@ -127,7 +128,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$refs = {}
 
 	    util.objEach(options.methods, function (key, m) {
-	        vm.$methods[key] = vm[key] = m.bind(vm)
+	        vm.$methods[key] = vm[key] =util.bind(m, vm)
 	    })
 
 	    _created && _created.call(vm)
@@ -165,10 +166,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var childs = util.slice(querySelectorAll(componentSel))
 
 	    // compile components
-	    util.forEach(childs, function (tar) {
+	    util.forEach(childs, util.bind(function (tar) {
 	        // prevent cross level component parse and repeat parse
 	        if (tar._component) return
-	        if (supportQuerySelector && ~grandChilds.indexOf(tar)) return
+	        if (supportQuerySelector && ~util.indexOf(grandChilds, tar)) return
 
 	        var cname = _getAttribute(tar, componentDec)
 	        if (!cname) {
@@ -219,7 +220,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	        $components.push(c)
 
-	    }.bind(this))
+	    }, this))
 
 	    util.forEach(util.keys(_diretives), function (dname) {
 
@@ -235,7 +236,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var drefs = tar._diretives || []
 	            var expr = _getAttribute(tar, dname) || ''
 	            // prevent repetitive binding
-	            if (drefs && ~drefs.indexOf(dname)) return
+	            if (drefs && ~util.indexOf(drefs, dname)) return
 
 	            _removeAttribute(tar, dname)
 
@@ -247,7 +248,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    _strip(expr).split(sep), 
 	                    function(item) {
 	                        // discard empty expression 
-	                        if (!item.trim()) return
+	                        if (!util.trim(item)) return
 	                        d = new Directive(vm, tar, def, dname, '{' + item + '}')
 	                    })
 	            } else {
@@ -315,9 +316,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return console.error('Invalid expression of "{' + expr + '}", it should be in this format: ' + name + '="{ key: expression }".')
 	        }
 	        expr = expr.replace(keyRE, function(m) {
-	            key = m.replace(/:$/, '').trim()
+	            key = util.trim(m.replace(/:$/, ''))
 	            return ''
-	        }).trim()
+	        })
+	        expr = util.trim(expr)
 
 	        bindParams.push(key)
 	    }
@@ -376,10 +378,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function _isExpr(c) {
-	    return c ? !!c.trim().match(/^\{[\s\S]*?\}$/m) : false
+	    return c ? !!util.trim(c).match(/^\{[\s\S]*?\}$/m) : false
 	}
 	function _strip (expr) {
-	    return expr.trim()
+	    return util.trim(expr)
 	            .match(/^\{([\s\S]*)\}$/m)[1]
 	            .replace(/^- /, '')
 	}
@@ -417,8 +419,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var util = __webpack_require__(2)
 	var is = __webpack_require__(3)
 	var conf = __webpack_require__(4)
-	// var supportQuerySelector = document.querySelector && document.querySelectorAll
-	var supportQuerySelector = false
+	var supportQuerySelector = document.querySelector && document.querySelectorAll
 
 	module.exports = function (el, scopedSel, sels) {
 		if (!supportQuerySelector) {
@@ -471,6 +472,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        })
 	        return keys
 	    },
+	    bind: function (fn, ctx) {
+	        return function () {
+	            fn.apply(ctx, arguments)
+	        }
+	    },
 	    extend: function(obj) {
 	        if (this.type(obj) != 'object') return obj;
 	        var source, prop;
@@ -481,6 +487,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        }
 	        return obj;
+	    },
+	    trim: function (str) {
+	        if (str.trim) return str.trim()
+	        else {
+	            return str.replace(/^\s+|\s+$/gm, '')
+	        }
+	    },
+	    indexOf: function (arr, tar) {
+	        if (arr.indexOf) return arr.indexOf(tar)
+	        else {
+	            var i = -1
+	            util.some(arr, function (item, index) {
+	                if (item === tar) {
+	                    i = index
+	                    return true
+	                }
+	            })
+	            return i
+	        }
 	    },
 	    forEach: function (arr, fn) {
 	        if (arr.forEach) return arr.forEach(fn)
@@ -546,7 +571,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    diff: function(next, pre, _t) {
 	        var that = this
-	            // defult max 4 level        
+	        // defult max 4 level        
 	        _t = _t == undefined ? 4 : _t
 
 	        if (_t <= 0) return next !== pre
@@ -563,20 +588,26 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            var that = this
 	            return util.some(nkeys, function(k) {
-	                return (!~pkeys.indexOf(k)) || that.diff(next[k], pre[k], _t - 1)
+	                return (!~util.indexOf(pkeys, k)) || that.diff(next[k], pre[k], _t - 1)
 	            })
 	        }
 	        return next !== pre
 	    },
 	    slice: function (a) {
-	        return [].slice.call(a)
+	        if (!a || !a.length) return []
+	        var len = a.length
+	        var next = []
+	        for (var i = 0; i < len; i ++) {
+	            next.push(a[i])
+	        }
+	        return next
 	    },
 	    walk: function(node, fn) {
 	        var into = fn(node) !== false
 	        var that = this
 	        if (into) {
 	            var children = [].slice.call(node.childNodes)
-	            children.forEach(function (i) {
+	            util.forEach(children, function (i) {
 	                that.walk(i, fn)
 	            })
 	        }
@@ -591,9 +622,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
+	var E = window.HTMLElement ? HTMLElement : Element
 	module.exports = {
 	    Element: function(el) {
-	        return el instanceof HTMLElement || el instanceof DocumentFragment
+	        return el instanceof E || el instanceof DocumentFragment
 	    },
 	    DOM: function (el) {
 	        return this.Element(el) || el instanceof Comment
@@ -673,7 +705,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (util.type(fn) !== 'function')
 	                return warn('"' + conf.namespace + 'on" only accept function. {' + this._expr + '}')
 
-	            this.fn = fn.bind(this.$vm)
+	            this.fn = util.bind(fn, this.$vm)
 	            $(this.$el).on(this.type, this.fn, false)
 
 	        },
@@ -740,15 +772,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function ElementArray () {
 	    this.push = function () {
-	        Array.prototype.push.apply(this, arguments)
+	        return Array.prototype.push.apply(this, arguments)
 	    }
-	    this.forEach = function () {
-	        Array.prototype.forEach.apply(this, arguments)
+	    this.forEach = function (fn) {
+	        for (var i = 0; i < this.length; i++) {
+	            fn.call(this, this[i], i)
+	        }
 	    }
 	    this.push.apply(this, arguments)
 	}
 
-	ElementArray.prototype = Object.create(Shell.prototype)
+	ElementArray.prototype = Shell.prototype
 
 	var proto = Shell.prototype
 	proto.find = function(sel) {
@@ -782,7 +816,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // el.classList.add(clazz)
 
 	        var classList = el.className.split(' ')
-	        if (!~classList.indexOf(clazz)) classList.push(clazz)
+	        if (!~util.indexOf(classList, clazz)) classList.push(clazz)
 	        el.className = classList.join(' ')
 	    })
 	    return this
@@ -794,7 +828,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // el.classList.remove(clazz)
 
 	        var classList = el.className.split(' ')
-	        var index = classList.indexOf(clazz)
+	        var index = util.indexOf(classList, clazz)
 	        if (~index) classList.splice(index, 1)
 	        el.className = classList.join(' ')
 	    })
@@ -803,23 +837,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	proto.hasClass = function(clazz) {
 	    if (!this[0]) return false
 	    var classList = el.className.split(' ')
-	    return ~~classList.indexOf(clazz)
+	    return ~~util.indexOf(classList, clazz)
 	}
 	proto.each = function(fn) {
 	    this.forEach(fn)
 	    return this
 	}
-	var addEvent = document.addEventListener ? 'addEventListener' : 'attachEvent'
-	var removeEvent = document.removeEventListener ? 'removeEventListener' : 'detachEvent'
+	var ieEvent = !document.addEventListener
 	proto.on = function(type, listener, capture) {
 	    this.forEach(function(el) {
-	        el[addEvent](type, listener, capture)
+	        if (ieEvent) {
+	            el.attachEvent('on' + type, listener)
+	        } else {
+	            el.addEventListener(type, listener, capture)
+	        }
 	    })
 	    return this
 	}
 	proto.off = function(type, listener) {
 	    this.forEach(function(el) {
-	        el[removeEvent](type, listener)
+	        if (ieEvent) {
+	            el.detachEvent('on' + type, listener)
+	        } else {
+	            el.removeEventListener(type, listener, capture)
+	        }
 	    })
 	    return this
 	}
