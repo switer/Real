@@ -229,7 +229,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        var bindingDrts = util.slice(querySelectorAll('[' + dname + ']'))
 	        // compile directive of container 
-	        if (el.hasAttribute && el.hasAttribute(dname)) bindingDrts.unshift(el)
+	        if (_hasAttribute(el, dname)) bindingDrts.unshift(el)
 
 	        util.forEach(bindingDrts, function (tar) {
 
@@ -393,6 +393,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _getAttribute (el, an) {
 	    return el && el.getAttribute(an)
 	}
+	function _hasAttribute (el, an) {
+	    if (el.hasAttribute) return el.hasAttribute(an)
+	    return el.getAttribute(an) !== null
+	}
 	function _removeAttribute (el, an) {
 	    return el && el.removeAttribute(an)
 	}
@@ -449,19 +453,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	var is = __webpack_require__(3)
 	var conf = __webpack_require__(4)
 	var supportQuerySelector = document.querySelector && document.querySelectorAll
-
+	function _hasAttribute (el, an) {
+	    if (el.hasAttribute) return el.hasAttribute(an)
+	    return el.getAttribute(an) !== null
+	}
 	module.exports = function (el, scopedSel, sels) {
 		if (!supportQuerySelector) {
 			var _elements = {}
 			util.walk(el, function (node) {
 				if (!is.Element(node)) return false
 				util.forEach(sels, function (sel) {
-					if (node.hasAttribute(sel)) {
+					if (_hasAttribute(node, sel)) {
 						if (!_elements[sel]) _elements[sel] = []
 						_elements[sel].push(node)
 					}
 				})
-				if (node.hasAttribute(scopedSel)) {
+				if (_hasAttribute(node, scopedSel)) {
 					if (!_elements[scopedSel]) _elements[scopedSel] = []
 					_elements[scopedSel].push(node)
 					return false
@@ -635,7 +642,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var into = fn(node) !== false
 	        var that = this
 	        if (into) {
-	            var children = [].slice.call(node.childNodes)
+	            var children = util.slice(node.childNodes)
 	            util.forEach(children, function (i) {
 	                that.walk(i, fn)
 	            })
@@ -653,10 +660,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	module.exports = {
 	    Element: function(el) {
-	        return el.nodeType == 1 || el instanceof DocumentFragment
+	    	// 1: ELEMENT_NODE, 11: DOCUMENT_FRAGMENT_NODE
+	        return el.nodeType == 1 || el.nodeType == 11
 	    },
 	    DOM: function (el) {
-	        return this.Element(el) || el instanceof Comment
+	    	// 8: COMMENT_NODE
+	        return this.Element(el) || el.nodeType == 8
 	    }
 	}
 

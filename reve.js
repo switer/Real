@@ -168,7 +168,7 @@ Reve.prototype.$compile = function (el) {
 
         var bindingDrts = util.slice(querySelectorAll('[' + dname + ']'))
         // compile directive of container 
-        if (el.hasAttribute && el.hasAttribute(dname)) bindingDrts.unshift(el)
+        if (_hasAttribute(el, dname)) bindingDrts.unshift(el)
 
         util.forEach(bindingDrts, function (tar) {
 
@@ -331,6 +331,10 @@ function _execLiteral (expr, vm, name) {
 }
 function _getAttribute (el, an) {
     return el && el.getAttribute(an)
+}
+function _hasAttribute (el, an) {
+    if (el.hasAttribute) return el.hasAttribute(an)
+    return el.getAttribute(an) !== null
 }
 function _removeAttribute (el, an) {
     return el && el.removeAttribute(an)
