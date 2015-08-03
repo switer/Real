@@ -38,9 +38,6 @@
 	</style>
 </head>
 <body>
-	<div id="app">
-		<button r-on="{click: onClick}">Click</button>
-	</div>
 	<!-- <div id="app" r-show="{show}" r-class="{hl: hl}">
 		<div class="c-header" 
 			r-component="c-header" 
@@ -71,6 +68,9 @@
 			}">change child component's title</button>
 		</div>
 	</div> -->
+	<div id="app">
+		<div r-autorefresh="{onRefresh}"></div>
+	</div>
 	<script>
 		Reve.directive('autorefresh', {
 			bind: function (fn) {
@@ -113,10 +113,6 @@
 				// console.log(this.$refs)
 			},
 			methods: {
-				onClick: function () {
-					_log('alert')
-					alert('+++')
-				},
 				onDisableHightlight: function () {
 					this.$data.hl = false
 					this.$update()

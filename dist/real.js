@@ -236,7 +236,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var expr = _getAttribute(tar, dname) || ''
 	            // prevent repetitive binding
 	            if (drefs && ~util.indexOf(drefs, dname)) return
-	            _log(expr, dname)
 	            _removeAttribute(tar, dname)
 
 	            var sep = conf.directiveSep
@@ -386,7 +385,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	function _execLiteral (expr, vm, name) {
 	    if (!_isExpr(expr)) return {}
-	    var r = _execute(vm, expr.replace(new RegExp(conf.directiveSep, 'g'), ',').replace(/,\s*}$/, ''), name) 
+	    var r = _execute(vm, expr.replace(new RegExp(conf.directiveSep, 'g'), ',').replace(/,\s*}$/, '}'), name) 
 	    return r[0] ? {} : r[1]
 	}
 	function _getAttribute (el, an) {
@@ -747,7 +746,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                return warn('"' + conf.namespace + 'on" only accept function. {' + this._expr + '}')
 
 	            this.fn = util.bind(fn, this.$vm)
-	            console.log('=========', this.$el)
 	            $(this.$el).on(this.type, this.fn, false)
 
 	        },
@@ -813,15 +811,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function ElementArray () {
-	    this.push = function () {
-	        return Array.prototype.push.apply(this, arguments)
+	    var _arr = util.slice(arguments)
+	    var that = this
+	    this.push = function (el) {
+	        _arr.push(el)
+	        that[_arr.length - 1] = el
+	        that.length = _arr.length
 	    }
 	    this.forEach = function (fn) {
-	        for (var i = 0; i < this.length; i++) {
-	            fn.call(this, this[i], i)
-	        }
+	        util.forEach(_arr, fn)
 	    }
-	    this.push.apply(this, arguments)
+	    this.length = _arr.length
 	}
 
 	ElementArray.prototype = Shell.prototype
