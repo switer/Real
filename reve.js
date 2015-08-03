@@ -165,7 +165,6 @@ Reve.prototype.$compile = function (el) {
 
         var def = _diretives[dname]
         dname = NS + dname
-
         var bindingDrts = util.slice(querySelectorAll('[' + dname + ']'))
         // compile directive of container 
         if (_hasAttribute(el, dname)) bindingDrts.unshift(el)
@@ -176,7 +175,7 @@ Reve.prototype.$compile = function (el) {
             var expr = _getAttribute(tar, dname) || ''
             // prevent repetitive binding
             if (drefs && ~util.indexOf(drefs, dname)) return
-
+            _log(expr, dname)
             _removeAttribute(tar, dname)
 
             var sep = conf.directiveSep
@@ -326,7 +325,7 @@ function _strip (expr) {
 }
 function _execLiteral (expr, vm, name) {
     if (!_isExpr(expr)) return {}
-    var r = _execute(vm, expr.replace(new RegExp(conf.directiveSep, 'g'), ','), name) 
+    var r = _execute(vm, expr.replace(new RegExp(conf.directiveSep, 'g'), ',').replace(/,\s*}$/, ''), name) 
     return r[0] ? {} : r[1]
 }
 function _getAttribute (el, an) {

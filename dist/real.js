@@ -226,7 +226,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        var def = _diretives[dname]
 	        dname = NS + dname
-
 	        var bindingDrts = util.slice(querySelectorAll('[' + dname + ']'))
 	        // compile directive of container 
 	        if (_hasAttribute(el, dname)) bindingDrts.unshift(el)
@@ -237,7 +236,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var expr = _getAttribute(tar, dname) || ''
 	            // prevent repetitive binding
 	            if (drefs && ~util.indexOf(drefs, dname)) return
-
+	            _log(expr, dname)
 	            _removeAttribute(tar, dname)
 
 	            var sep = conf.directiveSep
@@ -387,7 +386,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	function _execLiteral (expr, vm, name) {
 	    if (!_isExpr(expr)) return {}
-	    var r = _execute(vm, expr.replace(new RegExp(conf.directiveSep, 'g'), ','), name) 
+	    var r = _execute(vm, expr.replace(new RegExp(conf.directiveSep, 'g'), ',').replace(/,\s*}$/, ''), name) 
 	    return r[0] ? {} : r[1]
 	}
 	function _getAttribute (el, an) {
@@ -509,9 +508,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return keys
 	    },
 	    bind: function (fn, ctx) {
-	        return function () {
+	        if (fn.bind) return fn.bind(ctx)
+	        function bfn () {
 	            fn.apply(ctx, arguments)
 	        }
+	        bfn.toString = function () {
+	            return fn.toString()
+	        }
+	        return bfn
 	    },
 	    extend: function(obj) {
 	        if (this.type(obj) != 'object') return obj;
@@ -743,6 +747,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                return warn('"' + conf.namespace + 'on" only accept function. {' + this._expr + '}')
 
 	            this.fn = util.bind(fn, this.$vm)
+	            console.log('=========', this.$el)
 	            $(this.$el).on(this.type, this.fn, false)
 
 	        },
