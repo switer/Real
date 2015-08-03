@@ -6,8 +6,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="format-detection" content="telphone=no, email=no" />
+    <script src="debug.js"></script>
 	<title>REVE</title>
-	<script src="../dist/reve.js"></script>
+	<script src="/dist/real.js"></script>
 	<style>
 		body {padding: 0px;margin: 0;}
 		.hl {color: cornflowerblue}
@@ -50,15 +51,19 @@
 			}">change child component's title</button>
 		</div>
 	</div>
+<!-- 	<div id="app">
+		<div r-autorefresh="{onRefresh}"></div>
+	</div> -->
 	<script>
 		Reve.directive('autorefresh', {
 			bind: function (fn) {
+				var that = this
 				setInterval(function () {
-					this.$el.style.opacity = 0.2
+					that.$el.style.opacity = 0.2
 					fn(function () {
-						this.$el.style.opacity = 1
-					}.bind(this))
-				}.bind(this), 2000)
+						that.$el.style.opacity = 1
+					})
+				}, 2000)
 			}
 		})
 		Reve.component('c-header' ,{
