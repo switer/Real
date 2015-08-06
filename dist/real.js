@@ -745,7 +745,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (util.type(fn) !== 'function')
 	                return warn('"' + conf.namespace + 'on" only accept function. {' + this._expr + '}')
 
-	            this.fn = util.bind(fn, this.$vm)
+	            // this.fn = util.bind(fn, this.$vm)
+	            var that = this
+	            this.fn = function (e) {
+	                e.$currentTarget = that.$el
+	                fn.call(that.$vm, e)
+	            }
 	            $(this.$el).on(this.type, this.fn, false)
 
 	        },
