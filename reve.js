@@ -4,6 +4,7 @@ var util = require('./lib/util')
 var conf = require('./lib/conf')
 var is = require('./lib/is')
 var Query = require('./lib/query')
+var consoler = require('./lib/consoler')
 var buildInDirectives = require('./lib/build-in')
 var _execute = require('./lib/execute')
 var _components = {}
@@ -17,6 +18,7 @@ var supportQuerySelector = document.querySelector && document.querySelectorAll
  */
 function Reve(options) {
     var vm = this
+    var NS = conf.namespace
     var _ready = options.ready
     var _created = options.created
     var _shouldUpdate = options.shouldUpdate
@@ -41,7 +43,21 @@ function Reve(options) {
      *  Mounted element detect
      */
     if (el && options.template) {
-        el.innerHTML = options.template
+        var hasReplaceOption = _getAttribute(el, NS + 'replace') == 'true'
+        if (hasReplaceOption && el.parentNode) {
+            var child = _fragmentWrap(options.template)
+            if (!child.children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
+            var nextEl =child.children[0]
+            var parent = el.parentNode
+            parent.replaceChild(nextEl, el)
+            _cloneArributes(el, nextEl)
+            el = nextEl
+        } else {
+            if (hasReplaceOption && !el.parentNode) {
+                consoler.warn('Invalid element with \'' + NS + 'replace\' option.', el)
+            }
+            el.innerHTML = options.template
+        }
     } else if (options.template) {
         el = document.createElement('div')
         el.innerHTML = options.template
@@ -50,13 +66,13 @@ function Reve(options) {
         if (supportQuerySelector)
             el = document.querySelector(sel)
         else if (/^\./.test(sel)) {
-            el = document.getElementsByClassName(sel.replace(/^\./, ''))
+            el = _getElementsByClassName(sel.replace(/^\./, ''))
             el && (el = el[0])
         }
         else if (/^#/.test(sel))
             el = document.getElementById(sel.replace(/^#/, ''))
         else el = null
-        if (!el) return console.error('Can\'t not found element by selector "' + sel + '"')
+        if (!el) return consoler.error('Can\'t not found element by selector "' + sel + '"')
     } else if (!is.Element(el)) {
         throw new Error('Unmatch el option')
     }
@@ -112,11 +128,11 @@ Reve.prototype.$compile = function (el) {
 
         var cname = _getAttribute(tar, componentDec)
         if (!cname) {
-            return console.error(componentDec + ' missing component id.')
+            return consoler.error(componentDec + ' missing component id.')
         }
         var Component = _components[cname]
         if (!Component) {
-            return console.error('Component \'' + cname + '\' not found.')
+            return consoler.error('Component \'' + cname + '\' not found.')
         }
 
         var refid = _getAttribute(tar, NS + 'ref')
@@ -250,7 +266,7 @@ function Directive(vm, tar, def, name, expr) {
         var key
         var keyRE = /^[^:]+:/
         if (!keyRE.test(expr)) {
-            return console.error('Invalid expression of "{' + expr + '}", it should be in this format: ' + name + '="{ key: expression }".')
+            return consoler.error('Invalid expression of "{' + expr + '}", it should be in this format: ' + name + '="{ key: expression }".')
         }
         expr = expr.replace(keyRE, function(m) {
             key = util.trim(m.replace(/:$/, ''))
@@ -336,6 +352,17 @@ function _hasAttribute (el, an) {
 }
 function _removeAttribute (el, an) {
     return el && el.removeAttribute(an)
+}
+function _cloneArributes(el, target) {
+    var attrs = util.slice(el.attributes)
+    util.forEach(attrs, function (att) {
+        if (att.name == 'class') {
+            target.className = target.className + (target.className ? ' ' : '') + att.value
+        } else {
+            target[att.name] = att.value
+        }
+    })
+    return target
 }
 function _fragmentWrap (html) {
     var div = document.createElement('div')

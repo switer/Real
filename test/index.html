@@ -18,6 +18,8 @@
 		.button-group {text-align: center;}
 			.button-group button {line-height: 28px;color: white;background-color: cornflowerblue;border: 0;padding: 6px;
 				outline: 0;border-radius: 4px;margin: 5px;}
+
+		.footer {display: block;width: 100%;text-align: center;color: #ccc;text-decoration: underline;cursor: pointer;}
 	</style>
 </head>
 <body>
@@ -50,6 +52,7 @@
 				click: onChangeHeader
 			}">change child component's title</button>
 		</div>
+		<div r-component="c-footer" r-replace="true" class="footer"></div>
 	</div>
 <!-- 	<div id="app">
 		<div r-autorefresh="{onRefresh}"></div>
@@ -83,6 +86,9 @@
 		Reve.component('c-button' ,{
 			ready: function () {
 			}
+		})
+		Reve.component('c-footer' ,{
+			template: '<h6>Footer</h6>'
 		})
 		var $app = new Reve({
 			el: '#app',
