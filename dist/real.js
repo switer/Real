@@ -872,6 +872,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.forEach = function (fn) {
 	        util.forEach(_arr, fn)
 	    }
+	    this.forEach(function (item, i) {
+	        that[i] = item
+	    })
 	    this.length = _arr.length
 	}
 

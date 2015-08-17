@@ -23,7 +23,7 @@
 	</style>
 </head>
 <body>
-	<div id="app" r-show="{show}" r-class="{hl: hl}">
+	<div id="app" r-show="{show}" r-class="{hl: hl}" r-empty="">
 		<div class="c-header" 
 			r-component="c-header" 
 			r-ref="header"
@@ -89,6 +89,14 @@
 		})
 		Reve.component('c-footer' ,{
 			template: '<h6>Footer</h6>'
+		})
+		Reve.directive('empty' ,{
+			bind: function (key) {
+				console.log(key)
+			},
+			update: function () {
+
+			}
 		})
 		var $app = new Reve({
 			el: '#app',
