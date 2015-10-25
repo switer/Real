@@ -6,14 +6,18 @@ var is = require('./lib/is')
 var Query = require('./lib/query')
 var consoler = require('./lib/consoler')
 var buildInDirectives = require('./lib/build-in')
-var _execute = require('./lib/execute')
+var Expression = require('./lib/expression')
 var supportQuerySelector = require('./lib/detection').supportQuerySelector
+var _execute = require('./lib/execute')
 var _components = {}
 var _globalDirectives = {}
 var _did = 0
 var _diff = function () {
     return util.diff.apply(util, arguments)
 }
+var _isExpr = Expression.isExpr
+var _strip = Expression.strip
+
 /**
  * Constructor Function and Class.
  * @param {Object} options Instance options
@@ -283,6 +287,8 @@ function Directive(vm, tar, def, name, expr) {
     d.$el = tar
     d.$vm = vm
     d.$id = _did++
+    d.$expr = expr
+    d.$name = name
 
     var bind = def.bind
     var upda = def.update
@@ -345,14 +351,6 @@ function Directive(vm, tar, def, name, expr) {
     !hasError && upda && upda.call(d, prev)
 }
 
-function _isExpr(c) {
-    return c ? !!util.trim(c).match(/^\{[\s\S]*?\}$/m) : false
-}
-function _strip (expr) {
-    return util.trim(expr)
-            .match(/^\{([\s\S]*)\}$/m)[1]
-            .replace(/^- /, '')
-}
 function _execLiteral (expr, vm, name) {
     if (!_isExpr(expr)) return {}
     var r = _execute(vm, expr.replace(new RegExp(conf.directiveSep, 'g'), ',').replace(/,\s*}$/, '}'), name) 

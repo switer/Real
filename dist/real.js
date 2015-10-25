@@ -61,20 +61,24 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
-	var util = __webpack_require__(2)
-	var conf = __webpack_require__(3)
-	var is = __webpack_require__(4)
-	var Query = __webpack_require__(5)
-	var consoler = __webpack_require__(1)
+	var util = __webpack_require__(1)
+	var conf = __webpack_require__(2)
+	var is = __webpack_require__(3)
+	var Query = __webpack_require__(4)
+	var consoler = __webpack_require__(5)
 	var buildInDirectives = __webpack_require__(6)
-	var _execute = __webpack_require__(8)
+	var Expression = __webpack_require__(8)
 	var supportQuerySelector = __webpack_require__(9).supportQuerySelector
+	var _execute = __webpack_require__(10)
 	var _components = {}
 	var _globalDirectives = {}
 	var _did = 0
 	var _diff = function () {
 	    return util.diff.apply(util, arguments)
 	}
+	var _isExpr = Expression.isExpr
+	var _strip = Expression.strip
+
 	/**
 	 * Constructor Function and Class.
 	 * @param {Object} options Instance options
@@ -344,6 +348,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    d.$el = tar
 	    d.$vm = vm
 	    d.$id = _did++
+	    d.$expr = expr
+	    d.$name = name
 
 	    var bind = def.bind
 	    var upda = def.update
@@ -406,14 +412,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    !hasError && upda && upda.call(d, prev)
 	}
 
-	function _isExpr(c) {
-	    return c ? !!util.trim(c).match(/^\{[\s\S]*?\}$/m) : false
-	}
-	function _strip (expr) {
-	    return util.trim(expr)
-	            .match(/^\{([\s\S]*)\}$/m)[1]
-	            .replace(/^- /, '')
-	}
 	function _execLiteral (expr, vm, name) {
 	    if (!_isExpr(expr)) return {}
 	    var r = _execute(vm, expr.replace(new RegExp(conf.directiveSep, 'g'), ',').replace(/,\s*}$/, '}'), name) 
@@ -485,28 +483,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 1 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	var co = console
-	module.exports = {
-		log: function () {
-			co.log && co.log.apply(co, arguments)
-		},
-		error: function () {
-			(co.error || this.log).apply(co, arguments)
-		},
-		warn: function () {
-			(co.warn || this.log).apply(co, arguments)
-		},
-		info: function () {
-			(co.info || this.log).apply(co, arguments)
-		}
-	}
-
-/***/ },
-/* 2 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -681,7 +657,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = util
 
 /***/ },
-/* 3 */
+/* 2 */
 /***/ function(module, exports) {
 
 	var conf = {
@@ -692,7 +668,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = conf
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -709,13 +685,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 5 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var util = __webpack_require__(2)
-	var is = __webpack_require__(4)
+	var util = __webpack_require__(1)
+	var is = __webpack_require__(3)
 	var supportQuerySelector = document.querySelector && document.querySelectorAll
 
 	function _hasAttribute (el, an) {
@@ -751,6 +727,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	var co = console
+	module.exports = {
+		log: function () {
+			co.log && co.log.apply(co, arguments)
+		},
+		error: function () {
+			(co.error || this.log).apply(co, arguments)
+		},
+		warn: function () {
+			(co.warn || this.log).apply(co, arguments)
+		},
+		info: function () {
+			(co.info || this.log).apply(co, arguments)
+		}
+	}
+
+/***/ },
 /* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -761,9 +759,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var $ = __webpack_require__(7)
-	var conf = __webpack_require__(3)
-	var util = __webpack_require__(2)
-	var consoler = __webpack_require__(1)
+	var conf = __webpack_require__(2)
+	var util = __webpack_require__(1)
+	var consoler = __webpack_require__(5)
+	var Expression = __webpack_require__(8)
+
+	function noop () {}
 
 	module.exports = {
 	    'attr': {
@@ -778,6 +779,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	            } else {
 	                this._$el.attr(this.attname, next)
 	            }
+	        },
+	        unbind: function () {
+	            this._$el = null
 	        }
 	    },
 	    'class': {
@@ -789,6 +793,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        update: function(next) {
 	            if (next) this._$el.addClass(this.className)
 	            else this._$el.removeClass(this.className)
+	        },
+	        unbind: function () {
+	            this._$el = null
 	        }
 	    },
 	    'html': {
@@ -838,6 +845,63 @@ return /******/ (function(modules) { // webpackBootstrap
 	        update: function(next) {
 	            this.$el.style && (this.$el.style[this.sheet] = next)
 	        }
+	    },
+	    'text': {
+	        bind: function () {
+	            var reg = Expression.exprRegexp
+	            var expr = this.expr = this.$el.innerHTML
+	            var veilExpr = Expression.veil(expr)
+	            var expressions = this.expressions = util.map(veilExpr.match(reg), function (exp) {
+	                return Expression.strip(exp)
+	            })
+	            var parts = veilExpr.split(reg)
+	            var cache = this.cache = new Array(expressions.length)
+	            var that = this
+
+	            var $textNode = this.textNode = new Text()
+	            this.render = function () {
+	                // set value
+	                util.forEach(expressions, function(exp, index) {
+	                    var v = that.$exec(exp)
+	                    if (!v[0]) cache[index] = v[1]
+	                })
+	                // get content
+	                var frags = []
+	                util.forEach(parts, function(item, index) {
+	                    frags.push(item)
+	                    if (index < expressions.length) {
+	                        frags.push(cache[index])
+	                    }
+	                })
+	                // TODO, Number Mobile bug, trying to using replaceChild
+	                $textNode.nodeValue = Expression.unveil(frags.join(''))
+	            }
+
+	            var pn = this.$el.parentNode
+	            if (pn) {
+	                pn.replaceChild($textNode, this.$el)
+	            } else {
+	                return consoler.error('"' + conf.namespace + 'text" \'s parentNode is not found. {' + this.$expr + '}')
+	            }
+	            this.render()
+	        },
+	        shouldUpdate: function () {
+	            var that = this
+	            return util.some(this.expressions, function(exp, index) {
+	                var pv = that.cache[index]
+	                var nv = that.$exec(exp)
+	                if (!nv[0]) {
+	                    return !!that.$diff(pv, nv[1])
+	                }
+	            })
+	        },
+	        update: function () {
+	            this.render()
+	        },
+	        unbind: function () {
+	            this.render = noop
+	            this.expressions = this.cache = this.textNode = null
+	        }
 	    }
 	}
 
@@ -851,8 +915,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 	'use strict';
-	var util = __webpack_require__(2)
-	var is = __webpack_require__(4)
+	var util = __webpack_require__(1)
+	var is = __webpack_require__(3)
 
 	function Selector(sel) {
 	    if (util.type(sel) == 'string') {
@@ -1070,46 +1134,31 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/**
-	 *  execute expression from template with specified Scope and ViewModel
-	 */
+	'use strict';
 
-	var util = __webpack_require__(2)
-	/**
-	 *  Calc expression value
-	 */
-	function _execute($vm/*, expression, [label], [target]*/) {
-	    /**
-	     *  $scope is passed when call instance method $compile, 
-	     *  Each "scope" object maybe include "$parent, data, method" properties
-	     */
-	    var $scope = util.extend({}, $vm.$methods, $vm.$data)
+	var util = __webpack_require__(1)
 
-	    try {
-	        return [null, util.immutable(eval('with($scope){(%s)}'.replace('%s', arguments[1])))]
-	    } catch (e) {
-	        arguments[1] =  '. '+ arguments[2] + '=' + (/^\{/.test(arguments[1]) 
-	                                    ? arguments[1]
-	                                    : '{' + arguments[1] + '}') // expr
-	        
-	        var $consoler = __webpack_require__(1)
-	        // arguments[2] // label
-	        // arguments[3] // target
-	        switch (e.name) {
-	            case 'ReferenceError':
-	                $consoler.warn(e.message + arguments[1])
-	                break
-	            default:
-	                $consoler.error(
-	                    (arguments[2] ? '\'' + arguments[2] + '\': ' : ''),
-	                    e.message + arguments[1],
-	                    arguments[3] || ''
-	                )
-	        }
-	        return [e]
+	function _isExpr(c) {
+	    return c ? !!util.trim(c).match(/^\{[\s\S]*?\}$/m) : false
+	}
+	function _strip (expr) {
+	    return util.trim(expr)
+	            .match(/^\{([\s\S]*)\}$/m)[1]
+	            .replace(/^- /, '')
+	}
+	module.exports = {
+		isExpr: _isExpr,
+		strip: _strip,
+	    exprRegexp: /\{[\s\S]*?\}/g,
+		veil: function (expr) {
+	        return expr.replace(/\\{/g, '\uFFF0')
+	                   .replace(/\\}/g, '\uFFF1')
+	    },
+	    unveil: function (expr) {
+	        return expr.replace(/\uFFF0/g, '\\{')
+	                   .replace(/\uFFF1/g, '\\}')
 	    }
 	}
-	module.exports = _execute
 
 /***/ },
 /* 9 */
@@ -1136,6 +1185,51 @@ return /******/ (function(modules) { // webpackBootstrap
 		supportQuerySelector: document.querySelector && document.querySelectorAll
 	}
 
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 *  execute expression from template with specified Scope and ViewModel
+	 */
+
+	var util = __webpack_require__(1)
+	/**
+	 *  Calc expression value
+	 */
+	function _execute($vm/*, expression, [label], [target]*/) {
+	    /**
+	     *  $scope is passed when call instance method $compile, 
+	     *  Each "scope" object maybe include "$parent, data, method" properties
+	     */
+	    var $scope = util.extend({}, $vm.$methods, $vm.$data)
+
+	    try {
+	        return [null, util.immutable(eval('with($scope){(%s)}'.replace('%s', arguments[1])))]
+	    } catch (e) {
+	        arguments[1] =  '. '+ arguments[2] + '=' + (/^\{/.test(arguments[1]) 
+	                                    ? arguments[1]
+	                                    : '{' + arguments[1] + '}') // expr
+	        
+	        var $consoler = __webpack_require__(5)
+	        // arguments[2] // label
+	        // arguments[3] // target
+	        switch (e.name) {
+	            case 'ReferenceError':
+	                $consoler.warn(e.message + arguments[1])
+	                break
+	            default:
+	                $consoler.error(
+	                    (arguments[2] ? '\'' + arguments[2] + '\': ' : ''),
+	                    e.message + arguments[1],
+	                    arguments[3] || ''
+	                )
+	        }
+	        return [e]
+	    }
+	}
+	module.exports = _execute
 
 /***/ }
 /******/ ])
