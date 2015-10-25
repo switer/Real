@@ -23,7 +23,7 @@
 	</style>
 </head>
 <body>
-	<div id="app" r-show="{show}" r-class="{hl: hl}" r-empty="">
+	<div id="app" r-show="{show}" r-class="{hl: hl}">
 		<div class="c-header" 
 			r-component="c-header" 
 			r-ref="header"
@@ -41,7 +41,7 @@
 				r-ref="button"
 			>Home</button>
 		</div>
-		
+		<span r-content>{header}</span>
 		<h1 class="content">Hello world</h1>
 		<div class="button-group">
 			<button r-on="{
@@ -90,12 +90,68 @@
 		Reve.component('c-footer' ,{
 			template: '<h6>Footer</h6>'
 		})
-		Reve.directive('empty' ,{
-			bind: function (key) {
-				console.log(key)
+		Reve.directive('content' ,{
+			bind: function () {
+				function veil (expr) {
+			        return expr.replace(/\\{/g, '\uFFF0')
+			                   .replace(/\\}/g, '\uFFF1')
+			    }
+			    function unveil (expr) {
+			        return expr.replace(/\uFFF0/g, '\\{')
+			                   .replace(/\uFFF1/g, '\\}')
+			    }
+			    function strip (expr) {
+			        // -\d*\.?\d* TBD
+			        var m =  expr.trim().match(/^\{([\s\S]*)\}$/m)
+			        return m && m[1] ? m[1].replace(/^- /, '') : ''
+			    }
+				var reg = /\{[\s\S]*?\}/g
+				var expr = this.expr = this.$el.innerHTML
+				var veilExpr = veil(expr)
+				var expressions = this.expressions = veilExpr.match(reg).map(function (exp) {
+				    return strip(exp)
+				})
+				var parts = this.parts = veilExpr.split(reg)
+				var cache = this.cache = new Array(expressions.length)
+				var that = this
+
+				var $textNode = this.textNode = new Text()
+
+				console.log(this.$el.parentNode)
+				if (this.$el.parentNode) {
+					this.$el.parentNode.replaceChild($textNode, this.$el)
+				}
+				this.render = function (inited) {
+					// set value
+					expressions.forEach(function(exp, index) {
+						var v = that.$exec(exp)
+						if (!v[0]) cache[index] = v[1]
+				    })
+				    // get content
+					var frags = []
+			        parts.forEach(function(item, index) {
+			            frags.push(item)
+			            if (index < expressions.length) {
+			                frags.push(cache[index])
+			            }
+			        })
+			        // TODO, Number Mobile bug, trying to using replaceChild
+			        $textNode.nodeValue = unveil(frags.join(''))
+				}
+				this.render(true)
+			},
+			shouldUpdate: function () {
+				var that = this
+				return this.expressions.some(function(exp, index) {
+			        var pv = that.cache[index]
+			        var nv = that.$exec(exp)
+			        if (!nv[0]) {
+			        	return that.$diff(pv, nv[1])
+			        }
+			    })
 			},
 			update: function () {
-
+				this.render()
 			}
 		})
 		var $app = new Reve({

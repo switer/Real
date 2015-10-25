@@ -7,10 +7,13 @@ var Query = require('./lib/query')
 var consoler = require('./lib/consoler')
 var buildInDirectives = require('./lib/build-in')
 var _execute = require('./lib/execute')
+var supportQuerySelector = require('./lib/detection').supportQuerySelector
 var _components = {}
 var _globalDirectives = {}
 var _did = 0
-var supportQuerySelector = document.querySelector && document.querySelectorAll
+var _diff = function () {
+    return util.diff.apply(util, arguments)
+}
 /**
  * Constructor Function and Class.
  * @param {Object} options Instance options
@@ -294,19 +297,25 @@ function Directive(vm, tar, def, name, expr) {
     /**
      *  execute wrap with directive name and current VM
      */
-    function _exec(expr) {
+    var _exec = this.$exec = function (expr) {
         return _execute(vm, expr, name)
     }
-
+    this.$diff = _diff
     /**
      *  update handler
      */
     function _update() {
+        // empty expression
+        if (!expr) {
+            if (shouldUpdate && shouldUpdate.call(d)) upda && upda.call(d)
+            return
+        }
+
         var nexv = _exec(expr) // [error, result]
         if (!nexv[0]) {
             if (!shouldUpdate && !util.diff(nexv[1], prev)) {
                 return false
-            } else if (shouldUpdate && !shouldUpdate(nexv[1], prev)) {
+            } else if (shouldUpdate && !shouldUpdate.call(d, nexv[1], prev)) {
                 return false
             }
             var p = prev

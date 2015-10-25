@@ -1,5 +1,5 @@
 /**
-* Real v1.0.0
+* Real v1.0.1
 * (c) 2015 guankaishe
 * Released under the MIT License.
 */
@@ -61,17 +61,20 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
-	var util = __webpack_require__(1)
-	var conf = __webpack_require__(2)
-	var is = __webpack_require__(3)
-	var Query = __webpack_require__(4)
-	var consoler = __webpack_require__(5)
+	var util = __webpack_require__(2)
+	var conf = __webpack_require__(3)
+	var is = __webpack_require__(4)
+	var Query = __webpack_require__(5)
+	var consoler = __webpack_require__(1)
 	var buildInDirectives = __webpack_require__(6)
 	var _execute = __webpack_require__(8)
+	var supportQuerySelector = __webpack_require__(9).supportQuerySelector
 	var _components = {}
 	var _globalDirectives = {}
 	var _did = 0
-	var supportQuerySelector = document.querySelector && document.querySelectorAll
+	var _diff = function () {
+	    return util.diff.apply(util, arguments)
+	}
 	/**
 	 * Constructor Function and Class.
 	 * @param {Object} options Instance options
@@ -344,6 +347,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var bind = def.bind
 	    var upda = def.update
+	    var shouldUpdate = def.shouldUpdate
 	    var prev
 
 	    // set properties
@@ -354,16 +358,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	    /**
 	     *  execute wrap with directive name and current VM
 	     */
-	    function _exec(expr) {
+	    var _exec = this.$exec = function (expr) {
 	        return _execute(vm, expr, name)
 	    }
-
+	    this.$diff = _diff
 	    /**
 	     *  update handler
 	     */
 	    function _update() {
-	        var nexv = _exec(expr)
-	        if (!nexv[0] && util.diff(nexv[1], prev)) {
+	        // empty expression
+	        if (!expr) {
+	            if (shouldUpdate && shouldUpdate.call(d)) upda && upda.call(d)
+	            return
+	        }
+
+	        var nexv = _exec(expr) // [error, result]
+	        if (!nexv[0]) {
+	            if (!shouldUpdate && !util.diff(nexv[1], prev)) {
+	                return false
+	            } else if (shouldUpdate && !shouldUpdate.call(d, nexv[1], prev)) {
+	                return false
+	            }
 	            var p = prev
 	            prev = nexv[1]
 	            upda && upda.call(d, nexv[1], p, {})
@@ -470,6 +485,28 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 1 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	var co = console
+	module.exports = {
+		log: function () {
+			co.log && co.log.apply(co, arguments)
+		},
+		error: function () {
+			(co.error || this.log).apply(co, arguments)
+		},
+		warn: function () {
+			(co.warn || this.log).apply(co, arguments)
+		},
+		info: function () {
+			(co.info || this.log).apply(co, arguments)
+		}
+	}
+
+/***/ },
+/* 2 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -635,13 +672,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	                that.walk(i, fn)
 	            })
 	        }
+	    },
+	    isUndef: function (obj) {
+	        return obj === void(0)
 	    }
 	}
 
 	module.exports = util
 
 /***/ },
-/* 2 */
+/* 3 */
 /***/ function(module, exports) {
 
 	var conf = {
@@ -652,7 +692,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = conf
 
 /***/ },
-/* 3 */
+/* 4 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -669,13 +709,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var util = __webpack_require__(1)
-	var is = __webpack_require__(3)
+	var util = __webpack_require__(2)
+	var is = __webpack_require__(4)
 	var supportQuerySelector = document.querySelector && document.querySelectorAll
 
 	function _hasAttribute (el, an) {
@@ -711,28 +751,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 5 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	var co = console
-	module.exports = {
-		log: function () {
-			co.log && co.log.apply(co, arguments)
-		},
-		error: function () {
-			(co.error || this.log).apply(co, arguments)
-		},
-		warn: function () {
-			(co.warn || this.log).apply(co, arguments)
-		},
-		info: function () {
-			(co.info || this.log).apply(co, arguments)
-		}
-	}
-
-/***/ },
 /* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -743,9 +761,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var $ = __webpack_require__(7)
-	var conf = __webpack_require__(2)
-	var util = __webpack_require__(1)
-	var consoler = __webpack_require__(5)
+	var conf = __webpack_require__(3)
+	var util = __webpack_require__(2)
+	var consoler = __webpack_require__(1)
 
 	module.exports = {
 	    'attr': {
@@ -755,7 +773,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this._$el = $(this.$el)
 	        },
 	        update: function(next) {
-	            if (!next && next !== '') {
+	            if (util.isUndef(next)) {
 	                this._$el.removeAttr(this.attname)
 	            } else {
 	                this._$el.attr(this.attname, next)
@@ -775,7 +793,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    'html': {
 	        update: function(nextHTML) {
-	            this.$el.innerHTML = nextHTML
+	            this.$el.innerHTML = util.isUndef(nextHTML) ? '' : nextHTML
 	        }
 	    },
 	    'on': {
@@ -833,8 +851,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 	'use strict';
-	var util = __webpack_require__(1)
-	var is = __webpack_require__(3)
+	var util = __webpack_require__(2)
+	var is = __webpack_require__(4)
 
 	function Selector(sel) {
 	    if (util.type(sel) == 'string') {
@@ -1056,7 +1074,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 *  execute expression from template with specified Scope and ViewModel
 	 */
 
-	var util = __webpack_require__(1)
+	var util = __webpack_require__(2)
 	/**
 	 *  Calc expression value
 	 */
@@ -1074,7 +1092,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                    ? arguments[1]
 	                                    : '{' + arguments[1] + '}') // expr
 	        
-	        var $consoler = __webpack_require__(5)
+	        var $consoler = __webpack_require__(1)
 	        // arguments[2] // label
 	        // arguments[3] // target
 	        switch (e.name) {
@@ -1092,6 +1110,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	}
 	module.exports = _execute
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	function detect() {
+	    var undef
+	    var v = 3
+	    var div = document.createElement('div')
+	    var all = div.getElementsByTagName('i')
+
+	    while (
+	        div.innerHTML = '<!--[if gt IE ' + (++v) + ']><i></i><![endif]-->',
+	        all[0]
+	    )
+	    return v > 4 ? v : undef;
+	}
+
+	var ie = detect()
+	module.exports = {
+		ie: ie,
+		supportQuerySelector: document.querySelector && document.querySelectorAll
+	}
+
 
 /***/ }
 /******/ ])
