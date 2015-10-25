@@ -1,6 +1,6 @@
 /**
-* Real v1.0.1
-* (c) 2015 guankaishe
+* Real v1.2.0
+* (c) 2015 switer
 * Released under the MIT License.
 */
 (function webpackUniversalModuleDefinition(root, factory) {

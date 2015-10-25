@@ -15,8 +15,8 @@ var banner = ['/**',
               ''].join('\n')
 var bannerVars = { 
         version : meta.version,
-        author: 'guankaishe',
-        license: 'MIT'
+        author: meta.author,
+        license: meta.license
     }
 
 gulp.task('watch', function () {
