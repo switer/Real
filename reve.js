@@ -283,6 +283,7 @@ function Directive(vm, tar, def, name, expr) {
 
     var bind = def.bind
     var upda = def.update
+    var shouldUpdate = def.shouldUpdate
     var prev
 
     // set properties
@@ -301,8 +302,13 @@ function Directive(vm, tar, def, name, expr) {
      *  update handler
      */
     function _update() {
-        var nexv = _exec(expr)
-        if (!nexv[0] && util.diff(nexv[1], prev)) {
+        var nexv = _exec(expr) // [error, result]
+        if (!nexv[0]) {
+            if (!shouldUpdate && !util.diff(nexv[1], prev)) {
+                return false
+            } else if (shouldUpdate && !shouldUpdate(nexv[1], prev)) {
+                return false
+            }
             var p = prev
             prev = nexv[1]
             upda && upda.call(d, nexv[1], p, {})
