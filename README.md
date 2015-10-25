@@ -133,8 +133,10 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	Update element's innerHTML by binding data.
 
 - **r-text**
+
 	`r-text` is flag directive that without attribute value but using innerHTML as expression. 
 	It replace current element and render template content.
+	
 	```html
 	Framework: <span r-text>{name}</span> !
 	
