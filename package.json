@@ -1,6 +1,6 @@
 {
 	"name": "real",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"description": "t's Reve, but support IE6......",
 	"main": "reve.js",
 	"scripts": {

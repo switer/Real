@@ -11,12 +11,12 @@ var supportQuerySelector = require('./lib/detection').supportQuerySelector
 var _execute = require('./lib/execute')
 var _components = {}
 var _globalDirectives = {}
+var _isExpr = Expression.isExpr
+var _strip = Expression.strip
 var _did = 0
 var _diff = function () {
     return util.diff.apply(util, arguments)
 }
-var _isExpr = Expression.isExpr
-var _strip = Expression.strip
 
 /**
  * Constructor Function and Class.
@@ -31,6 +31,8 @@ function Reve(options) {
     var _shouldUpdate = options.shouldUpdate
     var $directives = this.$directives = []
     var $components = this.$components = []
+
+    this.$parent = options.parent || null
 
     this.$update = function () {
         // should update return false will stop UI update
@@ -50,7 +52,10 @@ function Reve(options) {
      *  Mounted element detect
      */
     if (el && options.template) {
-        var hasReplaceOption = _getAttribute(el, NS + 'replace') == 'true'
+        var hasReplaceOption = _hasAttribute(el, NS + 'replace')
+            ? _getAttribute(el, NS + 'replace') == 'true'
+            : options.replace
+
         if (hasReplaceOption && el.parentNode) {
             var child = _fragmentWrap(options.template)
             if (!child.children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
@@ -66,8 +71,14 @@ function Reve(options) {
             el.innerHTML = options.template
         }
     } else if (options.template) {
-        el = document.createElement('div')
-        el.innerHTML = options.template
+        if (options.replace) {
+            el = _fragmentWrap(options.template).children[0]
+            !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
+        }
+        if (!el) {
+            el = document.createElement('div')
+            el.innerHTML = options.template
+        }
     } else if (util.type(el) == 'string') {
         var sel = el
         if (supportQuerySelector)
@@ -99,7 +110,16 @@ function Reve(options) {
 
     _ready && _ready.call(vm)
 }
-
+/**
+ * Get root component instance of the ViewModel
+ */
+Reve.prototype.$root = function () {
+    var parent = this
+    while(parent.$parent) {
+        parent = parent.$parent 
+    }
+    return parent || null
+}
 /**
  * Compile all directives of the HTMLElement or HTML template in current ViewModel. 
  * It's useful when load something async then append to current ViewModel's DOM Tree.
@@ -166,6 +186,7 @@ Reve.prototype.$compile = function (el) {
         var c = new Component({
             el: tar,
             data: data,
+            parent: vm,
             methods: methods
         })
         if (refid) {
