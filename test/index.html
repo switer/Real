@@ -91,7 +91,10 @@
 		Reve.component('c-footer' ,{
 			template: '<h6>Footer</h6>'
 		})
-		
+		var $child = new Reve({
+			template: '<div>I am a child ViewModel</div>'
+		})
+
 		var $app = new Reve({
 			el: '#app',
 			data: function () {
@@ -120,6 +123,9 @@
 				}
 			}
 		})
+
+		$child.$appendTo($app)
+		console.log($child)
 	</script>
 </body>
 </html>

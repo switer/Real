@@ -1,5 +1,5 @@
 /**
-* Real v1.2.1
+* Real v1.2.2
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -92,8 +92,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var _shouldUpdate = options.shouldUpdate
 	    var $directives = this.$directives = []
 	    var $components = this.$components = []
-
-	    this.$parent = options.parent || null
+	    var $parent = this.$parent = options.parent || null
 
 	    this.$update = function () {
 	        // should update return false will stop UI update
@@ -155,6 +154,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    } else if (!is.Element(el)) {
 	        throw new Error('Unmatch el option')
 	    }
+	    if ($parent && el.parentNode !== $parent.$el) {
+	        $parent.$el.appendChild(el)
+	    }
 
 	    this.$el = el
 	    this.$methods = {}
@@ -168,7 +170,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    _created && _created.call(vm)
 
 	    this.$compile(el)
-
 	    _ready && _ready.call(vm)
 	}
 	/**
@@ -304,7 +305,21 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    return el
 	}
+	/**
+	 * Append child ViewModel to parent VideModel
+	 * @param  {Reve} parent            Parent container ViewModel
+	 * @param  {Function} appendHandler Custom append function
+	 */
+	Reve.prototype.$appendTo = function (parent, appendHandler) {
+	    if (!parent || !parent.$el) 
+	        throw new Error('Unvalid parent viewmodel instance.')
 
+	    this.$parent = parent
+	    appendHandler = appendHandler || function (currNode, parentNode) {
+	        parentNode.appendChild(currNode)
+	    }
+	    appendHandler.call(this, this.$el, parent.$el)
+	}
 	/**
 	 * Create Reve subc-lass that inherit Reve
 	 * @param {Object} options Reve instance options
