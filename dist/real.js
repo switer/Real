@@ -1,5 +1,5 @@
 /**
-* Real v1.2.2
+* Real v1.2.3
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -712,11 +712,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = {
 	    Element: function(el) {
 	    	// 1: ELEMENT_NODE, 11: DOCUMENT_FRAGMENT_NODE
-	        return el.nodeType == 1 || el.nodeType == 11
+	        return el && (el.nodeType == 1 || el.nodeType == 11)
 	    },
 	    DOM: function (el) {
 	    	// 8: COMMENT_NODE
-	        return this.Element(el) || el.nodeType == 8
+	        return el && (this.Element(el) || el.nodeType == 8)
 	    }
 	}
 
