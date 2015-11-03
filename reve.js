@@ -1,5 +1,6 @@
 'use strict';
 
+var $ = require('./lib/dm')
 var util = require('./lib/util')
 var conf = require('./lib/conf')
 var is = require('./lib/is')
@@ -453,4 +454,5 @@ function _getElementsByClassName(className) {
     }
 }
 
+Reve.$ = $
 module.exports = Reve

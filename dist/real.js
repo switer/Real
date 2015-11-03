@@ -1,5 +1,5 @@
 /**
-* Real v1.2.3
+* Real v1.2.4
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -61,12 +61,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
-	var util = __webpack_require__(1)
-	var conf = __webpack_require__(2)
-	var is = __webpack_require__(3)
-	var Query = __webpack_require__(4)
-	var consoler = __webpack_require__(5)
-	var buildInDirectives = __webpack_require__(6)
+	var $ = __webpack_require__(2)
+	var util = __webpack_require__(3)
+	var conf = __webpack_require__(5)
+	var is = __webpack_require__(4)
+	var Query = __webpack_require__(6)
+	var consoler = __webpack_require__(1)
+	var buildInDirectives = __webpack_require__(7)
 	var Expression = __webpack_require__(8)
 	var supportQuerySelector = __webpack_require__(9).supportQuerySelector
 	var _execute = __webpack_require__(10)
@@ -514,256 +515,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	}
 
+	Reve.$ = $
 	module.exports = Reve
 
 
 /***/ },
 /* 1 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	function hasOwn (obj, prop) {
-	    return obj && obj.hasOwnProperty(prop)
-	}
-
-	var util = {
-	    type: function(obj) {
-	        return /\[object (\w+)\]/.exec(Object.prototype.toString.call(obj))[1].toLowerCase()
-	    },
-	    keys: function (obj) {
-	        var keys = []
-	        if (!obj) return keys
-	        if (Object.keys) return Object.keys(obj)
-	        this.objEach(obj, function (key) {
-	            keys.push(key)
-	        })
-	        return keys
-	    },
-	    bind: function (fn, ctx) {
-	        if (fn.bind) return fn.bind(ctx)
-	        function bfn () {
-	            fn.apply(ctx, arguments)
-	        }
-	        bfn.toString = function () {
-	            return fn.toString()
-	        }
-	        return bfn
-	    },
-	    extend: function(obj) {
-	        if (this.type(obj) != 'object') return obj;
-	        var source, prop;
-	        for (var i = 1, length = arguments.length; i < length; i++) {
-	            source = arguments[i];
-	            for (prop in source) {
-	                obj[prop] = source[prop];
-	            }
-	        }
-	        return obj;
-	    },
-	    trim: function (str) {
-	        if (str.trim) return str.trim()
-	        else {
-	            return str.replace(/^\s+|\s+$/gm, '')
-	        }
-	    },
-	    indexOf: function (arr, tar) {
-	        if (arr.indexOf) return arr.indexOf(tar)
-	        else {
-	            var i = -1
-	            util.some(arr, function (item, index) {
-	                if (item === tar) {
-	                    i = index
-	                    return true
-	                }
-	            })
-	            return i
-	        }
-	    },
-	    forEach: function (arr, fn) {
-	        if (arr.forEach) return arr.forEach(fn)
-	        else {
-	            var len = arr.length
-	            for (var i = 0 ; i < len; i++) {
-	                fn(arr[i], i)
-	            }
-	        }
-	        return arr
-	    },
-	    some: function (arr, fn) {
-	        if (arr.forEach) return arr.some(fn)
-	        else {
-	            var len = arr.length
-	            var r = false
-	            for (var i = 0 ; i < len; i++) {
-	                if (fn(arr[i], i)) {
-	                    r = true
-	                    break
-	                }
-	            }
-	        }
-	        return r
-	    },
-	    map: function (arr, fn) {
-	        if (arr.map) return arr.map(fn)
-	        else {
-	            var len = arr.length
-	            var next = []
-	            for (var i = 0 ; i < len; i++) {
-	                next.push(fn(arr[i], i))
-	            }
-	            return next
-	        }
-	    },
-	    objEach: function (obj, fn) {
-	        if (!obj) return
-	        for(var key in obj) {
-	            if (hasOwn(obj, key)) {
-	                if(fn(key, obj[key]) === false) break
-	            }
-	        }
-	    },
-	    immutable: function (obj) {
-	        var that = this
-	        var _t = this.type(obj)
-	        var n
-
-	        if (_t == 'array') {
-	            n = obj.map(function (item) {
-	                return that.immutable(item)
-	            })
-	        } else if (_t == 'object') {
-	            n = {}
-	            this.objEach(obj, function (k, v) {
-	                n[k] = that.immutable(v)
-	            })
-	        } else {
-	            n = obj
-	        }
-	        return n
-	    },
-	    diff: function(next, pre, _t) {
-	        var that = this
-	        // defult max 4 level        
-	        _t = _t == undefined ? 4 : _t
-
-	        if (_t <= 0) return next !== pre
-
-	        if (this.type(next) == 'array' && this.type(pre) == 'array') {
-	            if (next.length !== pre.length) return true
-	            return util.some(next, function(item, index) {
-	                return that.diff(item, pre[index], _t - 1)
-	            })
-	        } else if (this.type(next) == 'object' && this.type(pre) == 'object') {
-	            var nkeys = util.keys(next)
-	            var pkeys = util.keys(pre)
-	            if (nkeys.length != pkeys.length) return true
-
-	            var that = this
-	            return util.some(nkeys, function(k) {
-	                return (!~util.indexOf(pkeys, k)) || that.diff(next[k], pre[k], _t - 1)
-	            })
-	        }
-	        return next !== pre
-	    },
-	    slice: function (a) {
-	        if (!a || !a.length) return []
-	        var len = a.length
-	        var next = []
-	        for (var i = 0; i < len; i ++) {
-	            next.push(a[i])
-	        }
-	        return next
-	    },
-	    walk: function(node, fn) {
-	        var into = fn(node) !== false
-	        var that = this
-	        if (into) {
-	            var children = util.slice(node.childNodes)
-	            util.forEach(children, function (i) {
-	                that.walk(i, fn)
-	            })
-	        }
-	    },
-	    isUndef: function (obj) {
-	        return obj === void(0)
-	    }
-	}
-
-	module.exports = util
-
-/***/ },
-/* 2 */
-/***/ function(module, exports) {
-
-	var conf = {
-		namespace: 'r-',
-		directiveSep: ';'
-	}
-
-	module.exports = conf
-
-/***/ },
-/* 3 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	module.exports = {
-	    Element: function(el) {
-	    	// 1: ELEMENT_NODE, 11: DOCUMENT_FRAGMENT_NODE
-	        return el && (el.nodeType == 1 || el.nodeType == 11)
-	    },
-	    DOM: function (el) {
-	    	// 8: COMMENT_NODE
-	        return el && (this.Element(el) || el.nodeType == 8)
-	    }
-	}
-
-/***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var util = __webpack_require__(1)
-	var is = __webpack_require__(3)
-	var supportQuerySelector = document.querySelector && document.querySelectorAll
-
-	function _hasAttribute (el, an) {
-	    if (el.hasAttribute) return el.hasAttribute(an)
-	    return el.getAttribute(an) !== null
-	}
-	module.exports = function (el, scopedSel, sels) {
-		if (!supportQuerySelector) {
-			var _elements = {}
-			util.walk(el, function (node) {
-				if (!is.Element(node)) return false
-				util.forEach(sels, function (sel) {
-					if (_hasAttribute(node, sel)) {
-						if (!_elements[sel]) _elements[sel] = []
-						_elements[sel].push(node)
-					}
-				})
-				if (_hasAttribute(node, scopedSel)) {
-					if (!_elements[scopedSel]) _elements[scopedSel] = []
-					_elements[scopedSel].push(node)
-					return false
-				}
-				return true
-			})
-		}
-
-
-		return function (selector) {
-			if (supportQuerySelector) return el.querySelectorAll(selector)
-			selector = selector.match(/^\[(.+?)\]$/)[1]
-			return _elements[selector] || []
-		}
-	}
-
-/***/ },
-/* 5 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -785,165 +542,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 6 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 *  Global Build-in Directives
-	 */
-
-	'use strict';
-
-	var $ = __webpack_require__(7)
-	var conf = __webpack_require__(2)
-	var util = __webpack_require__(1)
-	var consoler = __webpack_require__(5)
-	var Expression = __webpack_require__(8)
-
-	function noop () {}
-
-	module.exports = {
-	    'attr': {
-	        multi: true,
-	        bind: function(attname) {
-	            this.attname = attname
-	            this._$el = $(this.$el)
-	        },
-	        update: function(next) {
-	            if (util.isUndef(next)) {
-	                this._$el.removeAttr(this.attname)
-	            } else {
-	                this._$el.attr(this.attname, next)
-	            }
-	        },
-	        unbind: function () {
-	            this._$el = null
-	        }
-	    },
-	    'class': {
-	        multi: true,
-	        bind: function(className) {
-	            this.className = className
-	            this._$el = $(this.$el)
-	        },
-	        update: function(next) {
-	            if (next) this._$el.addClass(this.className)
-	            else this._$el.removeClass(this.className)
-	        },
-	        unbind: function () {
-	            this._$el = null
-	        }
-	    },
-	    'html': {
-	        update: function(nextHTML) {
-	            this.$el.innerHTML = util.isUndef(nextHTML) ? '' : nextHTML
-	        }
-	    },
-	    'on': {
-	        multi: true,
-	        bind: function(evtType, handler, expression) {
-	            this._expr = expression
-	            this.type = evtType
-	        },
-	        update: function(handler) {
-	            this.unbind()
-
-	            var fn = handler
-	            if (util.type(fn) !== 'function')
-	                return consoler.warn('"' + conf.namespace + 'on" only accept function. {' + this._expr + '}')
-
-	            // this.fn = util.bind(fn, this.$vm)
-	            var that = this
-	            this.fn = function (e) {
-	                e.$currentTarget = that.$el
-	                fn.call(that.$vm, e)
-	            }
-	            $(this.$el).on(this.type, this.fn, false)
-
-	        },
-	        unbind: function() {
-	            if (this.fn) {
-	                $(this.$el).off(this.type, this.fn)
-	                this.fn = null
-	            }
-	        }
-	    },
-	    'show': {
-	        update: function(next) {
-	            this.$el.style.display = next ? '' : 'none'
-	        }
-	    },
-	    'style': {
-	        multi: true,
-	        bind: function(sheet) {
-	            this.sheet = sheet
-	        },
-	        update: function(next) {
-	            this.$el.style && (this.$el.style[this.sheet] = next)
-	        }
-	    },
-	    'text': {
-	        bind: function () {
-	            var reg = Expression.exprRegexp
-	            var expr = this.expr = this.$el.innerHTML
-	            var veilExpr = Expression.veil(expr)
-	            var expressions = this.expressions = util.map(veilExpr.match(reg), function (exp) {
-	                return Expression.strip(exp)
-	            })
-	            var parts = veilExpr.split(reg)
-	            var cache = this.cache = new Array(expressions.length)
-	            var that = this
-
-	            var $textNode = this.textNode = new Text()
-	            this.render = function () {
-	                // set value
-	                util.forEach(expressions, function(exp, index) {
-	                    var v = that.$exec(exp)
-	                    if (!v[0]) cache[index] = v[1]
-	                })
-	                // get content
-	                var frags = []
-	                util.forEach(parts, function(item, index) {
-	                    frags.push(item)
-	                    if (index < expressions.length) {
-	                        frags.push(cache[index])
-	                    }
-	                })
-	                // TODO, Number Mobile bug, trying to using replaceChild
-	                $textNode.nodeValue = Expression.unveil(frags.join(''))
-	            }
-
-	            var pn = this.$el.parentNode
-	            if (pn) {
-	                pn.replaceChild($textNode, this.$el)
-	            } else {
-	                return consoler.error('"' + conf.namespace + 'text" \'s parentNode is not found. {' + this.$expr + '}')
-	            }
-	            this.render()
-	        },
-	        shouldUpdate: function () {
-	            var that = this
-	            return util.some(this.expressions, function(exp, index) {
-	                var pv = that.cache[index]
-	                var nv = that.$exec(exp)
-	                if (!nv[0]) {
-	                    return !!that.$diff(pv, nv[1])
-	                }
-	            })
-	        },
-	        update: function () {
-	            this.render()
-	        },
-	        unbind: function () {
-	            this.render = noop
-	            this.expressions = this.cache = this.textNode = null
-	        }
-	    }
-	}
-
-
-/***/ },
-/* 7 */
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -951,8 +550,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 	'use strict';
-	var util = __webpack_require__(1)
-	var is = __webpack_require__(3)
+	var util = __webpack_require__(3)
+	var is = __webpack_require__(4)
 
 	function Selector(sel) {
 	    if (util.type(sel) == 'string') {
@@ -1167,12 +766,415 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
+/* 3 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	function hasOwn (obj, prop) {
+	    return obj && obj.hasOwnProperty(prop)
+	}
+
+	var util = {
+	    type: function(obj) {
+	        return /\[object (\w+)\]/.exec(Object.prototype.toString.call(obj))[1].toLowerCase()
+	    },
+	    keys: function (obj) {
+	        var keys = []
+	        if (!obj) return keys
+	        if (Object.keys) return Object.keys(obj)
+	        this.objEach(obj, function (key) {
+	            keys.push(key)
+	        })
+	        return keys
+	    },
+	    bind: function (fn, ctx) {
+	        if (fn.bind) return fn.bind(ctx)
+	        function bfn () {
+	            fn.apply(ctx, arguments)
+	        }
+	        bfn.toString = function () {
+	            return fn.toString()
+	        }
+	        return bfn
+	    },
+	    extend: function(obj) {
+	        if (this.type(obj) != 'object') return obj;
+	        var source, prop;
+	        for (var i = 1, length = arguments.length; i < length; i++) {
+	            source = arguments[i];
+	            for (prop in source) {
+	                obj[prop] = source[prop];
+	            }
+	        }
+	        return obj;
+	    },
+	    trim: function (str) {
+	        if (str.trim) return str.trim()
+	        else {
+	            return str.replace(/^\s+|\s+$/gm, '')
+	        }
+	    },
+	    indexOf: function (arr, tar) {
+	        if (arr.indexOf) return arr.indexOf(tar)
+	        else {
+	            var i = -1
+	            util.some(arr, function (item, index) {
+	                if (item === tar) {
+	                    i = index
+	                    return true
+	                }
+	            })
+	            return i
+	        }
+	    },
+	    forEach: function (arr, fn) {
+	        if (arr.forEach) return arr.forEach(fn)
+	        else {
+	            var len = arr.length
+	            for (var i = 0 ; i < len; i++) {
+	                fn(arr[i], i)
+	            }
+	        }
+	        return arr
+	    },
+	    some: function (arr, fn) {
+	        if (arr.forEach) return arr.some(fn)
+	        else {
+	            var len = arr.length
+	            var r = false
+	            for (var i = 0 ; i < len; i++) {
+	                if (fn(arr[i], i)) {
+	                    r = true
+	                    break
+	                }
+	            }
+	        }
+	        return r
+	    },
+	    map: function (arr, fn) {
+	        if (arr.map) return arr.map(fn)
+	        else {
+	            var len = arr.length
+	            var next = []
+	            for (var i = 0 ; i < len; i++) {
+	                next.push(fn(arr[i], i))
+	            }
+	            return next
+	        }
+	    },
+	    objEach: function (obj, fn) {
+	        if (!obj) return
+	        for(var key in obj) {
+	            if (hasOwn(obj, key)) {
+	                if(fn(key, obj[key]) === false) break
+	            }
+	        }
+	    },
+	    immutable: function (obj) {
+	        var that = this
+	        var _t = this.type(obj)
+	        var n
+
+	        if (_t == 'array') {
+	            n = obj.map(function (item) {
+	                return that.immutable(item)
+	            })
+	        } else if (_t == 'object') {
+	            n = {}
+	            this.objEach(obj, function (k, v) {
+	                n[k] = that.immutable(v)
+	            })
+	        } else {
+	            n = obj
+	        }
+	        return n
+	    },
+	    diff: function(next, pre, _t) {
+	        var that = this
+	        // defult max 4 level        
+	        _t = _t == undefined ? 4 : _t
+
+	        if (_t <= 0) return next !== pre
+
+	        if (this.type(next) == 'array' && this.type(pre) == 'array') {
+	            if (next.length !== pre.length) return true
+	            return util.some(next, function(item, index) {
+	                return that.diff(item, pre[index], _t - 1)
+	            })
+	        } else if (this.type(next) == 'object' && this.type(pre) == 'object') {
+	            var nkeys = util.keys(next)
+	            var pkeys = util.keys(pre)
+	            if (nkeys.length != pkeys.length) return true
+
+	            var that = this
+	            return util.some(nkeys, function(k) {
+	                return (!~util.indexOf(pkeys, k)) || that.diff(next[k], pre[k], _t - 1)
+	            })
+	        }
+	        return next !== pre
+	    },
+	    slice: function (a) {
+	        if (!a || !a.length) return []
+	        var len = a.length
+	        var next = []
+	        for (var i = 0; i < len; i ++) {
+	            next.push(a[i])
+	        }
+	        return next
+	    },
+	    walk: function(node, fn) {
+	        var into = fn(node) !== false
+	        var that = this
+	        if (into) {
+	            var children = util.slice(node.childNodes)
+	            util.forEach(children, function (i) {
+	                that.walk(i, fn)
+	            })
+	        }
+	    },
+	    isUndef: function (obj) {
+	        return obj === void(0)
+	    }
+	}
+
+	module.exports = util
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	module.exports = {
+	    Element: function(el) {
+	    	// 1: ELEMENT_NODE, 11: DOCUMENT_FRAGMENT_NODE
+	        return el && (el.nodeType == 1 || el.nodeType == 11)
+	    },
+	    DOM: function (el) {
+	    	// 8: COMMENT_NODE
+	        return el && (this.Element(el) || el.nodeType == 8)
+	    }
+	}
+
+/***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	var conf = {
+		namespace: 'r-',
+		directiveSep: ';'
+	}
+
+	module.exports = conf
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var util = __webpack_require__(3)
+	var is = __webpack_require__(4)
+	var supportQuerySelector = document.querySelector && document.querySelectorAll
+
+	function _hasAttribute (el, an) {
+	    if (el.hasAttribute) return el.hasAttribute(an)
+	    return el.getAttribute(an) !== null
+	}
+	module.exports = function (el, scopedSel, sels) {
+		if (!supportQuerySelector) {
+			var _elements = {}
+			util.walk(el, function (node) {
+				if (!is.Element(node)) return false
+				util.forEach(sels, function (sel) {
+					if (_hasAttribute(node, sel)) {
+						if (!_elements[sel]) _elements[sel] = []
+						_elements[sel].push(node)
+					}
+				})
+				if (_hasAttribute(node, scopedSel)) {
+					if (!_elements[scopedSel]) _elements[scopedSel] = []
+					_elements[scopedSel].push(node)
+					return false
+				}
+				return true
+			})
+		}
+
+
+		return function (selector) {
+			if (supportQuerySelector) return el.querySelectorAll(selector)
+			selector = selector.match(/^\[(.+?)\]$/)[1]
+			return _elements[selector] || []
+		}
+	}
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 *  Global Build-in Directives
+	 */
+
+	'use strict';
+
+	var $ = __webpack_require__(2)
+	var conf = __webpack_require__(5)
+	var util = __webpack_require__(3)
+	var consoler = __webpack_require__(1)
+	var Expression = __webpack_require__(8)
+
+	function noop () {}
+
+	module.exports = {
+	    'attr': {
+	        multi: true,
+	        bind: function(attname) {
+	            this.attname = attname
+	            this._$el = $(this.$el)
+	        },
+	        update: function(next) {
+	            if (util.isUndef(next)) {
+	                this._$el.removeAttr(this.attname)
+	            } else {
+	                this._$el.attr(this.attname, next)
+	            }
+	        },
+	        unbind: function () {
+	            this._$el = null
+	        }
+	    },
+	    'class': {
+	        multi: true,
+	        bind: function(className) {
+	            this.className = className
+	            this._$el = $(this.$el)
+	        },
+	        update: function(next) {
+	            if (next) this._$el.addClass(this.className)
+	            else this._$el.removeClass(this.className)
+	        },
+	        unbind: function () {
+	            this._$el = null
+	        }
+	    },
+	    'html': {
+	        update: function(nextHTML) {
+	            this.$el.innerHTML = util.isUndef(nextHTML) ? '' : nextHTML
+	        }
+	    },
+	    'on': {
+	        multi: true,
+	        bind: function(evtType, handler, expression) {
+	            this._expr = expression
+	            this.type = evtType
+	        },
+	        update: function(handler) {
+	            this.unbind()
+
+	            var fn = handler
+	            if (util.type(fn) !== 'function')
+	                return consoler.warn('"' + conf.namespace + 'on" only accept function. {' + this._expr + '}')
+
+	            // this.fn = util.bind(fn, this.$vm)
+	            var that = this
+	            this.fn = function (e) {
+	                e.$currentTarget = that.$el
+	                fn.call(that.$vm, e)
+	            }
+	            $(this.$el).on(this.type, this.fn, false)
+
+	        },
+	        unbind: function() {
+	            if (this.fn) {
+	                $(this.$el).off(this.type, this.fn)
+	                this.fn = null
+	            }
+	        }
+	    },
+	    'show': {
+	        update: function(next) {
+	            this.$el.style.display = next ? '' : 'none'
+	        }
+	    },
+	    'style': {
+	        multi: true,
+	        bind: function(sheet) {
+	            this.sheet = sheet
+	        },
+	        update: function(next) {
+	            this.$el.style && (this.$el.style[this.sheet] = next)
+	        }
+	    },
+	    'text': {
+	        bind: function () {
+	            var reg = Expression.exprRegexp
+	            var expr = this.expr = this.$el.innerHTML
+	            var veilExpr = Expression.veil(expr)
+	            var expressions = this.expressions = util.map(veilExpr.match(reg), function (exp) {
+	                return Expression.strip(exp)
+	            })
+	            var parts = veilExpr.split(reg)
+	            var cache = this.cache = new Array(expressions.length)
+	            var that = this
+
+	            var $textNode = this.textNode = new Text()
+	            this.render = function () {
+	                // set value
+	                util.forEach(expressions, function(exp, index) {
+	                    var v = that.$exec(exp)
+	                    if (!v[0]) cache[index] = v[1]
+	                })
+	                // get content
+	                var frags = []
+	                util.forEach(parts, function(item, index) {
+	                    frags.push(item)
+	                    if (index < expressions.length) {
+	                        frags.push(cache[index])
+	                    }
+	                })
+	                // TODO, Number Mobile bug, trying to using replaceChild
+	                $textNode.nodeValue = Expression.unveil(frags.join(''))
+	            }
+
+	            var pn = this.$el.parentNode
+	            if (pn) {
+	                pn.replaceChild($textNode, this.$el)
+	            } else {
+	                return consoler.error('"' + conf.namespace + 'text" \'s parentNode is not found. {' + this.$expr + '}')
+	            }
+	            this.render()
+	        },
+	        shouldUpdate: function () {
+	            var that = this
+	            return util.some(this.expressions, function(exp, index) {
+	                var pv = that.cache[index]
+	                var nv = that.$exec(exp)
+	                if (!nv[0]) {
+	                    return !!that.$diff(pv, nv[1])
+	                }
+	            })
+	        },
+	        update: function () {
+	            this.render()
+	        },
+	        unbind: function () {
+	            this.render = noop
+	            this.expressions = this.cache = this.textNode = null
+	        }
+	    }
+	}
+
+
+/***/ },
 /* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var util = __webpack_require__(1)
+	var util = __webpack_require__(3)
 
 	function _isExpr(c) {
 	    return c ? !!util.trim(c).match(/^\{[\s\S]*?\}$/m) : false
@@ -1230,7 +1232,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 *  execute expression from template with specified Scope and ViewModel
 	 */
 
-	var util = __webpack_require__(1)
+	var util = __webpack_require__(3)
 	/**
 	 *  Calc expression value
 	 */
@@ -1248,7 +1250,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                    ? arguments[1]
 	                                    : '{' + arguments[1] + '}') // expr
 	        
-	        var $consoler = __webpack_require__(5)
+	        var $consoler = __webpack_require__(1)
 	        // arguments[2] // label
 	        // arguments[3] // target
 	        switch (e.name) {
