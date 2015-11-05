@@ -32,7 +32,7 @@ function Reve(options) {
     var _shouldUpdate = options.shouldUpdate
     var $directives = this.$directives = []
     var $components = this.$components = []
-    var $parent = this.$parent = options.parent || null
+    this.$parent = options.parent || null
 
     this.$update = function () {
         // should update return false will stop UI update
@@ -93,9 +93,6 @@ function Reve(options) {
         if (!el) return consoler.error('Can\'t not found element by selector "' + sel + '"')
     } else if (!is.Element(el)) {
         throw new Error('Unmatch el option')
-    }
-    if ($parent && el.parentNode !== $parent.$el) {
-        $parent.$el.appendChild(el)
     }
 
     this.$el = el
