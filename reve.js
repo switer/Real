@@ -452,4 +452,5 @@ function _getElementsByClassName(className) {
 }
 
 Reve.$ = $
+Reve.util = util
 module.exports = Reve

@@ -1,5 +1,5 @@
 /**
-* Real v1.2.5
+* Real v1.2.6
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -513,6 +513,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	Reve.$ = $
+	Reve.util = util
 	module.exports = Reve
 
 
@@ -771,6 +772,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	function hasOwn (obj, prop) {
 	    return obj && obj.hasOwnProperty(prop)
 	}
+	var escapeCharMap = {
+	    '&': '&amp;',
+	    '<': '&lt;',
+	    '>': '&gt;',
+	    '\"': '&quot;',
+	    '\'': '&#x27;',
+	    '/': '&#x2F;'
+	}
+	var escapeRex = new RegExp(_keys(escapeCharMap).join('|'), 'g')
 
 	var util = {
 	    type: function(obj) {
@@ -836,7 +846,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return arr
 	    },
 	    some: function (arr, fn) {
-	        if (arr.forEach) return arr.some(fn)
+	        if (arr.some) return arr.some(fn)
 	        else {
 	            var len = arr.length
 	            var r = false
@@ -932,6 +942,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    isUndef: function (obj) {
 	        return obj === void(0)
+	    },
+	    escape: function (str) {
+	        if (!this.type(str) == 'string') return str
+	        return str.replace(escapeRex, function (m) {
+	            return escapeCharMap[m]
+	        })
 	    }
 	}
 
