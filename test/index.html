@@ -55,6 +55,8 @@
 			}">change child component's title</button>
 		</div>
 		<div r-component="c-footer" r-replace="true" class="footer"></div>
+		<button r-on="{click: onUpdateById}">Click to update "text"</button>
+		<div r-updateid="text" r-html="{updateid}"></div>
 	</div>
 	<script>
 		Reve.directive('autorefresh', {
@@ -101,7 +103,8 @@
 				return {
 					show: true,
 					hl: true,
-					header: 'Hi, Reve'
+					header: 'Hi, Reve',
+					updateid: ''
 				}
 			},
 			ready: function () {
@@ -120,6 +123,11 @@
 					setTimeout(function () {
 						cb()
 					}, 1000)
+				},
+				onUpdateById: function () {
+					this.$data.updateid = 'update by id'
+					this.$data.header = 'Header, update by id'
+					this.$update('text')
 				}
 			}
 		})

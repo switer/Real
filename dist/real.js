@@ -1,5 +1,5 @@
 /**
-* Real v1.2.7
+* Real v1.2.8
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -95,9 +95,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var $components = this.$components = []
 	    this.$parent = options.parent || null
 
-	    this.$update = function () {
+	    this.$update = function (updId/*updIds*/, handler) {
 	        // should update return false will stop UI update
 	        if (_shouldUpdate && _shouldUpdate.apply(vm, arguments) === false) return
+
+	        if (updId && updId.length) {
+	            var multi = util.type(updId) == 'array' ?  true:false
+	            function updateHandler(t) {
+	                return function (c) {
+	                    if (multi && !~updateId.indexOf(c.$updateId)) return
+	                    else if (!multi && c.$updateId !== updId) return
+
+	                    if (util.type(handler) == 'function') {
+	                        handler.call(c, t, c.$updateId) && c.$update()
+	                    } else {
+	                        c.$update()
+	                    }
+	                }
+	            }
+	            util.forEach($components, updateHandler('component'))
+	            return util.forEach($directives, updateHandler('directive'))
+	        }
 	        // update child components
 	        util.forEach($components, function (c) {
 	            c.$update()
@@ -225,6 +243,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var refid = _getAttribute(tar, NS + 'ref')
 	        var cdata = _getAttribute(tar, NS + 'data')
 	        var cmethods = _getAttribute(tar, NS + 'methods')
+	        var updId = _getAttribute(tar, NS + 'updateid') || ''
+
 	        var data = {}
 	        var methods = {}
 
@@ -252,6 +272,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (refid) {
 	            this.$refs[refid] = c
 	        }
+	        c.$updateId = updId || ''
 	        /**
 	         * Hook component instance update method, sync passing data before update.
 	         * @type {[type]}
@@ -384,6 +405,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    d.$id = _did++
 	    d.$expr = expr
 	    d.$name = name
+	    d.$updateId = _getAttribute(tar, conf.namespace + 'updateid') || ''
 
 	    var bind = def.bind
 	    var upda = def.update
