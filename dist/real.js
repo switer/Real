@@ -1,5 +1,5 @@
 /**
-* Real v1.2.9
+* Real v1.2.10
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -270,7 +270,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            methods: methods
 	        })
 	        // for component inspecting
-	        tar.setAttribute('data-rcompnent', cname)
+	        tar.setAttribute('data-rcomponent', cname)
 
 	        if (refid) {
 	            this.$refs[refid] = c
