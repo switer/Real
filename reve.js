@@ -208,6 +208,9 @@ Reve.prototype.$compile = function (el) {
             parent: vm,
             methods: methods
         })
+        // for component inspecting
+        tar.setAttribute('data-rcompnent', cname)
+
         if (refid) {
             this.$refs[refid] = c
         }
