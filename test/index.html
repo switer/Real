@@ -58,7 +58,6 @@
 			class="footer" 
 			r-component="c-footer" 
 			r-replace="true" 
-			r-binding="false" 
 			r-data="{header: header}"
 		></div>
 		<button r-on="{click: onUpdateById}">Click to update "text"</button>
@@ -91,15 +90,13 @@
 			}
 		})
 		Reve.component('c-button' ,{
-			ready: function () {
-				console.log(this.$root().$el)
-				console.log(this.$parent.$el)
-			}
+			ready: function () {},
 		})
 		Reve.component('c-footer' ,{
 			template: '<h6 r-html="{\'Footer Match:\' + header}"></h6>',
-			shouldUpdate: function (data) {
-				console.log(this.$data, data)
+			shouldUpdate: function (next, pre) {
+				console.log('c-footer:shouldUpdate()', next, pre)
+				return false
 			}
 		})
 		var $child = new Reve({
@@ -142,7 +139,6 @@
 		})
 
 		$child.$appendTo($app)
-		console.log($child)
 	</script>
 </body>
 </html>

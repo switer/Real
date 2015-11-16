@@ -29,19 +29,17 @@ function Reve(options) {
     var NS = conf.namespace
     var _ready = options.ready
     var _created = options.created
-    var _shouldUpdate = options.shouldUpdate
     var _binding = util.hasOwn(options, 'binding') ? options.binding : true
     var $directives = this.$directives = []
     var $components = this.$components = []
     this.$parent = options.parent || null
     this.$binding = _binding
+    this.$shouldUpdate = options.shouldUpdate
 
     /**
      * Update bindings, binding option can enable/disable
      */
     this.$update = function (updId/*updIds*/, handler) {
-        // should update return false will stop UI update
-        if (_shouldUpdate && _shouldUpdate.apply(vm, arguments) === false) return
 
         if (updId && updId.length) {
             var multi = util.type(updId) == 'array' ?  true:false
@@ -62,7 +60,11 @@ function Reve(options) {
         }
         // update child components
         util.forEach($components, function (c) {
-            c.$binding && c.$update()
+            if(c.$binding) {
+                c.$componentUpdate 
+                    ? c.$componentUpdate() 
+                    : c.$update()
+            }
         })
         // update directive of the VM
         util.forEach($directives, function (d) {
@@ -191,6 +193,7 @@ Reve.prototype.$compile = function (el) {
         var updId = _getAttribute(tar, NS + 'updateid') || ''
         var data = {}
         var methods = {}
+        var preData
 
         // remove 'r-component' attribute
         _removeAttribute(tar, componentDec)
@@ -201,6 +204,7 @@ Reve.prototype.$compile = function (el) {
 
         if (cdata) {
             data = _execLiteral(cdata, this, NS + 'data')            
+            preData = util.immutable(data)
         }
         if (cmethods) {
             methods = _execLiteral(cmethods, this, NS + 'methods')
@@ -225,9 +229,18 @@ Reve.prototype.$compile = function (el) {
          * @type {[type]}
          */
         var _$update = c.$update
-        c.$update = function () {
-            cdata && util.extend(c.$data, _execLiteral(cdata, vm))
-            _$update.apply(c, arguments)
+        c.$componentUpdate = function () {
+            var shouldUpdate = this.$shouldUpdate
+            var nextData = _execLiteral(cdata, vm)
+            // no cdata binding will not trigger update
+            if (cdata && util.diff(preData, nextData)) {
+                // should update return false will stop continue UI update
+                if (shouldUpdate && shouldUpdate.call(c, nextData, preData) === false) return
+                preData = util.immutable(nextData)
+                // merge updated data
+                c.$data = util.extend(c.$data, nextData)
+                _$update && _$update.apply(c, arguments)
+            }
         }
         $components.push(c)
 
