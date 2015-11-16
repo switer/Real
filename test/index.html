@@ -118,12 +118,12 @@
 			},
 			methods: {
 				onDisableHightlight: function () {
-					this.$data.hl = false
-					this.$update()
+					this.$set({
+						hl: false
+					})
 				},
 				onChangeHeader: function () {
-					this.$data.header = 'Hi, fouber'
-					this.$update()
+					this.$set('header', 'Hi, fouber')
 				},
 				onRefresh: function (cb) {
 					setTimeout(function () {

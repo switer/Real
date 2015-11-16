@@ -6,6 +6,7 @@ var conf = require('./lib/conf')
 var is = require('./lib/is')
 var Query = require('./lib/query')
 var consoler = require('./lib/consoler')
+var KP = require('./lib/keypath')
 var buildInDirectives = require('./lib/build-in')
 var Expression = require('./lib/expression')
 var supportQuerySelector = require('./lib/detection').supportQuerySelector
@@ -134,6 +135,16 @@ function Reve(options) {
     this.$compile(el)
     _ready && _ready.call(vm)
 }
+Reve.prototype.$set = function (/*[keypath, ]*/value) {
+    var keypath = util.type(value) == 'string' ? value : ''
+    if (keypath) {
+        value = arguments[1]
+        KP.set(this.$data, keypath, value)
+    } else {
+        this.$data = util.extend(this.$data, value)
+    }
+    this.$update()
+}
 /**
  * Get root component instance of the ViewModel
  */
@@ -235,7 +246,7 @@ Reve.prototype.$compile = function (el) {
             // no cdata binding will not trigger update
             if (cdata && util.diff(preData, nextData)) {
                 // should update return false will stop continue UI update
-                if (shouldUpdate && shouldUpdate.call(c, nextData, preData) === false) return
+                if (shouldUpdate && !shouldUpdate.call(c, nextData, preData)) return
                 preData = util.immutable(nextData)
                 // merge updated data
                 c.$data = util.extend(c.$data, nextData)
@@ -365,6 +376,7 @@ function Directive(vm, tar, def, name, expr) {
     d.$id = _did++
     d.$expr = expr
     d.$name = name
+    // updateId is used to update directive/component which DOM match the "updateid"
     d.$updateId = _getAttribute(tar, conf.namespace + 'updateid') || ''
 
     var bind = def.bind
@@ -388,22 +400,25 @@ function Directive(vm, tar, def, name, expr) {
      *  update handler
      */
     function _update() {
-        // empty expression
+        // empty expression also can trigger update, such `r-text` directive
         if (!expr) {
-            if (shouldUpdate && shouldUpdate.call(d)) upda && upda.call(d)
+            if (shouldUpdate && shouldUpdate.call(d)) {
+                upda && upda.call(d)
+            }
             return
         }
 
         var nexv = _exec(expr) // [error, result]
-        if (!nexv[0]) {
-            if (!shouldUpdate && !util.diff(nexv[1], prev)) {
-                return false
-            } else if (shouldUpdate && !shouldUpdate.call(d, nexv[1], prev)) {
+        var r = nexv[1]
+        if (!nexv[0] && util.diff(r, prev)) {
+            // shouldUpdate(nextValue, preValue)
+            if (shouldUpdate && !shouldUpdate.call(d, r, prev)) {
                 return false
             }
             var p = prev
-            prev = nexv[1]
-            upda && upda.call(d, nexv[1], p, {})
+            prev = r
+            // update(nextValue, preValue)
+            upda && upda.call(d, r, p)
         }
     }
 
@@ -422,8 +437,9 @@ function Directive(vm, tar, def, name, expr) {
     bindParams.push(expr)
     d.$update = _update
 
-    // ([property-name], expression-value, expression) 
-    bind && bind.apply(d, bindParams, expr)
+    // bind([propertyName, ]expression-value, expression) 
+    // propertyName only be passed when "multi:true"
+    bind && bind.apply(d, bindParams)
     // error will stop update
     !hasError && upda && upda.call(d, prev)
 }

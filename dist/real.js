@@ -1,5 +1,5 @@
 /**
-* Real v1.3.1
+* Real v1.3.2
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -61,16 +61,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
-	var $ = __webpack_require__(2)
-	var util = __webpack_require__(3)
-	var conf = __webpack_require__(5)
-	var is = __webpack_require__(4)
-	var Query = __webpack_require__(6)
-	var consoler = __webpack_require__(1)
-	var buildInDirectives = __webpack_require__(7)
-	var Expression = __webpack_require__(8)
-	var supportQuerySelector = __webpack_require__(9).supportQuerySelector
-	var _execute = __webpack_require__(10)
+	var $ = __webpack_require__(1)
+	var util = __webpack_require__(2)
+	var conf = __webpack_require__(4)
+	var is = __webpack_require__(3)
+	var Query = __webpack_require__(5)
+	var consoler = __webpack_require__(6)
+	var KP = __webpack_require__(7)
+	var buildInDirectives = __webpack_require__(8)
+	var Expression = __webpack_require__(9)
+	var supportQuerySelector = __webpack_require__(10).supportQuerySelector
+	var _execute = __webpack_require__(11)
 	var _components = {}
 	var _globalDirectives = {}
 	var _isExpr = Expression.isExpr
@@ -195,6 +196,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$compile(el)
 	    _ready && _ready.call(vm)
 	}
+	Reve.prototype.$set = function (/*[keypath, ]*/value) {
+	    var keypath = util.type(value) == 'string' ? value : ''
+	    if (keypath) {
+	        value = arguments[1]
+	        KP.set(this.$data, keypath, value)
+	    } else {
+	        this.$data = util.extend(this.$data, value)
+	    }
+	    this.$update()
+	}
 	/**
 	 * Get root component instance of the ViewModel
 	 */
@@ -296,7 +307,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            // no cdata binding will not trigger update
 	            if (cdata && util.diff(preData, nextData)) {
 	                // should update return false will stop continue UI update
-	                if (shouldUpdate && shouldUpdate.call(c, nextData, preData) === false) return
+	                if (shouldUpdate && !shouldUpdate.call(c, nextData, preData)) return
 	                preData = util.immutable(nextData)
 	                // merge updated data
 	                c.$data = util.extend(c.$data, nextData)
@@ -426,6 +437,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    d.$id = _did++
 	    d.$expr = expr
 	    d.$name = name
+	    // updateId is used to update directive/component which DOM match the "updateid"
 	    d.$updateId = _getAttribute(tar, conf.namespace + 'updateid') || ''
 
 	    var bind = def.bind
@@ -449,22 +461,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	     *  update handler
 	     */
 	    function _update() {
-	        // empty expression
+	        // empty expression also can trigger update, such `r-text` directive
 	        if (!expr) {
-	            if (shouldUpdate && shouldUpdate.call(d)) upda && upda.call(d)
+	            if (shouldUpdate && shouldUpdate.call(d)) {
+	                upda && upda.call(d)
+	            }
 	            return
 	        }
 
 	        var nexv = _exec(expr) // [error, result]
-	        if (!nexv[0]) {
-	            if (!shouldUpdate && !util.diff(nexv[1], prev)) {
-	                return false
-	            } else if (shouldUpdate && !shouldUpdate.call(d, nexv[1], prev)) {
+	        var r = nexv[1]
+	        if (!nexv[0] && util.diff(r, prev)) {
+	            // shouldUpdate(nextValue, preValue)
+	            if (shouldUpdate && !shouldUpdate.call(d, r, prev)) {
 	                return false
 	            }
 	            var p = prev
-	            prev = nexv[1]
-	            upda && upda.call(d, nexv[1], p, {})
+	            prev = r
+	            // update(nextValue, preValue)
+	            upda && upda.call(d, r, p)
 	        }
 	    }
 
@@ -483,8 +498,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    bindParams.push(expr)
 	    d.$update = _update
 
-	    // ([property-name], expression-value, expression) 
-	    bind && bind.apply(d, bindParams, expr)
+	    // bind([propertyName, ]expression-value, expression) 
+	    // propertyName only be passed when "multi:true"
+	    bind && bind.apply(d, bindParams)
 	    // error will stop update
 	    !hasError && upda && upda.call(d, prev)
 	}
@@ -562,28 +578,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 1 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	var co = console
-	module.exports = {
-		log: function () {
-			co.log && co.log.apply(co, arguments)
-		},
-		error: function () {
-			(co.error || this.log).apply(co, arguments)
-		},
-		warn: function () {
-			(co.warn || this.log).apply(co, arguments)
-		},
-		info: function () {
-			(co.info || this.log).apply(co, arguments)
-		}
-	}
-
-/***/ },
-/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -591,8 +585,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 	'use strict';
-	var util = __webpack_require__(3)
-	var is = __webpack_require__(4)
+	var util = __webpack_require__(2)
+	var is = __webpack_require__(3)
 
 	function Selector(sel) {
 	    if (util.type(sel) == 'string') {
@@ -807,7 +801,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 3 */
+/* 2 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1004,7 +998,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = util
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1021,7 +1015,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 5 */
+/* 4 */
 /***/ function(module, exports) {
 
 	var conf = {
@@ -1032,13 +1026,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = conf
 
 /***/ },
-/* 6 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var util = __webpack_require__(3)
-	var is = __webpack_require__(4)
+	var util = __webpack_require__(2)
+	var is = __webpack_require__(3)
 	var supportQuerySelector = document.querySelector && document.querySelectorAll
 
 	function _hasAttribute (el, an) {
@@ -1074,7 +1068,81 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	var co = console
+	module.exports = {
+		log: function () {
+			co.log && co.log.apply(co, arguments)
+		},
+		error: function () {
+			(co.error || this.log).apply(co, arguments)
+		},
+		warn: function () {
+			(co.warn || this.log).apply(co, arguments)
+		},
+		info: function () {
+			(co.info || this.log).apply(co, arguments)
+		}
+	}
+
+/***/ },
 /* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var util = __webpack_require__(2)
+	/**
+	 *  normalize all access ways into dot access
+	 *  @example "person.books[1].title" --> "person.books.1.title"
+	 */
+	function _keyPathNormalize(kp) {
+	    return new String(kp).replace(/\[([^\[\]]+)\]/g, function(m, k) {
+	        return '.' + k.replace(/^["']|["']$/g, '')
+	    })
+	}
+	/**
+	 *  set value to object by keypath
+	 */
+	function _set(obj, keypath, value) {
+	    var parts = _keyPathNormalize(keypath).split('.')
+	    var last = parts.pop()
+	    var dest = obj
+	    var hasError
+	    var errorInfo
+	    util.some(parts, function(key) {
+	        var t = util.type(dest)
+	        if (t != 'object' && t != 'array') {
+	            hasError = true
+	            errorInfo = [key, dest]
+	            return true
+	        }
+	        dest = dest[key]
+	    })
+	    // set value
+	    if (!hasError) {
+	        if (util.type(dest) != 'object' && util.type(dest) != 'array') {
+	            hasError = true
+	            errorInfo = [last, dest]
+	        } else {
+	            dest[last] = value
+	            return obj
+	        }
+	    }
+	    throw new Error('Can\' not access "' + errorInfo[0] + '" of "'+ errorInfo[1] + '" when set value of "' + keypath + '"')
+	}
+
+	module.exports = {
+	    normalize: _keyPathNormalize,
+	    set: _set
+	}
+
+/***/ },
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -1083,11 +1151,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
-	var $ = __webpack_require__(2)
-	var conf = __webpack_require__(5)
-	var util = __webpack_require__(3)
-	var consoler = __webpack_require__(1)
-	var Expression = __webpack_require__(8)
+	var $ = __webpack_require__(1)
+	var conf = __webpack_require__(4)
+	var util = __webpack_require__(2)
+	var consoler = __webpack_require__(6)
+	var Expression = __webpack_require__(9)
 
 	function noop () {}
 
@@ -1232,12 +1300,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var util = __webpack_require__(3)
+	var util = __webpack_require__(2)
 
 	function _isExpr(c) {
 	    return c ? !!util.trim(c).match(/^\{[\s\S]*?\}$/m) : false
@@ -1262,7 +1330,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1288,14 +1356,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 *  execute expression from template with specified Scope and ViewModel
 	 */
 
-	var util = __webpack_require__(3)
+	var util = __webpack_require__(2)
 	/**
 	 *  Calc expression value
 	 */
@@ -1313,7 +1381,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                    ? arguments[1]
 	                                    : '{' + arguments[1] + '}') // expr
 	        
-	        var $consoler = __webpack_require__(1)
+	        var $consoler = __webpack_require__(6)
 	        // arguments[2] // label
 	        // arguments[3] // target
 	        switch (e.name) {
