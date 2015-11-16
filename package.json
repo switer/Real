@@ -1,30 +1,31 @@
 {
-	"name": "real",
-	"version": "1.2.10",
-	"description": "t's Reve, but support IE6......",
-	"main": "reve.js",
-	"scripts": {
-		"test": "node test",
-		"start": "node server"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/switer/real.git"
-	},
-	"keywords": [
-		"data-binding",
-		"components reflect"
-	],
-	"author": "switer",
-	"license": "MIT",
-	"bugs": {
-		"url": "https://github.com/switer/real/issues"
-	},
-	"devDependencies": {
-		"gulp": "^3.8.10",
-		"gulp-header": "^1.2.2",
-		"gulp-uglifyjs": "^0.5.0",
-		"gulp-watch": "^4.1.0",
-		"gulp-webpack": "^1.1.2"
-	}
+  "name": "real",
+  "version": "1.3.0",
+  "description": "t's Reve, but support IE6......",
+  "main": "reve.js",
+  "scripts": {
+    "test": "mocha test/index.js",
+    "start": "node server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/switer/real.git"
+  },
+  "keywords": [
+    "data-binding",
+    "components reflect"
+  ],
+  "author": "switer",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/switer/real/issues"
+  },
+  "devDependencies": {
+    "gulp": "^3.8.10",
+    "gulp-header": "^1.2.2",
+    "gulp-uglifyjs": "^0.5.0",
+    "gulp-watch": "^4.1.0",
+    "gulp-webpack": "^1.1.2",
+    "mocha": "^2.3.4"
+  }
 }

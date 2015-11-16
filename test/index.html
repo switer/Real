@@ -54,7 +54,13 @@
 				click: onChangeHeader
 			}">change child component's title</button>
 		</div>
-		<div r-component="c-footer" r-replace="true" class="footer"></div>
+		<div 
+			class="footer" 
+			r-component="c-footer" 
+			r-replace="true" 
+			r-binding="false" 
+			r-data="{header: header}"
+		></div>
 		<button r-on="{click: onUpdateById}">Click to update "text"</button>
 		<div r-updateid="text" r-html="{updateid}"></div>
 	</div>
@@ -91,7 +97,10 @@
 			}
 		})
 		Reve.component('c-footer' ,{
-			template: '<h6>Footer</h6>'
+			template: '<h6 r-html="{\'Footer Match:\' + header}"></h6>',
+			shouldUpdate: function (data) {
+				console.log(this.$data, data)
+			}
 		})
 		var $child = new Reve({
 			template: '<div>I am a child ViewModel</div>'

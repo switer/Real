@@ -30,10 +30,15 @@ function Reve(options) {
     var _ready = options.ready
     var _created = options.created
     var _shouldUpdate = options.shouldUpdate
+    var _binding = util.hasOwn(options, 'binding') ? options.binding : true
     var $directives = this.$directives = []
     var $components = this.$components = []
     this.$parent = options.parent || null
+    this.$binding = _binding
 
+    /**
+     * Update bindings, binding option can enable/disable
+     */
     this.$update = function (updId/*updIds*/, handler) {
         // should update return false will stop UI update
         if (_shouldUpdate && _shouldUpdate.apply(vm, arguments) === false) return
@@ -57,7 +62,7 @@ function Reve(options) {
         }
         // update child components
         util.forEach($components, function (c) {
-            c.$update()
+            c.$binding && c.$update()
         })
         // update directive of the VM
         util.forEach($directives, function (d) {
@@ -182,15 +187,15 @@ Reve.prototype.$compile = function (el) {
         var refid = _getAttribute(tar, NS + 'ref')
         var cdata = _getAttribute(tar, NS + 'data')
         var cmethods = _getAttribute(tar, NS + 'methods')
+        var bindingOpt = _getAttribute(tar, NS + 'binding')
         var updId = _getAttribute(tar, NS + 'updateid') || ''
-
         var data = {}
         var methods = {}
 
         // remove 'r-component' attribute
         _removeAttribute(tar, componentDec)
 
-        util.forEach(['ref','data', 'methods'], function (a) {
+        util.forEach(['ref','data', 'methods', 'binding'], function (a) {
             _removeAttribute(tar, NS + a)
         })
 
@@ -201,12 +206,12 @@ Reve.prototype.$compile = function (el) {
             methods = _execLiteral(cmethods, this, NS + 'methods')
         }
         tar._component = componentDec
-        
         var c = new Component({
             el: tar,
             data: data,
             parent: vm,
-            methods: methods
+            methods: methods,
+            binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true
         })
         // for component inspecting
         tar.setAttribute('data-rcomponent', cname)

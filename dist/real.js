@@ -1,5 +1,5 @@
 /**
-* Real v1.2.10
+* Real v1.3.0
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -91,10 +91,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var _ready = options.ready
 	    var _created = options.created
 	    var _shouldUpdate = options.shouldUpdate
+	    var _binding = util.hasOwn(options, 'binding') ? options.binding : true
 	    var $directives = this.$directives = []
 	    var $components = this.$components = []
 	    this.$parent = options.parent || null
+	    this.$binding = _binding
 
+	    /**
+	     * Update bindings, binding option can enable/disable
+	     */
 	    this.$update = function (updId/*updIds*/, handler) {
 	        // should update return false will stop UI update
 	        if (_shouldUpdate && _shouldUpdate.apply(vm, arguments) === false) return
@@ -118,7 +123,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	        // update child components
 	        util.forEach($components, function (c) {
-	            c.$update()
+	            c.$binding && c.$update()
 	        })
 	        // update directive of the VM
 	        util.forEach($directives, function (d) {
@@ -243,15 +248,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var refid = _getAttribute(tar, NS + 'ref')
 	        var cdata = _getAttribute(tar, NS + 'data')
 	        var cmethods = _getAttribute(tar, NS + 'methods')
+	        var bindingOpt = _getAttribute(tar, NS + 'binding')
 	        var updId = _getAttribute(tar, NS + 'updateid') || ''
-
 	        var data = {}
 	        var methods = {}
 
 	        // remove 'r-component' attribute
 	        _removeAttribute(tar, componentDec)
 
-	        util.forEach(['ref','data', 'methods'], function (a) {
+	        util.forEach(['ref','data', 'methods', 'binding'], function (a) {
 	            _removeAttribute(tar, NS + a)
 	        })
 
@@ -262,12 +267,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	            methods = _execLiteral(cmethods, this, NS + 'methods')
 	        }
 	        tar._component = componentDec
-	        
 	        var c = new Component({
 	            el: tar,
 	            data: data,
 	            parent: vm,
-	            methods: methods
+	            methods: methods,
+	            binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true
 	        })
 	        // for component inspecting
 	        tar.setAttribute('data-rcomponent', cname)
@@ -813,7 +818,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return ks
 	}
 	var escapeRex = new RegExp(_keys(escapeCharMap).join('|'), 'g')
-
+	var DEFAULT_DIFF_LEVEL = 5
 	var util = {
 	    type: function(obj) {
 	        return /\[object (\w+)\]/.exec(Object.prototype.toString.call(obj))[1].toLowerCase()
@@ -931,8 +936,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    diff: function(next, pre, _t) {
 	        var that = this
-	        // defult max 4 level        
-	        _t = _t == undefined ? 4 : _t
+	        _t = _t == undefined ? DEFAULT_DIFF_LEVEL : _t
 
 	        if (_t <= 0) return next !== pre
 
@@ -980,7 +984,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return str.replace(escapeRex, function (m) {
 	            return escapeCharMap[m]
 	        })
-	    }
+	    },
+	    hasOwn: hasOwn
 	}
 
 	module.exports = util
