@@ -32,6 +32,36 @@ gulp.task('default', function() {
                 library: 'Reve',
                 libraryTarget: 'umd',
                 filename: 'real.js'
+            },
+            module: {
+                preLoaders: [
+                    {
+                        test: /\.js$/, // include .js files
+                        exclude: /node_modules/, // exclude any and all files in the node_modules folder
+                        loader: "jshint-loader"
+                    }
+                ],
+            },
+            jshint: {
+                // set emitErrors to true to display them as errors
+                emitErrors: false,
+                // set failOnHint to true
+                failOnHint: false,
+                "browser": true,
+                "esnext": true,
+                "globals": {},
+                "globalstrict": true,
+                "quotmark": false,
+                "undef": true,
+                "unused": true,
+                "asi": true,
+                "strict": false,
+                "sub": true,
+                "shadow": true,
+                "eqeqeq": false,
+                "expr": true,
+                "laxbreak": true,
+                "newcap": false
             }
         }))
         .pipe(header(banner, bannerVars))

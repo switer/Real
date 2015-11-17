@@ -44,9 +44,9 @@ function Reve(options) {
 
         if (updId && updId.length) {
             var multi = util.type(updId) == 'array' ?  true:false
-            function updateHandler(t) {
+            var updateHandler = function(t) {
                 return function (c) {
-                    if (multi && !~updateId.indexOf(c.$updateId)) return
+                    if (multi && !~updId.indexOf(c.$updateId)) return
                     else if (!multi && c.$updateId !== updId) return
 
                     if (util.type(handler) == 'function') {
@@ -480,8 +480,8 @@ function _fragmentWrap (html) {
     }
     return frag
 }
-function _getElementsByClassName(className) {
-    if (document.getElementsByClassName) return document.getElementsByClassName(className)
+function _getElementsByClassName(search) {
+    if (document.getElementsByClassName) return document.getElementsByClassName(search)
     else {
         /**
          * @author eikes

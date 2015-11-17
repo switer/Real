@@ -1,5 +1,5 @@
 /**
-* Real v1.3.2
+* Real v1.3.3
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -105,9 +105,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        if (updId && updId.length) {
 	            var multi = util.type(updId) == 'array' ?  true:false
-	            function updateHandler(t) {
+	            var updateHandler = function(t) {
 	                return function (c) {
-	                    if (multi && !~updateId.indexOf(c.$updateId)) return
+	                    if (multi && !~updId.indexOf(c.$updateId)) return
 	                    else if (!multi && c.$updateId !== updId) return
 
 	                    if (util.type(handler) == 'function') {
@@ -541,8 +541,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    return frag
 	}
-	function _getElementsByClassName(className) {
-	    if (document.getElementsByClassName) return document.getElementsByClassName(className)
+	function _getElementsByClassName(search) {
+	    if (document.getElementsByClassName) return document.getElementsByClassName(search)
 	    else {
 	        /**
 	         * @author eikes
@@ -684,7 +684,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	proto.hasClass = function(clazz) {
 	    if (!this[0]) return false
-	    var classList = el.className.split(' ')
+	    var classList = this[0].className.split(' ')
 	    return ~~util.indexOf(classList, clazz)
 	}
 	proto.each = function(fn) {
@@ -702,7 +702,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    })
 	    return this
 	}
-	proto.off = function(type, listener) {
+	proto.off = function(type, listener, capture) {
 	    this.forEach(function(el) {
 	        if (ieEvent) {
 	            el.detachEvent('on' + type, listener)
@@ -900,8 +900,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    break
 	                }
 	            }
+	            return r
 	        }
-	        return r
 	    },
 	    map: function (arr, fn) {
 	        if (arr.map) return arr.map(fn)
@@ -943,7 +943,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    diff: function(next, pre, _t) {
 	        var that = this
-	        _t = _t == undefined ? DEFAULT_DIFF_LEVEL : _t
+	        _t = _t === undefined ? DEFAULT_DIFF_LEVEL : _t
 
 	        if (_t <= 0) return next !== pre
 
@@ -987,7 +987,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return obj === void(0)
 	    },
 	    escape: function (str) {
-	        if (!this.type(str) == 'string') return str
+	        if (this.type(str) !== 'string') return str
 	        return str.replace(escapeRex, function (m) {
 	            return escapeCharMap[m]
 	        })
@@ -1101,7 +1101,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 *  @example "person.books[1].title" --> "person.books.1.title"
 	 */
 	function _keyPathNormalize(kp) {
-	    return new String(kp).replace(/\[([^\[\]]+)\]/g, function(m, k) {
+	    return String(kp).replace(/\[([^\[\]]+)\]/g, function(m, k) {
 	        return '.' + k.replace(/^["']|["']$/g, '')
 	    })
 	}
@@ -1373,26 +1373,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	     *  Each "scope" object maybe include "$parent, data, method" properties
 	     */
 	    var $scope = util.extend({}, $vm.$methods, $vm.$data)
-
+	    var __$args__ = util.slice(arguments)
 	    try {
-	        return [null, util.immutable(eval('with($scope){(%s)}'.replace('%s', arguments[1])))]
+	        return [null, util.immutable(eval('with($scope){(%s)}'.replace('%s', __$args__[1])))]
 	    } catch (e) {
-	        arguments[1] =  '. '+ arguments[2] + '=' + (/^\{/.test(arguments[1]) 
-	                                    ? arguments[1]
-	                                    : '{' + arguments[1] + '}') // expr
+	        __$args__[1] =  '. '+ __$args__[2] + '=' + (/^\{/.test(__$args__[1]) 
+	                                    ? __$args__[1]
+	                                    : '{' + __$args__[1] + '}') // expr
 	        
 	        var $consoler = __webpack_require__(6)
-	        // arguments[2] // label
-	        // arguments[3] // target
+	        // __$args__[2] // label
+	        // __$args__[3] // target
 	        switch (e.name) {
 	            case 'ReferenceError':
-	                $consoler.warn(e.message + arguments[1])
+	                $consoler.warn(e.message + __$args__[1])
 	                break
 	            default:
 	                $consoler.error(
-	                    (arguments[2] ? '\'' + arguments[2] + '\': ' : ''),
-	                    e.message + arguments[1],
-	                    arguments[3] || ''
+	                    (__$args__[2] ? '\'' + __$args__[2] + '\': ' : ''),
+	                    e.message + __$args__[1],
+	                    __$args__[3] || ''
 	                )
 	        }
 	        return [e]
