@@ -401,7 +401,7 @@ function Directive(vm, tar, def, name, expr) {
      */
     function _update() {
         // empty expression also can trigger update, such `r-text` directive
-        if (!expr) {
+        if (!isExpr) {
             if (shouldUpdate && shouldUpdate.call(d)) {
                 upda && upda.call(d)
             }

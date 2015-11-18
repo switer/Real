@@ -41,4 +41,21 @@ describe('Global API', function () {
         })
         assert(inited)
     })
+    it('directive-expression:string', function () {
+        var inited = false
+        var img = 'https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png'
+        Reve.directive('lazy', {
+            bind: function (src, expr) {
+                inited = true
+                assert.equal(src, img)
+            },
+            update: function (src) {
+                assert.equal(src, img)
+            }
+        })
+        new Reve({
+            template: '<img r-lazy="' + img + '" />'
+        })
+        assert(inited)
+    })
 })

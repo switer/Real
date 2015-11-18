@@ -1,5 +1,5 @@
 /**
-* Real v1.3.3
+* Real v1.3.4
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -462,7 +462,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	     */
 	    function _update() {
 	        // empty expression also can trigger update, such `r-text` directive
-	        if (!expr) {
+	        if (!isExpr) {
 	            if (shouldUpdate && shouldUpdate.call(d)) {
 	                upda && upda.call(d)
 	            }
@@ -1363,7 +1363,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 *  execute expression from template with specified Scope and ViewModel
 	 */
 
-	var util = __webpack_require__(2)
+	var __$util__ = __webpack_require__(2)
 	/**
 	 *  Calc expression value
 	 */
@@ -1372,14 +1372,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	     *  $scope is passed when call instance method $compile, 
 	     *  Each "scope" object maybe include "$parent, data, method" properties
 	     */
-	    var $scope = util.extend({}, $vm.$methods, $vm.$data)
-	    var __$args__ = util.slice(arguments)
+	    var $scope = __$util__.extend({}, $vm.$methods, $vm.$data)
+	    var __$args__ = __$util__.slice(arguments)
 	    try {
-	        return [null, util.immutable(eval('with($scope){(%s)}'.replace('%s', __$args__[1])))]
+	        return [null, __$util__.immutable(eval('with($scope){(%s)}'.replace('%s', __$args__[1])))]
 	    } catch (e) {
 	        __$args__[1] =  '. '+ __$args__[2] + '=' + (/^\{/.test(__$args__[1]) 
-	                                    ? __$args__[1]
-	                                    : '{' + __$args__[1] + '}') // expr
+	            ? __$args__[1]
+	            : '{' + __$args__[1] + '}') // expr
 	        
 	        var $consoler = __webpack_require__(6)
 	        // __$args__[2] // label

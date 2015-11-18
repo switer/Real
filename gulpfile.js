@@ -49,7 +49,9 @@ gulp.task('default', function() {
                 failOnHint: false,
                 "browser": true,
                 "esnext": true,
-                "globals": {},
+                "globals": {
+                    console: true
+                },
                 "globalstrict": true,
                 "quotmark": false,
                 "undef": true,

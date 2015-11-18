@@ -61,6 +61,7 @@
 		></div>
 		<button r-on="{click: onUpdateById}">Click to update "text"</button>
 		<div r-updateid="text" r-html="{updateid}"></div>
+		<img r-lazy="https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png" />
 	</div>
 	<script>
 		Reve.directive('autorefresh', {
@@ -72,6 +73,11 @@
 						that.$el.style.opacity = 1
 					})
 				}, 2000)
+			}
+		})
+		Reve.directive('lazy', {
+			bind: function (src) {
+				console.log(src)
 			}
 		})
 		Reve.component('c-header' ,{
