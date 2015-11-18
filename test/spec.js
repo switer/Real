@@ -43,6 +43,7 @@ describe('Global API', function () {
     })
     it('directive-expression:string', function () {
         var inited = false
+        var updateTimes = 0
         var img = 'https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png'
         Reve.directive('lazy', {
             bind: function (src, expr) {
@@ -50,12 +51,15 @@ describe('Global API', function () {
                 assert.equal(src, img)
             },
             update: function (src) {
+                updateTimes ++
                 assert.equal(src, img)
             }
         })
-        new Reve({
+        var c = new Reve({
             template: '<img r-lazy="' + img + '" />'
         })
+        c.$update()
         assert(inited)
+        assert(updateTimes, 1)
     })
 })
