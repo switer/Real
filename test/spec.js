@@ -66,14 +66,18 @@ describe('Global API', function () {
     })
     it('directive-expression:function', function () {
         var inited = false
+        var results = [20, 30]
+        var index = 0
+        var updated = false
         Reve.directive('func', {
             bind: function (v, expr) {
                 inited = true
-                assert.equal(v, 20)
+                assert.equal(v, results[0])
                 assert.equal(expr, 'add(num, 10)')
             },
             update: function (v) {
-                assert.equal(v, 20)
+                updated = true
+                assert.equal(v, results[index++])
             }
         })
         var c = new Reve({
@@ -89,8 +93,10 @@ describe('Global API', function () {
                 }
             }
         })
-        c.$update()
         assert(inited)
+        assert(updated)
+        c.$data.num = 20
+        c.$update()
     })
     it('directive-expression:string', function () {
         var inited = false
@@ -130,5 +136,29 @@ describe('Global API', function () {
         })
         c.$update()
         assert(inited)
+    })
+    it('directive-methods:shoudUpdate', function () {
+        var shouldUpdated = false
+        var index = 0
+        Reve.directive('delta', {
+            shouldUpdate: function (next, pre) {
+                assert.equal(pre, 1)
+                assert.equal(next, 2)
+                shouldUpdated = true
+                return false
+            },
+            update: function (v) {
+                index++ && assert(false, 'should not update.')
+            }
+        })
+        var c = new Reve({
+            data:  {
+                num: 1
+            },
+            template: '<span r-delta="{num}"></span>'
+        })
+        c.$data.num ++
+        c.$update()
+        assert(shouldUpdated, 'shouldUpdated should be called.')
     })
 })
