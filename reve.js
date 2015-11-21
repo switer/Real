@@ -37,41 +37,7 @@ function Reve(options) {
     this.$binding = _binding
     this.$shouldUpdate = options.shouldUpdate
 
-    /**
-     * Update bindings, binding option can enable/disable
-     */
-    this.$update = function (updId/*updIds*/, handler) {
-
-        if (updId && updId.length) {
-            var multi = util.type(updId) == 'array' ?  true:false
-            var updateHandler = function(t) {
-                return function (c) {
-                    if (multi && !~updId.indexOf(c.$updateId)) return
-                    else if (!multi && c.$updateId !== updId) return
-
-                    if (util.type(handler) == 'function') {
-                        handler.call(c, t, c.$updateId) && c.$update()
-                    } else {
-                        c.$update()
-                    }
-                }
-            }
-            util.forEach($components, updateHandler('component'))
-            return util.forEach($directives, updateHandler('directive'))
-        }
-        // update child components
-        util.forEach($components, function (c) {
-            if(c.$binding) {
-                c.$componentUpdate 
-                    ? c.$componentUpdate() 
-                    : c.$update()
-            }
-        })
-        // update directive of the VM
-        util.forEach($directives, function (d) {
-            d.$update()
-        })
-    }
+    
 
     var el = options.el
     /**
@@ -236,11 +202,12 @@ Reve.prototype.$compile = function (el) {
         }
         c.$updateId = updId || ''
         /**
-         * Hook component instance update method, sync passing data before update.
-         * @type {[type]}
+         * Hook to component instance update method;
+         * A private method offer to parent ViewModel calling;
+         * If binding data has been changed, it will trigger "$shouldUpdate()" method.
          */
         var _$update = c.$update
-        c.$componentUpdate = function () {
+        c.$componentShouldUpdate = function () {
             var shouldUpdate = this.$shouldUpdate
             var nextData = _execLiteral(cdata, vm)
             // no cdata binding will not trigger update
@@ -311,6 +278,59 @@ Reve.prototype.$appendTo = function (parent, appendHandler) {
     appendHandler.call(this, this.$el, parent.$el)
 }
 /**
+ * Update bindings, binding option can enable/disable
+ */
+Reve.prototype.$update = function (updId/*updIds*/, handler) {
+    if (updId && updId.length) {
+        var multi = util.type(updId) == 'array' ?  true:false
+        var updateHandler = function(t) {
+            return function (c) {
+                if (multi && !~updId.indexOf(c.$updateId)) return
+                else if (!multi && c.$updateId !== updId) return
+
+                if (util.type(handler) == 'function') {
+                    handler.call(c, t, c.$updateId) && c.$update()
+                } else {
+                    c.$update()
+                }
+            }
+        }
+        util.forEach($components, updateHandler('component'))
+        return util.forEach($directives, updateHandler('directive'))
+    }
+    /**
+     * Update child components of the ViewModel
+     * "$componentShouldUpdate()" is a private method of child-component for updating check.
+     */
+    util.forEach($components, function (c) {
+        if(c.$binding) {
+            c.$componentShouldUpdate 
+                ? c.$componentShouldUpdate() 
+                : c.$update()
+        }
+    })
+    // update directive of the VM
+    util.forEach($directives, function (d) {
+        d.$update()
+    })
+}
+/**
+ * Destroy the ViewModel, relase variables.
+ */
+Reve.prototype.$destroy = function () {
+    if (this.$destroyed) return
+    // update child components
+    util.forEach(this.$components, function (c) {
+        c.$destroy()
+    })
+    // update directive of the VM
+    util.forEach(this.$directives, function (d) {
+        d.$destroy()
+    })
+    this.$el = this.$components = this.$directives = this.$data = this.$methods = this.$refs = null
+    this.$destroyed = true
+}
+/**
  * Create Reve subc-lass that inherit Reve
  * @param {Object} options Reve instance options
  * @return {Function} sub-lass of Reve
@@ -376,8 +396,10 @@ function Directive(vm, tar, def, name, expr) {
     d.$id = _did++
     d.$expr = expr
     d.$name = name
+    d.$destroyed = false
     // updateId is used to update directive/component which DOM match the "updateid"
     d.$updateId = _getAttribute(tar, conf.namespace + 'updateid') || ''
+    this._$unbind = def.unbind
 
     var bind = def.bind
     var upda = def.update
@@ -389,17 +411,12 @@ function Directive(vm, tar, def, name, expr) {
         d[k] = v
     })
 
-    /**
-     *  execute wrap with directive name and current VM
-     */
-    var _exec = this.$exec = function (expr) {
-        return _execute(vm, expr, name)
-    }
     this.$diff = _diff
     /**
      *  update handler
      */
     function _update() {
+        if (d.$destroyed) return consoler.warn('Directive "' + name + '" already destroyed.')
         // empty expression also can trigger update, such `r-text` directive
         if (!isExpr) {
             if (shouldUpdate && shouldUpdate.call(d)) {
@@ -408,7 +425,7 @@ function Directive(vm, tar, def, name, expr) {
             return
         }
 
-        var nexv = _exec(expr) // [error, result]
+        var nexv = d.$exec(expr) // [error, result]
         var r = nexv[1]
         if (!nexv[0] && util.diff(r, prev)) {
             // shouldUpdate(nextValue, preValue)
@@ -427,7 +444,7 @@ function Directive(vm, tar, def, name, expr) {
      */
     var hasError
     if (isExpr) {
-        prev =  _exec(expr)
+        prev =  d.$exec(expr)
         hasError = prev[0]
         prev = prev[1]
     } else {
@@ -436,12 +453,28 @@ function Directive(vm, tar, def, name, expr) {
     bindParams.push(prev)
     bindParams.push(expr)
     d.$update = _update
-
-    // bind([propertyName, ]expression-value, expression) 
-    // propertyName only be passed when "multi:true"
+    
+    /**
+     * bind([propertyName, ]expression-value, expression)
+     * propertyName will be passed if and only if "multi:true"
+     */
     bind && bind.apply(d, bindParams)
     // error will stop update
     !hasError && upda && upda.call(d, prev)
+}
+/**
+ *  execute wrap with directive name and current ViewModel
+ */
+Directive.prototype.$exec = function (expr) {
+    return _execute(this.$vm, expr, this.$name)
+}
+Directive.prototype.$destroy = function () {
+    if (this.$destroyed) return
+
+    this._$unbind && this._$unbind.call(this)
+    this.$update = this.$destroy = this.$exec = noop
+    this.$el = null
+    this.$destroyed = true
 }
 
 function _execLiteral (expr, vm, name) {
@@ -509,6 +542,7 @@ function _getElementsByClassName(search) {
         return results;
     }
 }
+function noop() {}
 
 Reve.$ = $
 Reve.util = util
