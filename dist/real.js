@@ -1,5 +1,5 @@
 /**
-* Real v1.4.0
+* Real v1.3.4
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1076,6 +1076,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (el.hasAttribute) return el.hasAttribute(an)
 	    return el.getAttribute(an) !== null
 	}
+	/**
+	 * Query all elements that inde "sels", and which element match scoped selector will be skipped.
+	 * All selector is attribute selector
+	 * @param {Element} el container element
+	 * @param {String} scopedSel scope element's selector
+	 * @param {Array} seles selectors
+	 */
 	module.exports = function (el, scopedSel, sels) {
 		if (!supportQuerySelector) {
 			var _elements = {}
