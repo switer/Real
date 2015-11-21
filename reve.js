@@ -31,13 +31,11 @@ function Reve(options) {
     var _ready = options.ready
     var _created = options.created
     var _binding = util.hasOwn(options, 'binding') ? options.binding : true
-    var $directives = this.$directives = []
-    var $components = this.$components = []
     this.$parent = options.parent || null
     this.$binding = _binding
     this.$shouldUpdate = options.shouldUpdate
-
-    
+    this.$directives = []
+    this.$components = []
 
     var el = options.el
     /**
@@ -58,7 +56,7 @@ function Reve(options) {
             el = nextEl
         } else {
             if (hasReplaceOption && !el.parentNode) {
-                consoler.warn('Invalid element with \'' + NS + 'replace\' option.', el)
+                consoler.warn('Invalid element with "replace" option.', el)
             }
             el.innerHTML = options.template
         }
@@ -250,11 +248,12 @@ Reve.prototype.$compile = function (el) {
                         // discard empty expression 
                         if (!util.trim(item)) return
                         d = new Directive(vm, tar, def, dname, '{' + item + '}')
+                        $directives.push(d)
                     })
             } else {
                 d = new Directive(vm, tar, def, dname, expr)
+                $directives.push(d)
             }
-            $directives.push(d)
             drefs.push(dname)
             tar._diretives = drefs
         })
@@ -281,6 +280,9 @@ Reve.prototype.$appendTo = function (parent, appendHandler) {
  * Update bindings, binding option can enable/disable
  */
 Reve.prototype.$update = function (updId/*updIds*/, handler) {
+    var $components = this.$components
+    var $directives = this.$directives
+
     if (updId && updId.length) {
         var multi = util.type(updId) == 'array' ?  true:false
         var updateHandler = function(t) {
@@ -372,6 +374,7 @@ function Directive(vm, tar, def, name, expr) {
     var d = this
     var bindParams = []
     var isExpr = !!_isExpr(expr)
+    var rawExpr = expr
 
     isExpr && (expr = _strip(expr))
 
@@ -395,6 +398,7 @@ function Directive(vm, tar, def, name, expr) {
     d.$vm = vm
     d.$id = _did++
     d.$expr = expr
+    d.$rawExpr = rawExpr
     d.$name = name
     d.$destroyed = false
     // updateId is used to update directive/component which DOM match the "updateid"
@@ -453,7 +457,6 @@ function Directive(vm, tar, def, name, expr) {
     bindParams.push(prev)
     bindParams.push(expr)
     d.$update = _update
-    
     /**
      * bind([propertyName, ]expression-value, expression)
      * propertyName will be passed if and only if "multi:true"
@@ -505,11 +508,11 @@ function _cloneArributes(el, target) {
 }
 function _fragmentWrap (html) {
     var div = document.createElement('div')
-    var frag = document.createDocumentFragment();
+    var frag = document.createDocumentFragment()
     div.innerHTML = html
-    var children = div.childNodes;
+    var children = div.childNodes
     while(children.length){
-        frag.appendChild(children[0]);
+        frag.appendChild(children[0])
     }
     return frag
 }
@@ -539,7 +542,7 @@ function _getElementsByClassName(search) {
                 }
             }
         }
-        return results;
+        return results
     }
 }
 function noop() {}
