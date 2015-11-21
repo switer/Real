@@ -1,4 +1,4 @@
-Reeal
+Real
 =====
 It's Reve, but support IE6......[About Reve](https://github.com/scrat-team/reve).
 
@@ -132,6 +132,21 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	Update element's innerHTML by binding data.
 
+- **r-text**
+
+	`r-text` is flag directive that without attribute value but using innerHTML as expression. 
+	It replace current element and render template content.
+	
+	```html
+	Framework: <span r-text>{name}</span> !
+	
+	```
+	Assert name is 'Reve', it will be rendered to:
+	```
+	Framework: Reve !
+	```
+
+
 - **r-component**
 
 	Declare the element is a component root element, and Reve will instance it with specified component id.
@@ -254,8 +269,8 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **shouldUpdate** `<Function>`
 
-	**Lifecycle Method** It will be called after each times calling `$update` method, 
-	return `false` will stop current ViewModel to update UI.
+	**Lifecycle Method** It will be called when parent ViewModel call `$update` method and the result of `r-data` has been changed, 
+	return `false` will stop current ViewModel to update UI. Call after value diff.
 
 
 #### Instance Properties
@@ -287,6 +302,23 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	Call the method manually to update UI View when data of the ViewModel instance has been changed.
 
+- **$set**([keypath, ] value)
+	
+	Set value to 'this.$data' and call this.$update immediately. Also can set value by keypath. Examples:
+	```html
+	this.$set({ state: true })
+	/** equal to 
+	    this.$data.state = true
+	    this.$update
+	*/
+
+	this.$set('person[0].name', '')
+	/** equal to 
+	    this.$data.person[0].name = ''
+	    this.$update
+	*/
+	```
+
 - **$compile**(`HTMLElement` | `String`)
 
 	* return `<HTMLElement> | <DocumentFragment>` if param typeof `String`, it will be a documentfragment, otherwise will return HTMLElement.
@@ -299,13 +331,15 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 Directive lifecycle methods:
 * `bind` Call only once when init.
-* `update` Call every time when expression's value has been changed.
+* `update` Call when expression's value has been changed and not 'shouldUpdate' or 'shouldUpdate' return true.
 * `unbind` Call only once before directive is destroyed.
+* `shouldUpdate` Call every time when expression's value has been changed, before 'update', return false will stop update.
 
 Directive instance properties:
 * `$vm` Mounted VM of the directive
 * `$el` Mounted target Node of the directive
-* `$id` Current directive instance id
+* `$id` Current directive instance's id
+* `$name` Current directive instance's name
 
 Define a custom directive with `Reve.directive`, such as below example to define a "tap" directive:
 

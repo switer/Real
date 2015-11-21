@@ -6,9 +6,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="format-detection" content="telphone=no, email=no" />
-    <script src="debug.js"></script>
 	<title>REVE</title>
-	<script src="/dist/real.js"></script>
+	<script src="../dist/real.js"></script>
 	<style>
 		body {padding: 0px;margin: 0;}
 		.hl {color: cornflowerblue}
@@ -18,6 +17,8 @@
 		.button-group {text-align: center;}
 			.button-group button {line-height: 28px;color: white;background-color: cornflowerblue;border: 0;padding: 6px;
 				outline: 0;border-radius: 4px;margin: 5px;}
+
+		.footer {display: block;width: 100%;text-align: center;color: #ccc;text-decoration: underline;cursor: pointer;}
 	</style>
 </head>
 <body>
@@ -39,7 +40,9 @@
 				r-ref="button"
 			>Home</button>
 		</div>
-		
+		<span r-text>
+			1.{header} 2.{header}
+		</span>
 		<h1 class="content">Hello world</h1>
 		<div class="button-group">
 			<button r-on="{
@@ -50,10 +53,16 @@
 				click: onChangeHeader
 			}">change child component's title</button>
 		</div>
+		<div 
+			class="footer" 
+			r-component="c-footer" 
+			r-replace="true" 
+			r-data="{header: header}"
+		></div>
+		<button r-on="{click: onUpdateById}">Click to update "text"</button>
+		<div r-updateid="text" r-html="{updateid}"></div>
+		<img r-lazy="https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png" />
 	</div>
-<!-- 	<div id="app">
-		<div r-autorefresh="{onRefresh}"></div>
-	</div> -->
 	<script>
 		Reve.directive('autorefresh', {
 			bind: function (fn) {
@@ -64,6 +73,11 @@
 						that.$el.style.opacity = 1
 					})
 				}, 2000)
+			}
+		})
+		Reve.directive('lazy', {
+			bind: function (src) {
+				console.log(src)
 			}
 		})
 		Reve.component('c-header' ,{
@@ -81,16 +95,27 @@
 			}
 		})
 		Reve.component('c-button' ,{
-			ready: function () {
+			ready: function () {},
+		})
+		Reve.component('c-footer' ,{
+			template: '<h6 r-html="{\'Footer Match:\' + header}"></h6>',
+			shouldUpdate: function (next, pre) {
+				console.log('c-footer:shouldUpdate()', next, pre)
+				return false
 			}
 		})
+		var $child = new Reve({
+			template: '<div>I am a child ViewModel</div>'
+		})
+
 		var $app = new Reve({
 			el: '#app',
 			data: function () {
 				return {
 					show: true,
 					hl: true,
-					header: 'Hi, Reve'
+					header: 'Hi, Reve',
+					updateid: ''
 				}
 			},
 			ready: function () {
@@ -98,20 +123,27 @@
 			},
 			methods: {
 				onDisableHightlight: function () {
-					this.$data.hl = false
-					this.$update()
+					this.$set({
+						hl: false
+					})
 				},
 				onChangeHeader: function () {
-					this.$data.header = 'Hi, fouber'
-					this.$update()
+					this.$set('header', 'Hi, fouber')
 				},
 				onRefresh: function (cb) {
 					setTimeout(function () {
 						cb()
 					}, 1000)
+				},
+				onUpdateById: function () {
+					this.$data.updateid = 'update by id'
+					this.$data.header = 'Header, update by id'
+					this.$update('text')
 				}
 			}
 		})
+
+		$child.$appendTo($app)
 	</script>
 </body>
 </html>
