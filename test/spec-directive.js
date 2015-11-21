@@ -1,4 +1,4 @@
-describe('Global API', function () {
+describe('# Directive', function () {
     it('directive(name, def)', function () {
         var inited = false
         Reve.directive('d', {
@@ -160,5 +160,140 @@ describe('Global API', function () {
         c.$data.num ++
         c.$update()
         assert(shouldUpdated, 'shouldUpdated should be called.')
+    })
+    it('directive-methods:unbind', function (done) {
+        var unbind = false
+        Reve.directive('unbind', {
+            bind: function () {
+            },
+            unbind: function () {
+                assert(!!this.$el, 'Before destroyed, $el should be exist')
+                setTimeout(function () {
+                    unbind = true
+                    assert(!this.$el, 'After destroyed, $el should not be exist')
+                })
+            }
+        })
+        var c = new Reve({
+            data:  {
+                num: 1
+            },
+            template: '<span r-unbind="{num}"></span>'
+        })
+        c.$destroy()
+        setTimeout(function () {
+            assert(unbind, '"unbind" of directive should be call when the ViewModel be destroyed.')
+            done()
+        })
+    })
+})
+
+describe('# Directive build-in', function () {
+    it('r-attr', function () {
+        var c = new Reve({
+            data: {
+                attr: ''
+            },
+            template: '<div r-attr="{data-attr: attr}"></div>'
+        })
+        var tar = c.$el.querySelector('div')
+        assert(tar.hasAttribute('data-attr'))
+        assert.equal(tar.getAttribute('data-attr'), '')
+        c.$data.attr = undefined
+        c.$update()
+        assert(!tar.hasAttribute('data-attr'), '"undefined" value will remove the attribute.')
+        c.$data.attr = 'real'
+        c.$update()
+        assert.equal(tar.getAttribute('data-attr'), 'real')
+    })
+    it('r-class', function () {
+        var c = new Reve({
+            data: {
+                clazz: ''
+            },
+            template: '<div r-class="{clazz: clazz}"></div>'
+        })
+        var tar = c.$el.querySelector('div')
+        assert(!Reve.$(tar).hasClass('clazz'))
+        c.$set('clazz', true)
+        assert(Reve.$(tar).hasClass('clazz'))
+    })
+    it('r-html', function () {
+        var c = new Reve({
+            data: {
+                html: ''
+            },
+            template: '<div r-html="{html}"></div>'
+        })
+        var tar = c.$el.querySelector('div')
+        assert.equal(tar.innerHTML, '')
+        c.$set('html', '<div class="name"></div>')
+        assert(!!tar.querySelector('.name'))
+        c.$set('html', undefined)
+        assert.equal(tar.innerHTML, '', '"undefined" value should equal to empty string')
+        c.$set('html', null)
+        assert.equal(tar.innerHTML, '', 'Set innerHTML with "null" should be empty string')
+        c.$set('html', 0)
+        assert.equal(tar.innerHTML, '0')
+        c.$set('html', false)
+        assert.equal(tar.innerHTML, 'false')
+    })
+    it('r-on', function (done) {
+        var c = new Reve({
+            data: {},
+            template: '<div r-on="{click: onClick}"></div>',
+            methods: {
+                onClick: function () {
+                    done()
+                }
+            }
+        })
+        var tar = c.$el.querySelector('div')
+        var event = document.createEvent('Event')
+        event.initEvent('click', true, true);
+        tar.dispatchEvent(event)
+    })
+    it('r-show', function () {
+        var c = new Reve({
+            data: {
+                show: false
+            },
+            template: '<div r-show="{show}"></div>'
+        })
+        var tar = c.$el.querySelector('div')
+        assert.equal(tar.style.display, 'none')
+        c.$set('show', true)
+        assert.equal(tar.style.display, '')
+    })
+    it('r-style', function () {
+        var c = new Reve({
+            data: {
+                display: 'block',
+                backgroundColor: 'blue'
+            },
+            template: '<div r-style="{display: display; backgroundColor: backgroundColor}"></div>'
+        })
+        var tar = c.$el.querySelector('div')
+        assert.equal(tar.style.display, 'block')
+        assert.equal(tar.style.backgroundColor, 'blue')
+        c.$set('display', 'none')
+        c.$set('backgroundColor', 'red')
+        assert.equal(tar.style.display, 'none')
+        assert.equal(tar.style.backgroundColor, 'red')
+    })
+    it('r-text', function () {
+        var c = new Reve({
+            data: {
+                name: '',
+                author: ''
+            },
+            template: '<span r-text>{name},author: {author}</span>'
+        })
+        assert.equal(c.$el.innerText, ',author: ')
+        c.$set({
+            name: 'real',
+            author: 'switer'
+        })
+        assert.equal(c.$el.innerText, 'real,author: switer')
     })
 })
