@@ -220,9 +220,14 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	> Notice: work with "r-component" only.
 
 - **r-binding**
-	If 'r-binding' is disale, parent component will not update the child component when parent's data has been changed.
 
+	If 'r-binding' is false("false" or "0"), parent component will not update the child component when parent's data has been changed.
 	> Notice: work with "r-component" only.
+
+- **r-updateid**
+
+	If 'r-updateid' is presented, call `$update(id)` will update those matching directives or components.
+	> Notice: work with "r-component" or directives.
 
 #### Class Methods
 
