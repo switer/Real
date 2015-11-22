@@ -1,5 +1,5 @@
 /**
-* Real v1.4.0
+* Real v1.4.1
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -99,13 +99,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$components = []
 
 	    var el = options.el
+	    var isHTMLElement = is.Element(el)
+	    var hasReplaceOption = util.hasOwn(options, 'replace') 
+	            ? options.replace
+	            : false
 	    /**
 	     *  Mounted element detect
 	     */
-	    if (el && options.template) {
-	        var hasReplaceOption = _hasAttribute(el, NS + 'replace')
-	            ? _getAttribute(el, NS + 'replace') == 'true'
-	            : options.replace
+	    if (isHTMLElement && options.template) {
 
 	        if (hasReplaceOption && el.parentNode) {
 	            var child = _fragmentWrap(options.template)
@@ -121,8 +122,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	            el.innerHTML = options.template
 	        }
-	    } else if (options.template) {
-	        if (options.replace) {
+	    } else if (!el && options.template) {
+	        if (hasReplaceOption) {
 	            el = _fragmentWrap(options.template).children[0]
 	            !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
 	        }
@@ -142,8 +143,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	            el = document.getElementById(sel.replace(/^#/, ''))
 	        else el = null
 	        if (!el) return consoler.error('Can\'t not found element by selector "' + sel + '"')
-	    } else if (!is.Element(el)) {
-	        throw new Error('Unmatch el option')
+	    } else if (isHTMLElement) {
+	        if (hasReplaceOption) {
+	            var hasChildren = el.children && el.children.length
+	            !hasChildren && consoler.warn('Component\'s container element should has children when "replace" option given.')
+	            if (hasChildren) {
+	                var oldel = el
+	                el = el.children[0]
+	                if (oldel.parentNode) {
+	                    oldel.parentNode.replaceChild(el, oldel)
+	                }
+	            }
+	        }
+	    } else {
+	        throw new Error('Unvalid el option')
 	    }
 
 	    this.$el = el
@@ -227,14 +240,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var cmethods = _getAttribute(tar, NS + 'methods')
 	        var bindingOpt = _getAttribute(tar, NS + 'binding')
 	        var updId = _getAttribute(tar, NS + 'updateid') || ''
+	        var replaceOpt = _getAttribute(tar, NS + 'replace')
 	        var data = {}
 	        var methods = {}
 	        var preData
 
+	        replaceOpt = _hasAttribute(tar, NS + 'replace')
+	            ? replaceOpt == 'true' || replaceOpt == '1'
+	            : false
 	        // remove 'r-component' attribute
 	        _removeAttribute(tar, componentDec)
 
-	        util.forEach(['ref','data', 'methods', 'binding'], function (a) {
+	        util.forEach(['ref','data', 'methods', 'binding', 'replace'], function (a) {
 	            _removeAttribute(tar, NS + a)
 	        })
 
@@ -251,7 +268,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            data: data,
 	            parent: vm,
 	            methods: methods,
-	            binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true
+	            binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true,
+	            replace: !!replaceOpt
 	        })
 	        // for component inspecting
 	        tar.setAttribute('data-rcomponent', cname)
