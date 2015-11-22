@@ -1,5 +1,7 @@
 Real
 =====
+[![travis-ci](https://travis-ci.org/switer/Real.svg?branch=master)](https://travis-ci.org/switer/Real)
+
 It's Reve, but support IE6......[About Reve](https://github.com/scrat-team/reve).
 
 ## Downloads
@@ -215,6 +217,11 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 - **r-methods**
 
 	Passing methods from parent VM to child component.
+	> Notice: work with "r-component" only.
+
+- **r-binding**
+	If 'r-binding' is disale, parent component will not update the child component when parent's data has been changed.
+
 	> Notice: work with "r-component" only.
 
 #### Class Methods
