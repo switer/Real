@@ -1,5 +1,5 @@
 /**
-* Real v1.4.3
+* Real v1.4.4
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -70,7 +70,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var KP = __webpack_require__(7)
 	var buildInDirectives = __webpack_require__(8)
 	var Expression = __webpack_require__(9)
-	var supportQuerySelector = __webpack_require__(10).supportQuerySelector
+	var detection = __webpack_require__(10)
+	var supportQuerySelector = detection.supportQuerySelector
 	var _execute = __webpack_require__(11)
 	var _components = {}
 	var _globalDirectives = {}
@@ -115,7 +116,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var nextEl = children[0]
 	            var parent = el.parentNode
 	            parent.replaceChild(nextEl, el)
-	            _cloneArributes(el, nextEl)
+	            _cloneAttributes(el, nextEl)
 	            el = nextEl
 	        } else {
 	            if (hasReplaceOption && !el.parentNode) {
@@ -576,16 +577,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _removeAttribute (el, an) {
 	    return el && el.removeAttribute(an)
 	}
-	function _cloneArributes(el, target) {
+	function _cloneAttributes(el, target) {
 	    var attrs = util.slice(el.attributes)
-	    util.forEach(attrs, function (att) {
-	        // In IE9, attributes contain event handler...
-	        if (util.type(att.value) == 'function' || att.value === null) return
 
+	    util.forEach(attrs, function (att) {
+	        // In IE9 below, attributes and properties are merged...
+	        if (util.type(att.value) == 'function') return
 	        if (att.name == 'class') {
 	            target.className = target.className + (target.className ? ' ' : '') + att.value
 	        } else {
-	            target[att.name] = att.value
+	            try {
+	                target.setAttribute(att.name, att.value)
+	            } catch(e) {
+	                // In IE, set some attribute will cause error...
+	            }
 	        }
 	    })
 	    return target

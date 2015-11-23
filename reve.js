@@ -9,7 +9,8 @@ var consoler = require('./lib/consoler')
 var KP = require('./lib/keypath')
 var buildInDirectives = require('./lib/build-in')
 var Expression = require('./lib/expression')
-var supportQuerySelector = require('./lib/detection').supportQuerySelector
+var detection = require('./lib/detection')
+var supportQuerySelector = detection.supportQuerySelector
 var _execute = require('./lib/execute')
 var _components = {}
 var _globalDirectives = {}
@@ -54,7 +55,7 @@ function Reve(options) {
             var nextEl = children[0]
             var parent = el.parentNode
             parent.replaceChild(nextEl, el)
-            _cloneArributes(el, nextEl)
+            _cloneAttributes(el, nextEl)
             el = nextEl
         } else {
             if (hasReplaceOption && !el.parentNode) {
@@ -515,16 +516,20 @@ function _hasAttribute (el, an) {
 function _removeAttribute (el, an) {
     return el && el.removeAttribute(an)
 }
-function _cloneArributes(el, target) {
+function _cloneAttributes(el, target) {
     var attrs = util.slice(el.attributes)
-    util.forEach(attrs, function (att) {
-        // In IE9, attributes contain event handler...
-        if (util.type(att.value) == 'function' || att.value === null) return
 
+    util.forEach(attrs, function (att) {
+        // In IE9 below, attributes and properties are merged...
+        if (util.type(att.value) == 'function') return
         if (att.name == 'class') {
             target.className = target.className + (target.className ? ' ' : '') + att.value
         } else {
-            target[att.name] = att.value
+            try {
+                target.setAttribute(att.name, att.value)
+            } catch(e) {
+                // In IE, set some attribute will cause error...
+            }
         }
     })
     return target
