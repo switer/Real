@@ -1,6 +1,7 @@
 Real
 =====
 [![travis-ci](https://travis-ci.org/switer/Real.svg?branch=master)](https://travis-ci.org/switer/Real)
+[![npm version](https://badge.fury.io/js/real.svg)](https://www.npmjs.com/package/real)
 
 It's Reve, but support IE6......[About Reve](https://github.com/scrat-team/reve).
 
