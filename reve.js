@@ -49,8 +49,9 @@ function Reve(options) {
 
         if (hasReplaceOption && el.parentNode) {
             var child = _fragmentWrap(options.template)
-            if (!child.children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
-            var nextEl =child.children[0]
+            var children = _fragmentChildren(child)
+            if (!children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
+            var nextEl = children[0]
             var parent = el.parentNode
             parent.replaceChild(nextEl, el)
             _cloneArributes(el, nextEl)
@@ -63,7 +64,8 @@ function Reve(options) {
         }
     } else if (!el && options.template) {
         if (hasReplaceOption) {
-            el = _fragmentWrap(options.template).children[0]
+            var frag = _fragmentWrap(options.template)
+            el = _fragmentChildren(frag)[0]
             !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
         }
         if (!el) {
@@ -533,6 +535,14 @@ function _fragmentWrap (html) {
         frag.appendChild(children[0])
     }
     return frag
+}
+function _fragmentChildren(frag) {
+    var children = []
+    util.forEach(frag.childNodes, function (node) {
+        // element node type
+        ;(node.nodeType === 1) && children.push(node)
+    })
+    return children
 }
 function _getElementsByClassName(search) {
     if (document.getElementsByClassName) return document.getElementsByClassName(search)
