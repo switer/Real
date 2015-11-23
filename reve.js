@@ -518,6 +518,9 @@ function _removeAttribute (el, an) {
 function _cloneArributes(el, target) {
     var attrs = util.slice(el.attributes)
     util.forEach(attrs, function (att) {
+        // In IE9, attributes contain event handler...
+        if (util.type(att.value) == 'function' || att.value === null) return
+
         if (att.name == 'class') {
             target.className = target.className + (target.className ? ' ' : '') + att.value
         } else {

@@ -1,5 +1,5 @@
 /**
-* Real v1.4.2
+* Real v1.4.3
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -579,6 +579,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _cloneArributes(el, target) {
 	    var attrs = util.slice(el.attributes)
 	    util.forEach(attrs, function (att) {
+	        // In IE9, attributes contain event handler...
+	        if (util.type(att.value) == 'function' || att.value === null) return
+
 	        if (att.name == 'class') {
 	            target.className = target.className + (target.className ? ' ' : '') + att.value
 	        } else {
