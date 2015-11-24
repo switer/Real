@@ -66,7 +66,7 @@ function Reve(options) {
     } else if (!el && options.template) {
         if (hasReplaceOption) {
             var frag = _fragmentWrap(options.template)
-            el = _fragmentChildren(frag)[0]
+            el = _fragmentChildren(frag)[0] 
             !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
         }
         if (!el) {
@@ -84,21 +84,21 @@ function Reve(options) {
         else if (/^#/.test(sel))
             el = document.getElementById(sel.replace(/^#/, ''))
         else el = null
+
         if (!el) return consoler.error('Can\'t not found element by selector "' + sel + '"')
     } else if (isHTMLElement) {
         if (hasReplaceOption) {
-            var hasChildren = el.children && el.children.length
+            var children = is.Fragment(el) ? _fragmentChildren(el) : el.children
+            var hasChildren = children && children.length
             !hasChildren && consoler.warn('Component\'s container element should has children when "replace" option given.')
             if (hasChildren) {
                 var oldel = el
-                el = el.children[0]
-                if (oldel.parentNode) {
-                    oldel.parentNode.replaceChild(el, oldel)
-                }
+                el = children[0]
+                oldel.parentNode && oldel.parentNode.replaceChild(el, oldel)
             }
         }
     } else {
-        throw new Error('Unvalid el option')
+        throw new Error('Unvalid "el" option.')
     }
 
     this.$el = el
@@ -107,7 +107,7 @@ function Reve(options) {
     this.$refs = {}
 
     util.objEach(options.methods, function (key, m) {
-        vm.$methods[key] = vm[key] =util.bind(m, vm)
+        vm.$methods[key] = vm[key] = util.bind(m, vm)
     })
 
     _created && _created.call(vm)
@@ -170,7 +170,7 @@ Reve.prototype.$compile = function (el) {
 
         var cname = _getAttribute(tar, componentDec)
         if (!cname) {
-            return consoler.error(componentDec + ' missing component id.')
+            return consoler.error(componentDec + ' missing component id.', tar)
         }
         var Component = _components[cname]
         if (!Component) {
@@ -209,6 +209,7 @@ Reve.prototype.$compile = function (el) {
             el: tar,
             data: data,
             parent: vm,
+            // methods will not trace changes
             methods: methods,
             binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true,
             replace: !!replaceOpt
@@ -521,12 +522,17 @@ function _cloneAttributes(el, target) {
 
     util.forEach(attrs, function (att) {
         // In IE9 below, attributes and properties are merged...
-        if (util.type(att.value) == 'function') return
-        if (att.name == 'class') {
-            target.className = target.className + (target.className ? ' ' : '') + att.value
+        var aname = att.name
+        var avalue = att.value
+        // unclone function property
+        if (util.type(avalue) == 'function') return
+        // IE9 below will get all inherited function properties
+        if (/^on/.test(aname) && avalue === 'null') return
+        if (aname == 'class') {
+            target.className = target.className + (target.className ? ' ' : '') + avalue
         } else {
             try {
-                target.setAttribute(att.name, att.value)
+                target.setAttribute(aname, avalue)
             } catch(e) {
                 // In IE, set some attribute will cause error...
             }

@@ -1,7 +1,7 @@
 {
   "name": "real",
-  "version": "1.4.4",
-  "description": "t's Reve, but support IE6......",
+  "version": "1.4.5",
+  "description": "Web components framework that using in server-side render. Ω support IE6 +",
   "main": "reve.js",
   "scripts": {
     "pt": "./node_modules/.bin/mocha-phantomjs ./test/runner.html",
