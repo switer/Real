@@ -187,7 +187,7 @@ Reve.prototype.$compile = function (el) {
         var methods = {}
         var preData
 
-        replaceOpt = _hasAttribute(tar, NS + 'replace')
+        replaceOpt = util.hasAttribute(tar, NS + 'replace')
             ? replaceOpt == 'true' || replaceOpt == '1'
             : false
         // remove 'r-component' attribute
@@ -250,7 +250,7 @@ Reve.prototype.$compile = function (el) {
         dname = NS + dname
         var bindingDrts = util.slice(querySelectorAll('[' + dname + ']'))
         // compile directive of container 
-        if (_hasAttribute(el, dname)) bindingDrts.unshift(el)
+        if (util.hasAttribute(el, dname)) bindingDrts.unshift(el)
 
         util.forEach(bindingDrts, function (tar) {
 
@@ -509,10 +509,6 @@ function _execLiteral (expr, vm, name) {
 }
 function _getAttribute (el, an) {
     return el && el.getAttribute(an)
-}
-function _hasAttribute (el, an) {
-    if (el.hasAttribute) return el.hasAttribute(an)
-    return el.getAttribute(an) !== null
 }
 function _removeAttribute (el, an) {
     return el && el.removeAttribute(an)

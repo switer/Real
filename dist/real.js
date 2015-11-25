@@ -1,5 +1,5 @@
 /**
-* Real v1.4.5
+* Real v1.4.6
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -248,7 +248,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var methods = {}
 	        var preData
 
-	        replaceOpt = _hasAttribute(tar, NS + 'replace')
+	        replaceOpt = util.hasAttribute(tar, NS + 'replace')
 	            ? replaceOpt == 'true' || replaceOpt == '1'
 	            : false
 	        // remove 'r-component' attribute
@@ -311,7 +311,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        dname = NS + dname
 	        var bindingDrts = util.slice(querySelectorAll('[' + dname + ']'))
 	        // compile directive of container 
-	        if (_hasAttribute(el, dname)) bindingDrts.unshift(el)
+	        if (util.hasAttribute(el, dname)) bindingDrts.unshift(el)
 
 	        util.forEach(bindingDrts, function (tar) {
 
@@ -570,10 +570,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	function _getAttribute (el, an) {
 	    return el && el.getAttribute(an)
-	}
-	function _hasAttribute (el, an) {
-	    if (el.hasAttribute) return el.hasAttribute(an)
-	    return el.getAttribute(an) !== null
 	}
 	function _removeAttribute (el, an) {
 	    return el && el.removeAttribute(an)
@@ -1071,7 +1067,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return escapeCharMap[m]
 	        })
 	    },
-	    hasOwn: hasOwn
+	    hasOwn: hasOwn,
+	    hasAttribute: function(el, an) {
+	        if (el.hasAttribute) return el.hasAttribute(an)
+	        else if (!el.getAttribute) return false
+	        return el.getAttribute(an) !== null
+	    }
 	}
 
 	module.exports = util
@@ -1118,22 +1119,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	var is = __webpack_require__(3)
 	var supportQuerySelector = document.querySelector && document.querySelectorAll
 
-	function _hasAttribute (el, an) {
-	    if (el.hasAttribute) return el.hasAttribute(an)
-	    return el.getAttribute(an) !== null
-	}
 	module.exports = function (el, scopedSel, sels) {
 		if (!supportQuerySelector) {
 			var _elements = {}
 			util.walk(el, function (node) {
 				if (!is.Element(node)) return false
 				util.forEach(sels, function (sel) {
-					if (_hasAttribute(node, sel)) {
+					if (util.hasAttribute(node, sel)) {
 						if (!_elements[sel]) _elements[sel] = []
 						_elements[sel].push(node)
 					}
 				})
-				if (_hasAttribute(node, scopedSel)) {
+				if (util.hasAttribute(node, scopedSel)) {
 					if (!_elements[scopedSel]) _elements[scopedSel] = []
 					_elements[scopedSel].push(node)
 					return false
