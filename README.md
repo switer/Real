@@ -234,6 +234,23 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	If 'r-binding' is false("false" or "0"), parent component will not update the child component when parent's data has been changed.
 	> Notice: work with "r-component" only.
 
+	```html
+	<div class="parent">
+	    <div 
+	        r-component="c-child" 
+	        r-data="{prop: parentState}" 
+	        r-binding="false"
+	        r-ref="child"
+	    ></div>
+	</div>
+	```
+	"r-binding" is disable, " c-child" will not update if parent ViewModel's parentState has been changed. If need to update child component manually, do as below:
+	```js
+	    var $child = this.$refs.child	    
+	    $child.$data.prop = this.$data.parentState
+	    this.$refs.child.$update()
+	```
+
 - **r-updateid**
 
 	If 'r-updateid' is presented, call `$update(id)` will update those matching directives or components.
