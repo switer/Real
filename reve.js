@@ -39,41 +39,14 @@ function Reve(options) {
     this.$components = []
 
     var el = options.el
-    var isHTMLElement = is.Element(el)
     var hasReplaceOption = util.hasOwn(options, 'replace') 
             ? options.replace
             : false
     /**
      *  Mounted element detect
+     *  Convert selector to element
      */
-    if (isHTMLElement && options.template) {
-
-        if (hasReplaceOption && el.parentNode) {
-            var child = _fragmentWrap(options.template)
-            var children = _fragmentChildren(child)
-            if (!children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
-            var nextEl = children[0]
-            var parent = el.parentNode
-            parent.replaceChild(nextEl, el)
-            _cloneAttributes(el, nextEl)
-            el = nextEl
-        } else {
-            if (hasReplaceOption && !el.parentNode) {
-                consoler.warn('Invalid element with "replace" option.', el)
-            }
-            el.innerHTML = options.template
-        }
-    } else if (!el && options.template) {
-        if (hasReplaceOption) {
-            var frag = _fragmentWrap(options.template)
-            el = _fragmentChildren(frag)[0] 
-            !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
-        }
-        if (!el) {
-            el = document.createElement('div')
-            el.innerHTML = options.template
-        }
-    } else if (util.type(el) == 'string') {
+    if (util.type(el) == 'string') {
         var sel = el
         if (supportQuerySelector)
             el = document.querySelector(sel)
@@ -86,6 +59,42 @@ function Reve(options) {
         else el = null
 
         if (!el) return consoler.error('Can\'t not found element by selector "' + sel + '"')
+    }
+    
+    /**
+     * Container element must be a element or has template option
+     */
+    var isHTMLElement = is.Element(el)
+
+    if (isHTMLElement && options.template) {
+        if (hasReplaceOption) {
+            var child = _fragmentWrap(options.template)
+            var children = _fragmentChildren(child)
+            if (!children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
+            var nextEl = children[0]
+            var parent = el.parentNode
+            if (parent) {
+                parent.replaceChild(nextEl, el)
+            }
+            _cloneAttributes(el, nextEl)
+            el = nextEl
+        } else {
+            if (is.Fragment(el)){
+                consoler.warn('Container element should not a fragment node when "template" is given. Template:\n', options.template)
+            } else {
+                el.innerHTML = options.template
+            }
+        }
+    } else if (!el && options.template) {
+        if (hasReplaceOption) {
+            var frag = _fragmentWrap(options.template)
+            el = _fragmentChildren(frag)[0] 
+            !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
+        }
+        if (!el) {
+            el = document.createElement('div')
+            el.innerHTML = options.template
+        }
     } else if (isHTMLElement) {
         if (hasReplaceOption) {
             var children = is.Fragment(el) ? _fragmentChildren(el) : el.children
