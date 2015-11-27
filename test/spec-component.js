@@ -1,7 +1,7 @@
 describe('# Component', function () {
     it('component-directives:r-data', function () {
         Reve.component('header', {
-            template: '<div class="c-header"><span r-text>{title}</span></div>'
+            template: '<div class="c-header"><span r-text="replace">{title}</span></div>'
         })
         var c = new Reve({
             data: {title: 'real'},
@@ -14,7 +14,7 @@ describe('# Component', function () {
     })
     it('component-directives:r-methods', function () {
         Reve.component('header', {
-            template: '<div class="c-header"><span r-text>{upCase(title)}</span></div>'
+            template: '<div class="c-header"><span r-text="replace">{upCase(title)}</span></div>'
         })
         var c = new Reve({
             data: {title: 'real'},
@@ -42,7 +42,7 @@ describe('# Component', function () {
     })
     it('component-directives:r-binding', function () {
         Reve.component('header', {
-            template: '<div class="c-header"><span r-text>{title}</span></div>'
+            template: '<div class="c-header"><span r-text="replace">{title}</span></div>'
         })
         var c = new Reve({
             data:{title: 'real'},
@@ -63,7 +63,7 @@ describe('# Component', function () {
     })
     it('component-directives:r-updateid', function () {
         Reve.component('header', {
-            template: '<div class="c-header"><span r-text>{title}</span></div>',
+            template: '<div class="c-header"><span r-text="replace">{title}</span></div>',
             methods: {
                 update: function () {
                     this.$data.title = 'reve'

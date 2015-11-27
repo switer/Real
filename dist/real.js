@@ -1329,7 +1329,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    },
 	    'text': {
-	        bind: function () {
+	        bind: function (opt) {
+	            var replace = opt === 'replace'
 	            var reg = Expression.exprRegexp
 	            var expr = this.expr = this.$el.innerHTML
 	            var veilExpr = Expression.veil(expr)
@@ -1340,7 +1341,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var cache = this.cache = new Array(expressions.length)
 	            var that = this
 
-	            var $textNode = this.textNode = document.createTextNode('')
+	            var $textNode 
 	            this.render = function () {
 	                // set value
 	                util.forEach(expressions, function(exp, index) {
@@ -1355,15 +1356,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	                        frags.push(cache[index])
 	                    }
 	                })
-	                // TODO, Number Mobile bug, trying to using replaceChild
-	                $textNode.nodeValue = Expression.unveil(frags.join(''))
+	                var result = Expression.unveil(frags.join(''))
+	                if (replace) {
+	                    // TODO, Number Mobile bug, trying to using replaceChild
+	                    $textNode.nodeValue = result
+	                } else {
+	                    this.$el.innerHTML = result
+	                }
 	            }
-
-	            var pn = this.$el.parentNode
-	            if (pn) {
-	                pn.replaceChild($textNode, this.$el)
-	            } else {
-	                return consoler.error('"' + conf.namespace + 'text" \'s parentNode is not found. {' + this.$expr + '}')
+	            if (replace) {
+	                $textNode = this.textNode = document.createTextNode('')
+	                var pn = this.$el.parentNode
+	                if (pn) {
+	                    pn.replaceChild($textNode, this.$el)
+	                } else {
+	                    return consoler.error('"' + conf.namespace + 'text" \'s parentNode is not found. {' + this.$expr + '}')
+	                }
 	            }
 	            this.render()
 	        },

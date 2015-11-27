@@ -285,15 +285,17 @@ describe('# Directive build-in', function () {
         var c = new Reve({
             data: {
                 name: '',
-                author: ''
+                author: '',
+                num: 0
             },
-            template: '<span r-text>{name},author: {author}</span>'
+            template: '<span r-text="replace">{name},author: {author}</span><span r-text>{num}</span>'
         })
-        assert.equal(c.$el.innerText, ',author: ')
+        assert.equal(c.$el.innerHTML, ',author: <span>0</span>')
         c.$set({
             name: 'real',
-            author: 'switer'
+            author: 'switer',
+            num: 1
         })
-        assert.equal(c.$el.innerText, 'real,author: switer')
+        assert.equal(c.$el.innerHTML, 'real,author: switer<span>1</span>')
     })
 })
