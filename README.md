@@ -157,7 +157,7 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	// $data => {title: 'real'}
 	<div r-html>Framework is <span>{title}</span></div>
 	// render to
-	<div>Framework is <span>{title}</span></div>
+	<div>Framework is <span>real</span></div>
 	```
 
 - **r-text**
