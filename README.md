@@ -143,7 +143,22 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 - **r-html**
 
 	Render given **template** and update target element's innerHTML. If "r-html"'s attribute value is empty, template is innerHTML of target element.
-	Otherwise, template is result of the attribute expression.
+	Otherwise, template is result of the attribute expression and will set it to target element's innerHTML.
+
+	```html
+	// $data => {title: 'real'}
+	<div r-html="{'Framework is ' + title}"></div>
+	// render to
+	<div>Framework is real</div>
+	```
+
+	Using template:
+	```html
+	// $data => {title: 'real'}
+	<div r-html>Framework is <span>{title}</span></div>
+	// render to
+	<div>Framework is <span>{title}</span></div>
+	```
 
 - **r-text**
 
