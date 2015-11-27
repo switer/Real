@@ -107,7 +107,7 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	Set inline style to element.
 	```html
-	<span r-class="{
+	<span r-style="{
 	  display    : show ? '':'none'
 	}"></span>
 	```
