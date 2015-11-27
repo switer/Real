@@ -1,5 +1,5 @@
 /**
-* Real v1.4.8
+* Real v1.4.9
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1247,7 +1247,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Expression = __webpack_require__(9)
 
 	function noop () {}
-
+	function templateShouldUpdate() {
+	    var that = this
+	    return util.some(this.expressions, function(exp, index) {
+	        var pv = that.cache[index]
+	        var nv = that.$exec(exp)
+	        if (!nv[0]) {
+	            return !!that.$diff(pv, nv[1])
+	        }
+	    })
+	}
 	module.exports = {
 	    'attr': {
 	        multi: true,
@@ -1281,8 +1290,59 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    },
 	    'html': {
+	        bind: function (value, expression) {
+	            // if express is not empty will set innerHTML with expression result.
+	            // Otherwise render content template then set innerHTML.
+	            var templated = this.templated = !expression
+
+	            if (templated) {
+	                var reg = Expression.exprRegexp
+	                var template = this.$el.innerHTML
+
+	                if (!template) consoler.warn('Content template should not empty of "' + conf.namespace + 'html".', this.$el)
+
+	                var veilExpr = Expression.veil(template)
+	                var expressions = this.expressions = util.map(veilExpr.match(reg), function (exp) {
+	                    return Expression.strip(exp)
+	                })
+	                var parts = veilExpr.split(reg)
+	                var cache = this.cache = new Array(expressions.length)
+	                var that =this
+	                
+	                this.render = function () {
+	                    // set value
+	                    util.forEach(expressions, function(exp, index) {
+	                        var v = that.$exec(exp)
+	                        if (!v[0]) cache[index] = v[1]
+	                    })
+	                    // get content
+	                    var frags = []
+	                    util.forEach(parts, function(item, index) {
+	                        frags.push(item)
+	                        if (index < expressions.length) {
+	                            frags.push(cache[index])
+	                        }
+	                    })
+	                    var result = Expression.unveil(frags.join(''))
+	                    that.$el.innerHTML = result
+	                }
+	            }
+
+	        },
+	        shouldUpdate: function () {
+	            if (!this.templated) return true
+	            else return templateShouldUpdate.apply(this, arguments)
+	        },
 	        update: function(nextHTML) {
-	            this.$el.innerHTML = util.isUndef(nextHTML) ? '' : nextHTML
+	            if (!this.templated) {
+	                this.$el.innerHTML = util.isUndef(nextHTML) ? '' : nextHTML
+	            } else {
+	                this.render()
+	            }
+	        },
+	        unbind: function () {
+	            this.render = noop
+	            this.expressions = this.cache = null
 	        }
 	    },
 	    'on': {
@@ -1361,7 +1421,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    // TODO, Number Mobile bug, trying to using replaceChild
 	                    $textNode.nodeValue = result
 	                } else {
-	                    this.$el.innerHTML = result
+	                    that.$el.innerText = result
 	                }
 	            }
 	            if (replace) {
@@ -1375,16 +1435,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	            this.render()
 	        },
-	        shouldUpdate: function () {
-	            var that = this
-	            return util.some(this.expressions, function(exp, index) {
-	                var pv = that.cache[index]
-	                var nv = that.$exec(exp)
-	                if (!nv[0]) {
-	                    return !!that.$diff(pv, nv[1])
-	                }
-	            })
-	        },
+	        shouldUpdate: templateShouldUpdate,
 	        update: function () {
 	            this.render()
 	        },

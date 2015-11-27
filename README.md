@@ -142,15 +142,16 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **r-html**
 
-	Update element's innerHTML by binding data.
+	Render given **template** and update target element's innerHTML. If "r-html"'s attribute value is empty, template is innerHTML of target element.
+	Otherwise, template is result of the attribute expression.
 
 - **r-text**
 
-	`r-text` is flag directive that without attribute value but using innerHTML as expression. 
-	It replace current element and render template content.
+	Using `r-text` to render text template. if attribute value is "replace", it will replace current element with a TextNode which value is render result.
+	Otherwise, will update innerText of target element.
 	
 	```html
-	Framework: <span r-text>{name}</span> !
+	Framework: <span r-text="replace">{name}</span> !
 	
 	```
 	Assert name is 'Reve', it will be rendered to:

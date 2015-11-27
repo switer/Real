@@ -238,6 +238,26 @@ describe('# Directive build-in', function () {
         c.$set('html', false)
         assert.equal(tar.innerHTML, 'false')
     })
+    it('r-html:template', function () {
+        var c = new Reve({
+            data: {
+                html: ''
+            },
+            template: '<div r-html="">Render to:<span>{html}</span></div>'
+        })
+        var tar = c.$el.querySelector('div')
+        assert.equal(tar.innerHTML, 'Render to:<span></span>')
+        c.$set('html', '<div class="name"></div>')
+        assert(!!tar.querySelector('span .name'))
+        c.$set('html', undefined)
+        assert.equal(tar.innerHTML, 'Render to:<span></span>')
+        c.$set('html', null)
+        assert.equal(tar.innerHTML, 'Render to:<span></span>')
+        c.$set('html', 0)
+        assert.equal(tar.innerHTML, 'Render to:<span>0</span>')
+        c.$set('html', false)
+        assert.equal(tar.innerHTML, 'Render to:<span>false</span>')
+    })
     it('r-on', function (done) {
         var c = new Reve({
             data: {},
