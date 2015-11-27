@@ -27,6 +27,8 @@ describe('# Component', function () {
         })
         var tar = c.$el.querySelector('.c-header')
         assert.equal(tar.innerHTML, 'REAL')
+        c.$set('title', 'reve')
+        assert.equal(tar.innerHTML, 'REVE')
     })
     it('component-directives:r-ref', function () {
         Reve.component('header', {
@@ -58,5 +60,24 @@ describe('# Component', function () {
         })
         var tar = c.$el.querySelector('.c-header')
         assert.equal(tar, c.$refs.header.$el)
+    })
+    it('component-directives:r-updateid', function () {
+        Reve.component('header', {
+            template: '<div class="c-header"><span r-text>{title}</span></div>',
+            methods: {
+                update: function () {
+                    this.$data.title = 'reve'
+                }
+            }
+        })
+        var c = new Reve({
+            data:{title: 'real'},
+            template: '<div r-component="header" r-updateid="header" r-data="{title: title}" r-ref="header"></div>'
+        })
+        var tar = c.$el.querySelector('.c-header')
+        assert.equal(tar.innerHTML, 'real')
+        c.$refs.header.update()
+        c.$update('header')
+        assert.equal(tar.innerHTML, 'reve')
     })
 })
