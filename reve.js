@@ -14,6 +14,7 @@ var supportQuerySelector = detection.supportQuerySelector
 var _execute = require('./lib/execute')
 var _components = {}
 var _globalDirectives = {}
+var _scopeDirectives = []
 var _isExpr = Expression.isExpr
 var _strip = Expression.strip
 var _did = 0
@@ -162,9 +163,16 @@ Reve.prototype.$compile = function (el) {
     // compile directives of the VM
     var _diretives = util.extend({}, buildInDirectives, _globalDirectives)
     var attSels = util.keys(_diretives)
-    var querySelectorAll = Query(el, componentDec, util.map(attSels, function (sel) {
+    var querySelectorAll = Query(
+        el, 
+        [componentDec].concat(util.map(_scopeDirectives, function (sel) {
             return conf.namespace + sel
-        }))
+        })), 
+        util.map(attSels, function (sel) {
+            return conf.namespace + sel
+        })
+    )
+
     if (supportQuerySelector) {
         // nested component
         var grandChilds = util.slice(el.querySelectorAll(componentSel + ' ' + componentSel))
@@ -390,6 +398,7 @@ Reve.component = function (id, options) {
     return c
 }
 Reve.directive = function (id, def) {
+    if (def.scope) _scopeDirectives.push(id) 
     _globalDirectives[id] = def
 }
 

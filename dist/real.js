@@ -1,5 +1,5 @@
 /**
-* Real v1.3.4
+* Real v1.4.9
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -70,7 +70,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var KP = __webpack_require__(7)
 	var buildInDirectives = __webpack_require__(8)
 	var Expression = __webpack_require__(9)
-	var supportQuerySelector = __webpack_require__(10).supportQuerySelector
+	var detection = __webpack_require__(10)
+	var supportQuerySelector = detection.supportQuerySelector
 	var _execute = __webpack_require__(11)
 	var _components = {}
 	var _globalDirectives = {}
@@ -99,38 +100,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$components = []
 
 	    var el = options.el
+	    var hasReplaceOption = util.hasOwn(options, 'replace') 
+	            ? options.replace
+	            : false
 	    /**
 	     *  Mounted element detect
+	     *  Convert selector to element
 	     */
-	    if (el && options.template) {
-	        var hasReplaceOption = _hasAttribute(el, NS + 'replace')
-	            ? _getAttribute(el, NS + 'replace') == 'true'
-	            : options.replace
-
-	        if (hasReplaceOption && el.parentNode) {
-	            var child = _fragmentWrap(options.template)
-	            if (!child.children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
-	            var nextEl =child.children[0]
-	            var parent = el.parentNode
-	            parent.replaceChild(nextEl, el)
-	            _cloneArributes(el, nextEl)
-	            el = nextEl
-	        } else {
-	            if (hasReplaceOption && !el.parentNode) {
-	                consoler.warn('Invalid element with "replace" option.', el)
-	            }
-	            el.innerHTML = options.template
-	        }
-	    } else if (options.template) {
-	        if (options.replace) {
-	            el = _fragmentWrap(options.template).children[0]
-	            !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
-	        }
-	        if (!el) {
-	            el = document.createElement('div')
-	            el.innerHTML = options.template
-	        }
-	    } else if (util.type(el) == 'string') {
+	    if (util.type(el) == 'string') {
 	        var sel = el
 	        if (supportQuerySelector)
 	            el = document.querySelector(sel)
@@ -141,9 +118,57 @@ return /******/ (function(modules) { // webpackBootstrap
 	        else if (/^#/.test(sel))
 	            el = document.getElementById(sel.replace(/^#/, ''))
 	        else el = null
+
 	        if (!el) return consoler.error('Can\'t not found element by selector "' + sel + '"')
-	    } else if (!is.Element(el)) {
-	        throw new Error('Unmatch el option')
+	    }
+	    
+	    /**
+	     * Container element must be a element or has template option
+	     */
+	    var isHTMLElement = is.Element(el)
+
+	    if (isHTMLElement && options.template) {
+	        if (hasReplaceOption) {
+	            var child = _fragmentWrap(options.template)
+	            var children = _fragmentChildren(child)
+	            if (!children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
+	            var nextEl = children[0]
+	            var parent = el.parentNode
+	            if (parent) {
+	                parent.replaceChild(nextEl, el)
+	            }
+	            _cloneAttributes(el, nextEl)
+	            el = nextEl
+	        } else {
+	            if (is.Fragment(el)){
+	                consoler.warn('Container element should not a fragment node when "template" is given. Template:\n', options.template)
+	            } else {
+	                el.innerHTML = options.template
+	            }
+	        }
+	    } else if (!el && options.template) {
+	        if (hasReplaceOption) {
+	            var frag = _fragmentWrap(options.template)
+	            el = _fragmentChildren(frag)[0] 
+	            !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
+	        }
+	        if (!el) {
+	            el = document.createElement('div')
+	            el.innerHTML = options.template
+	        }
+	    } else if (isHTMLElement) {
+	        if (hasReplaceOption) {
+	            var children = is.Fragment(el) ? _fragmentChildren(el) : el.children
+	            var hasChildren = children && children.length
+	            !hasChildren && consoler.warn('Component\'s container element should has children when "replace" option given.')
+	            if (hasChildren) {
+	                var oldel = el
+	                el = children[0]
+	                oldel.parentNode && oldel.parentNode.replaceChild(el, oldel)
+	            }
+	        }
+	    } else {
+	        throw new Error('Unvalid "el" option.')
 	    }
 
 	    this.$el = el
@@ -152,7 +177,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$refs = {}
 
 	    util.objEach(options.methods, function (key, m) {
-	        vm.$methods[key] = vm[key] =util.bind(m, vm)
+	        vm.$methods[key] = vm[key] = util.bind(m, vm)
 	    })
 
 	    _created && _created.call(vm)
@@ -215,7 +240,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        var cname = _getAttribute(tar, componentDec)
 	        if (!cname) {
-	            return consoler.error(componentDec + ' missing component id.')
+	            return consoler.error(componentDec + ' missing component id.', tar)
 	        }
 	        var Component = _components[cname]
 	        if (!Component) {
@@ -227,14 +252,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var cmethods = _getAttribute(tar, NS + 'methods')
 	        var bindingOpt = _getAttribute(tar, NS + 'binding')
 	        var updId = _getAttribute(tar, NS + 'updateid') || ''
+	        var replaceOpt = _getAttribute(tar, NS + 'replace')
 	        var data = {}
 	        var methods = {}
 	        var preData
 
+	        replaceOpt = util.hasAttribute(tar, NS + 'replace')
+	            ? replaceOpt == 'true' || replaceOpt == '1'
+	            : false
 	        // remove 'r-component' attribute
 	        _removeAttribute(tar, componentDec)
 
-	        util.forEach(['ref','data', 'methods', 'binding'], function (a) {
+	        util.forEach(['ref','data', 'methods', 'binding', 'replace'], function (a) {
 	            _removeAttribute(tar, NS + a)
 	        })
 
@@ -250,8 +279,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            el: tar,
 	            data: data,
 	            parent: vm,
+	            // methods will not trace changes
 	            methods: methods,
-	            binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true
+	            binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true,
+	            replace: !!replaceOpt
 	        })
 	        // for component inspecting
 	        tar.setAttribute('data-rcomponent', cname)
@@ -289,7 +320,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        dname = NS + dname
 	        var bindingDrts = util.slice(querySelectorAll('[' + dname + ']'))
 	        // compile directive of container 
-	        if (_hasAttribute(el, dname)) bindingDrts.unshift(el)
+	        if (util.hasAttribute(el, dname)) bindingDrts.unshift(el)
 
 	        util.forEach(bindingDrts, function (tar) {
 
@@ -549,20 +580,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _getAttribute (el, an) {
 	    return el && el.getAttribute(an)
 	}
-	function _hasAttribute (el, an) {
-	    if (el.hasAttribute) return el.hasAttribute(an)
-	    return el.getAttribute(an) !== null
-	}
 	function _removeAttribute (el, an) {
 	    return el && el.removeAttribute(an)
 	}
-	function _cloneArributes(el, target) {
+	function _cloneAttributes(el, target) {
 	    var attrs = util.slice(el.attributes)
+
 	    util.forEach(attrs, function (att) {
-	        if (att.name == 'class') {
-	            target.className = target.className + (target.className ? ' ' : '') + att.value
+	        // In IE9 below, attributes and properties are merged...
+	        var aname = att.name
+	        var avalue = att.value
+	        // unclone function property
+	        if (util.type(avalue) == 'function') return
+	        // IE9 below will get all inherited function properties
+	        if (/^on/.test(aname) && avalue === 'null') return
+	        if (aname == 'class') {
+	            target.className = target.className + (target.className ? ' ' : '') + avalue
 	        } else {
-	            target[att.name] = att.value
+	            try {
+	                target.setAttribute(aname, avalue)
+	            } catch(e) {
+	                // In IE, set some attribute will cause error...
+	            }
 	        }
 	    })
 	    return target
@@ -576,6 +615,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        frag.appendChild(children[0])
 	    }
 	    return frag
+	}
+	function _fragmentChildren(frag) {
+	    var children = []
+	    util.forEach(frag.childNodes, function (node) {
+	        // element node type
+	        ;(node.nodeType === 1) && children.push(node)
+	    })
+	    return children
 	}
 	function _getElementsByClassName(search) {
 	    if (document.getElementsByClassName) return document.getElementsByClassName(search)
@@ -1029,7 +1076,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return escapeCharMap[m]
 	        })
 	    },
-	    hasOwn: hasOwn
+	    hasOwn: hasOwn,
+	    hasAttribute: function(el, an) {
+	        if (el.hasAttribute) return el.hasAttribute(an)
+	        else if (!el.getAttribute) return false
+	        return el.getAttribute(an) !== null
+	    }
 	}
 
 	module.exports = util
@@ -1044,6 +1096,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Element: function(el) {
 	    	// 1: ELEMENT_NODE, 11: DOCUMENT_FRAGMENT_NODE
 	        return el && (el.nodeType == 1 || el.nodeType == 11)
+	    },
+	    Fragment: function(el) {
+	        // 11: DOCUMENT_FRAGMENT_NODE
+	        return el && el.nodeType == 11
 	    },
 	    DOM: function (el) {
 	    	// 8: COMMENT_NODE
@@ -1072,10 +1128,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var is = __webpack_require__(3)
 	var supportQuerySelector = document.querySelector && document.querySelectorAll
 
-	function _hasAttribute (el, an) {
-	    if (el.hasAttribute) return el.hasAttribute(an)
-	    return el.getAttribute(an) !== null
-	}
 	/**
 	 * Query all elements that inde "sels", and which element match scoped selector will be skipped.
 	 * All selector is attribute selector
@@ -1089,12 +1141,12 @@ return /******/ (function(modules) { // webpackBootstrap
 			util.walk(el, function (node) {
 				if (!is.Element(node)) return false
 				util.forEach(sels, function (sel) {
-					if (_hasAttribute(node, sel)) {
+					if (util.hasAttribute(node, sel)) {
 						if (!_elements[sel]) _elements[sel] = []
 						_elements[sel].push(node)
 					}
 				})
-				if (_hasAttribute(node, scopedSel)) {
+				if (util.hasAttribute(node, scopedSel)) {
 					if (!_elements[scopedSel]) _elements[scopedSel] = []
 					_elements[scopedSel].push(node)
 					return false
@@ -1202,7 +1254,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Expression = __webpack_require__(9)
 
 	function noop () {}
-
+	function templateShouldUpdate() {
+	    var that = this
+	    return util.some(this.expressions, function(exp, index) {
+	        var pv = that.cache[index]
+	        var nv = that.$exec(exp)
+	        if (!nv[0]) {
+	            return !!that.$diff(pv, nv[1])
+	        }
+	    })
+	}
 	module.exports = {
 	    'attr': {
 	        multi: true,
@@ -1236,8 +1297,59 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    },
 	    'html': {
+	        bind: function (value, expression) {
+	            // if express is not empty will set innerHTML with expression result.
+	            // Otherwise render content template then set innerHTML.
+	            var templated = this.templated = !expression
+
+	            if (templated) {
+	                var reg = Expression.exprRegexp
+	                var template = this.$el.innerHTML
+
+	                if (!template) consoler.warn('Content template should not empty of "' + conf.namespace + 'html".', this.$el)
+
+	                var veilExpr = Expression.veil(template)
+	                var expressions = this.expressions = util.map(veilExpr.match(reg), function (exp) {
+	                    return Expression.strip(exp)
+	                })
+	                var parts = veilExpr.split(reg)
+	                var cache = this.cache = new Array(expressions.length)
+	                var that =this
+	                
+	                this.render = function () {
+	                    // set value
+	                    util.forEach(expressions, function(exp, index) {
+	                        var v = that.$exec(exp)
+	                        if (!v[0]) cache[index] = v[1]
+	                    })
+	                    // get content
+	                    var frags = []
+	                    util.forEach(parts, function(item, index) {
+	                        frags.push(item)
+	                        if (index < expressions.length) {
+	                            frags.push(cache[index])
+	                        }
+	                    })
+	                    var result = Expression.unveil(frags.join(''))
+	                    that.$el.innerHTML = result
+	                }
+	            }
+
+	        },
+	        shouldUpdate: function () {
+	            if (!this.templated) return true
+	            else return templateShouldUpdate.apply(this, arguments)
+	        },
 	        update: function(nextHTML) {
-	            this.$el.innerHTML = util.isUndef(nextHTML) ? '' : nextHTML
+	            if (!this.templated) {
+	                this.$el.innerHTML = util.isUndef(nextHTML) ? '' : nextHTML
+	            } else {
+	                this.render()
+	            }
+	        },
+	        unbind: function () {
+	            this.render = noop
+	            this.expressions = this.cache = null
 	        }
 	    },
 	    'on': {
@@ -1284,7 +1396,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    },
 	    'text': {
-	        bind: function () {
+	        bind: function (opt) {
+	            var replace = opt === 'replace'
 	            var reg = Expression.exprRegexp
 	            var expr = this.expr = this.$el.innerHTML
 	            var veilExpr = Expression.veil(expr)
@@ -1295,7 +1408,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var cache = this.cache = new Array(expressions.length)
 	            var that = this
 
-	            var $textNode = this.textNode = document.createTextNode('')
+	            var $textNode 
 	            this.render = function () {
 	                // set value
 	                util.forEach(expressions, function(exp, index) {
@@ -1310,28 +1423,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	                        frags.push(cache[index])
 	                    }
 	                })
-	                // TODO, Number Mobile bug, trying to using replaceChild
-	                $textNode.nodeValue = Expression.unveil(frags.join(''))
+	                var result = Expression.unveil(frags.join(''))
+	                if (replace) {
+	                    // TODO, Number Mobile bug, trying to using replaceChild
+	                    $textNode.nodeValue = result
+	                } else {
+	                    that.$el.innerText = result
+	                }
 	            }
-
-	            var pn = this.$el.parentNode
-	            if (pn) {
-	                pn.replaceChild($textNode, this.$el)
-	            } else {
-	                return consoler.error('"' + conf.namespace + 'text" \'s parentNode is not found. {' + this.$expr + '}')
+	            if (replace) {
+	                $textNode = this.textNode = document.createTextNode('')
+	                var pn = this.$el.parentNode
+	                if (pn) {
+	                    pn.replaceChild($textNode, this.$el)
+	                } else {
+	                    return consoler.error('"' + conf.namespace + 'text" \'s parentNode is not found. {' + this.$expr + '}')
+	                }
 	            }
 	            this.render()
 	        },
-	        shouldUpdate: function () {
-	            var that = this
-	            return util.some(this.expressions, function(exp, index) {
-	                var pv = that.cache[index]
-	                var nv = that.$exec(exp)
-	                if (!nv[0]) {
-	                    return !!that.$diff(pv, nv[1])
-	                }
-	            })
-	        },
+	        shouldUpdate: templateShouldUpdate,
 	        update: function () {
 	            this.render()
 	        },
