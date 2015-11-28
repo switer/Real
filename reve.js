@@ -9,7 +9,8 @@ var consoler = require('./lib/consoler')
 var KP = require('./lib/keypath')
 var buildInDirectives = require('./lib/build-in')
 var Expression = require('./lib/expression')
-var supportQuerySelector = require('./lib/detection').supportQuerySelector
+var detection = require('./lib/detection')
+var supportQuerySelector = detection.supportQuerySelector
 var _execute = require('./lib/execute')
 var _components = {}
 var _globalDirectives = {}
@@ -38,38 +39,14 @@ function Reve(options) {
     this.$components = []
 
     var el = options.el
+    var hasReplaceOption = util.hasOwn(options, 'replace') 
+            ? options.replace
+            : false
     /**
      *  Mounted element detect
+     *  Convert selector to element
      */
-    if (el && options.template) {
-        var hasReplaceOption = _hasAttribute(el, NS + 'replace')
-            ? _getAttribute(el, NS + 'replace') == 'true'
-            : options.replace
-
-        if (hasReplaceOption && el.parentNode) {
-            var child = _fragmentWrap(options.template)
-            if (!child.children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
-            var nextEl =child.children[0]
-            var parent = el.parentNode
-            parent.replaceChild(nextEl, el)
-            _cloneArributes(el, nextEl)
-            el = nextEl
-        } else {
-            if (hasReplaceOption && !el.parentNode) {
-                consoler.warn('Invalid element with "replace" option.', el)
-            }
-            el.innerHTML = options.template
-        }
-    } else if (options.template) {
-        if (options.replace) {
-            el = _fragmentWrap(options.template).children[0]
-            !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
-        }
-        if (!el) {
-            el = document.createElement('div')
-            el.innerHTML = options.template
-        }
-    } else if (util.type(el) == 'string') {
+    if (util.type(el) == 'string') {
         var sel = el
         if (supportQuerySelector)
             el = document.querySelector(sel)
@@ -80,9 +57,57 @@ function Reve(options) {
         else if (/^#/.test(sel))
             el = document.getElementById(sel.replace(/^#/, ''))
         else el = null
+
         if (!el) return consoler.error('Can\'t not found element by selector "' + sel + '"')
-    } else if (!is.Element(el)) {
-        throw new Error('Unmatch el option')
+    }
+    
+    /**
+     * Container element must be a element or has template option
+     */
+    var isHTMLElement = is.Element(el)
+
+    if (isHTMLElement && options.template) {
+        if (hasReplaceOption) {
+            var child = _fragmentWrap(options.template)
+            var children = _fragmentChildren(child)
+            if (!children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
+            var nextEl = children[0]
+            var parent = el.parentNode
+            if (parent) {
+                parent.replaceChild(nextEl, el)
+            }
+            _cloneAttributes(el, nextEl)
+            el = nextEl
+        } else {
+            if (is.Fragment(el)){
+                consoler.warn('Container element should not a fragment node when "template" is given. Template:\n', options.template)
+            } else {
+                el.innerHTML = options.template
+            }
+        }
+    } else if (!el && options.template) {
+        if (hasReplaceOption) {
+            var frag = _fragmentWrap(options.template)
+            el = _fragmentChildren(frag)[0] 
+            !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
+        }
+        if (!el) {
+            el = document.createElement('div')
+            el.innerHTML = options.template
+        }
+    } else if (isHTMLElement) {
+        if (hasReplaceOption) {
+            var children = is.Fragment(el) ? _fragmentChildren(el) : el.children
+            var hasChildren = children && children.length
+            !hasChildren && consoler.warn('Component\'s container element should has children when "replace" option given.')
+            if (hasChildren) {
+                var oldel = el
+                el = children[0]
+                oldel.parentNode && oldel.parentNode.replaceChild(el, oldel)
+            }
+        }
+    } else {
+        throw new Error('Unvalid "el" option.')
     }
 
     this.$el = el
@@ -91,7 +116,7 @@ function Reve(options) {
     this.$refs = {}
 
     util.objEach(options.methods, function (key, m) {
-        vm.$methods[key] = vm[key] =util.bind(m, vm)
+        vm.$methods[key] = vm[key] = util.bind(m, vm)
     })
 
     _created && _created.call(vm)
@@ -154,7 +179,7 @@ Reve.prototype.$compile = function (el) {
 
         var cname = _getAttribute(tar, componentDec)
         if (!cname) {
-            return consoler.error(componentDec + ' missing component id.')
+            return consoler.error(componentDec + ' missing component id.', tar)
         }
         var Component = _components[cname]
         if (!Component) {
@@ -166,14 +191,18 @@ Reve.prototype.$compile = function (el) {
         var cmethods = _getAttribute(tar, NS + 'methods')
         var bindingOpt = _getAttribute(tar, NS + 'binding')
         var updId = _getAttribute(tar, NS + 'updateid') || ''
+        var replaceOpt = _getAttribute(tar, NS + 'replace')
         var data = {}
         var methods = {}
         var preData
 
+        replaceOpt = util.hasAttribute(tar, NS + 'replace')
+            ? replaceOpt == 'true' || replaceOpt == '1'
+            : false
         // remove 'r-component' attribute
         _removeAttribute(tar, componentDec)
 
-        util.forEach(['ref','data', 'methods', 'binding'], function (a) {
+        util.forEach(['ref','data', 'methods', 'binding', 'replace'], function (a) {
             _removeAttribute(tar, NS + a)
         })
 
@@ -189,8 +218,10 @@ Reve.prototype.$compile = function (el) {
             el: tar,
             data: data,
             parent: vm,
+            // methods will not trace changes
             methods: methods,
-            binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true
+            binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true,
+            replace: !!replaceOpt
         })
         // for component inspecting
         tar.setAttribute('data-rcomponent', cname)
@@ -228,7 +259,7 @@ Reve.prototype.$compile = function (el) {
         dname = NS + dname
         var bindingDrts = util.slice(querySelectorAll('[' + dname + ']'))
         // compile directive of container 
-        if (_hasAttribute(el, dname)) bindingDrts.unshift(el)
+        if (util.hasAttribute(el, dname)) bindingDrts.unshift(el)
 
         util.forEach(bindingDrts, function (tar) {
 
@@ -488,20 +519,28 @@ function _execLiteral (expr, vm, name) {
 function _getAttribute (el, an) {
     return el && el.getAttribute(an)
 }
-function _hasAttribute (el, an) {
-    if (el.hasAttribute) return el.hasAttribute(an)
-    return el.getAttribute(an) !== null
-}
 function _removeAttribute (el, an) {
     return el && el.removeAttribute(an)
 }
-function _cloneArributes(el, target) {
+function _cloneAttributes(el, target) {
     var attrs = util.slice(el.attributes)
+
     util.forEach(attrs, function (att) {
-        if (att.name == 'class') {
-            target.className = target.className + (target.className ? ' ' : '') + att.value
+        // In IE9 below, attributes and properties are merged...
+        var aname = att.name
+        var avalue = att.value
+        // unclone function property
+        if (util.type(avalue) == 'function') return
+        // IE9 below will get all inherited function properties
+        if (/^on/.test(aname) && avalue === 'null') return
+        if (aname == 'class') {
+            target.className = target.className + (target.className ? ' ' : '') + avalue
         } else {
-            target[att.name] = att.value
+            try {
+                target.setAttribute(aname, avalue)
+            } catch(e) {
+                // In IE, set some attribute will cause error...
+            }
         }
     })
     return target
@@ -515,6 +554,14 @@ function _fragmentWrap (html) {
         frag.appendChild(children[0])
     }
     return frag
+}
+function _fragmentChildren(frag) {
+    var children = []
+    util.forEach(frag.childNodes, function (node) {
+        // element node type
+        ;(node.nodeType === 1) && children.push(node)
+    })
+    return children
 }
 function _getElementsByClassName(search) {
     if (document.getElementsByClassName) return document.getElementsByClassName(search)

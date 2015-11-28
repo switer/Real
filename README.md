@@ -1,5 +1,8 @@
 Real
 =====
+[![travis-ci](https://travis-ci.org/switer/Real.svg?branch=master)](https://travis-ci.org/switer/Real)
+[![npm version](https://badge.fury.io/js/real.svg)](https://www.npmjs.com/package/real)
+
 It's Reve, but support IE6......[About Reve](https://github.com/scrat-team/reve).
 
 ## Downloads
@@ -10,6 +13,15 @@ It's Reve, but support IE6......[About Reve](https://github.com/scrat-team/reve)
 ## Examples
 
 - [HackerNews WebApp](https://github.com/switer/scrat-seo-reve-hackernews)
+
+## API Reference
+
+- [Direcitves](https://github.com/switer/real#directives)
+- [Class Methods](https://github.com/switer/real#class-methods)
+- [Instance Options](https://github.com/switer/real#instance-options)
+- [Instance Methods](https://github.com/switer/real#instance-methods)
+- [Instance Properties](https://github.com/switer/real#instance-properties)
+- [Custom Directive](https://github.com/switer/real#custom-directive)
 
 ## Guide
 
@@ -104,7 +116,7 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	Set inline style to element.
 	```html
-	<span r-class="{
+	<span r-style="{
 	  display    : show ? '':'none'
 	}"></span>
 	```
@@ -130,15 +142,31 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **r-html**
 
-	Update element's innerHTML by binding data.
+	Render given **template** and update target element's innerHTML. If "r-html"'s attribute value is empty, template is innerHTML of target element.
+	Otherwise, template is result of the attribute expression and will set it to target element's innerHTML.
+
+	```html
+	// $data => {title: 'real'}
+	<div r-html="{'Framework is ' + title}"></div>
+	// render to
+	<div>Framework is real</div>
+	```
+
+	Using template:
+	```html
+	// $data => {title: 'real'}
+	<div r-html>Framework is <span>{title}</span></div>
+	// render to
+	<div>Framework is <span>real</span></div>
+	```
 
 - **r-text**
 
-	`r-text` is flag directive that without attribute value but using innerHTML as expression. 
-	It replace current element and render template content.
+	Using `r-text` to render text template. if attribute value is "replace", it will replace current element with a TextNode which value is render result.
+	Otherwise, will update innerText of target element.
 	
 	```html
-	Framework: <span r-text>{name}</span> !
+	Framework: <span r-text="replace">{name}</span> !
 	
 	```
 	Assert name is 'Reve', it will be rendered to:
@@ -216,6 +244,33 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	Passing methods from parent VM to child component.
 	> Notice: work with "r-component" only.
+
+- **r-binding**
+
+	If 'r-binding' is false("false" or "0"), parent component will not update the child component when parent's data has been changed.
+	> Notice: work with "r-component" only.
+
+	```html
+	<div class="parent">
+	    <div 
+	        r-component="c-child" 
+	        r-data="{prop: parentState}" 
+	        r-binding="false"
+	        r-ref="child"
+	    ></div>
+	</div>
+	```
+	"r-binding" is disable, " c-child" will not update if parent ViewModel's parentState has been changed. If need to update child component manually, do as below:
+	```js
+	    var $child = this.$refs.child	    
+	    $child.$data.prop = this.$data.parentState
+	    this.$refs.child.$update()
+	```
+
+- **r-updateid**
+
+	If 'r-updateid' is presented, call `$update(id)` will update those matching directives or components.
+	> Notice: work with "r-component" or directives.
 
 #### Class Methods
 
@@ -325,7 +380,6 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	Compile all directives of the HTMLElement or HTML template in current ViewModel. It's useful when load something async then append to current ViewModel's DOM Tree.
 
-## Guide
 
 #### Custom Directive
 
