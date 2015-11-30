@@ -175,7 +175,15 @@ Reve.prototype.$compile = function (el) {
 
     if (supportQuerySelector) {
         // nested component
-        var grandChilds = util.slice(el.querySelectorAll(componentSel + ' ' + componentSel))
+        // Block selector cartesian product
+        var scopeSelectors = [componentDec].concat(_scopeDirectives)
+        var selectors = []
+        util.forEach(scopeSelectors, function (name1) {
+            return util.forEach(scopeSelectors, function (name2) {
+                selectors.push('[' + name1 + '] [' + name2 + ']')
+            })
+        })
+        var grandChilds = util.slice(el.querySelectorAll(selectors))
     }
     var childs = util.slice(querySelectorAll(componentSel))
 
