@@ -1,5 +1,5 @@
 /**
-* Real v1.4.9
+* Real v1.4.10
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -285,7 +285,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            replace: !!replaceOpt
 	        })
 	        // for component inspecting
-	        tar.setAttribute('data-rcomponent', cname)
+	        _setAttribute(c.$el, 'data-rcomponent', cname)
 
 	        if (refid) {
 	            this.$refs[refid] = c
@@ -582,6 +582,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	function _removeAttribute (el, an) {
 	    return el && el.removeAttribute(an)
+	}
+	function _setAttribute (el, an, av) {
+	    return el && el.setAttribute && el.setAttribute(an, av)
 	}
 	function _cloneAttributes(el, target) {
 	    var attrs = util.slice(el.attributes)
