@@ -50,4 +50,19 @@ describe('# Class Methods', function () {
         })
         assert(!!c2.$el.querySelector('.custom-component'))
     })
+    it('directive', function (){
+        Reve.directive('empty', {
+            bind: function (value, expression) {
+                assert.equal(value, 'empty-value')
+            },
+            update: function (value) {
+                this.$el.setAttribute('data-empty', value)
+            }
+        })
+        var c = new Reve({
+            el: document.createElement('div'),
+            template: '<div class="empty" r-empty="empty-value"></div>'
+        })
+        assert.equal(c.$el.querySelector('.empty').getAttribute('data-empty'), 'empty-value')
+    })
 })
