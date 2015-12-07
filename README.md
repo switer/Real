@@ -223,7 +223,8 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **r-model**
 	
-	Input element tow way binding directive, support select/input/textarea. For example:
+	Two way binding directive for select/input/textarea element. Value of directive expression is the binding property name in $data,
+	it could be a keypath, such as: **r-model="person[i].name"**. Example:
 
 	```js
 		var c = new Reve({
