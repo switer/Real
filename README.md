@@ -286,6 +286,10 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	Create a ViewModel Class and assign it with specified `id`. it's `r-component`'s value.
 
+- **Reve.directive**(id, options)
+
+	Define a directive which effect on global.
+
 
 #### Instance Options
 

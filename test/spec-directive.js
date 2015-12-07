@@ -188,7 +188,7 @@ describe('# Directive', function () {
     })
 })
 
-describe('# Directive build-in', function () {
+describe('# Build-in Directives', function () {
     it('r-attr', function () {
         var c = new Reve({
             data: {

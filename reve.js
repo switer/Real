@@ -240,7 +240,7 @@ Reve.prototype.$compile = function (el) {
             replace: !!replaceOpt
         })
         // for component inspecting
-        tar.setAttribute('data-rcomponent', cname)
+        _setAttribute(c.$el, 'data-rcomponent', cname)
 
         if (refid) {
             this.$refs[refid] = c
@@ -538,6 +538,9 @@ function _getAttribute (el, an) {
 }
 function _removeAttribute (el, an) {
     return el && el.removeAttribute(an)
+}
+function _setAttribute (el, an, av) {
+    return el && el.setAttribute && el.setAttribute(an, av)
 }
 function _cloneAttributes(el, target) {
     var attrs = util.slice(el.attributes)
