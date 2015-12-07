@@ -14,6 +14,7 @@ var supportQuerySelector = detection.supportQuerySelector
 var _execute = require('./lib/execute')
 var _components = {}
 var _globalDirectives = {}
+var _scopeDirectives = []
 var _isExpr = Expression.isExpr
 var _strip = Expression.strip
 var _did = 0
@@ -162,12 +163,27 @@ Reve.prototype.$compile = function (el) {
     // compile directives of the VM
     var _diretives = util.extend({}, buildInDirectives, _globalDirectives)
     var attSels = util.keys(_diretives)
-    var querySelectorAll = Query(el, componentDec, util.map(attSels, function (sel) {
+    var querySelectorAll = Query(
+        el, 
+        [componentDec].concat(util.map(_scopeDirectives, function (sel) {
             return conf.namespace + sel
-        }))
+        })), 
+        util.map(attSels, function (sel) {
+            return conf.namespace + sel
+        })
+    )
+
     if (supportQuerySelector) {
         // nested component
-        var grandChilds = util.slice(el.querySelectorAll(componentSel + ' ' + componentSel))
+        // Block selector cartesian product
+        var scopeSelectors = [componentDec].concat(_scopeDirectives)
+        var selectors = []
+        util.forEach(scopeSelectors, function (name1) {
+            return util.forEach(scopeSelectors, function (name2) {
+                selectors.push('[' + name1 + '] [' + name2 + ']')
+            })
+        })
+        var grandChilds = util.slice(el.querySelectorAll(selectors))
     }
     var childs = util.slice(querySelectorAll(componentSel))
 
@@ -390,6 +406,7 @@ Reve.component = function (id, options) {
     return c
 }
 Reve.directive = function (id, def) {
+    if (def.scope) _scopeDirectives.push(id) 
     _globalDirectives[id] = def
 }
 
@@ -439,6 +456,7 @@ function Directive(vm, tar, def, name, expr) {
     var bind = def.bind
     var upda = def.update
     var shouldUpdate = def.shouldUpdate
+    var afterUpdate = def.afterUpdate
     var prev
 
     // set properties
@@ -452,26 +470,30 @@ function Directive(vm, tar, def, name, expr) {
      */
     function _update() {
         if (d.$destroyed) return consoler.warn('Directive "' + name + '" already destroyed.')
+
+        var hasDiff = false
         // empty expression also can trigger update, such `r-text` directive
         if (!isExpr) {
             if (shouldUpdate && shouldUpdate.call(d)) {
                 upda && upda.call(d)
             }
-            return
-        }
+        } else {
+            var nexv = d.$exec(expr) // [error, result]
+            var r = nexv[1]
 
-        var nexv = d.$exec(expr) // [error, result]
-        var r = nexv[1]
-        if (!nexv[0] && util.diff(r, prev)) {
-            // shouldUpdate(nextValue, preValue)
-            if (shouldUpdate && !shouldUpdate.call(d, r, prev)) {
-                return false
+            if (!nexv[0] && util.diff(r, prev)) {
+                hasDiff = true
+
+                // shouldUpdate(nextValue, preValue)
+                if (!shouldUpdate || shouldUpdate.call(d, r, prev)) {
+                    var p = prev
+                    prev = r
+                    // update(nextValue, preValue)
+                    upda && upda.call(d, r, p)
+                }
             }
-            var p = prev
-            prev = r
-            // update(nextValue, preValue)
-            upda && upda.call(d, r, p)
         }
+        afterUpdate && afterUpdate.call(d, hasDiff)
     }
 
     /**

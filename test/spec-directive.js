@@ -161,6 +161,28 @@ describe('# Directive', function () {
         c.$update()
         assert(shouldUpdated, 'shouldUpdated should be called.')
     })
+    it('directive-methods:afterUpdate', function () {
+        var afterUpdated = false
+        var index = 0
+        Reve.directive('afterupdate', {
+            afterUpdate: function (diff) {
+                afterUpdated = true
+                assert(diff)
+            },
+            update: function (v) {
+                index++ && assert.equal(v, 2)
+            }
+        })
+        var c = new Reve({
+            data:  {
+                num: 1
+            },
+            template: '<span r-afterupdate="{num}"></span>'
+        })
+        c.$data.num ++
+        c.$update()
+        assert(afterUpdated, 'afterUpdate should be called.')
+    })
     it('directive-methods:unbind', function (done) {
         var unbind = false
         Reve.directive('unbind', {
@@ -317,5 +339,32 @@ describe('# Build-in Directives', function () {
             num: 1
         })
         assert.equal(c.$el.innerHTML, 'real,author: switer<span>1</span>')
+    })
+
+    function dispatchEvent(element, type) {
+        if ("createEvent" in document) {
+            var evt = document.createEvent("HTMLEvents");
+            evt.initEvent(type, false, true);
+            element.dispatchEvent(evt);
+        }
+        else
+            element.fireEvent("on" + type);
+    }
+    it('r-model', function (){
+
+        var c = new Reve({
+            data: {
+                val: ''
+            },
+            template: '<input type="text" r-model="val"/>'
+        })
+        var inp = c.$el.querySelector('input')
+        inp.value = 'real'
+        dispatchEvent(inp, 'input')
+        assert.equal(c.$data.val, 'real')
+
+        c.$set('val', 'real2')
+        assert.equal(inp.value, 'real2')
+
     })
 })
