@@ -221,6 +221,27 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	</div>
 	```
 
+- **r-model**
+	
+	Input element tow way binding directive, support select/input/textarea. For example:
+
+	```js
+		var c = new Reve({
+            data: {
+                val: ''
+            },
+            template: '<input type="text" r-model="val"/>'
+        })
+
+        // input element will update data with specified property name
+        dispatchEvent(inp, 'input', 'real')
+        assert.equal(c.$data.val, 'real')
+
+        // data changed will update DOM value
+        c.$set('val', 'real2')
+        assert.equal(inp.value, 'real2')
+	```
+
 - **r-ref**
 
 	Add a reference of the component instance to parent component instance.
@@ -233,6 +254,7 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	```js
 	app.$refs.header.$data.title // 'hi, reve'
 	```
+
 
 - **r-data**
 
@@ -271,6 +293,9 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	If 'r-updateid' is presented, call `$update(id)` will update those matching directives or components.
 	> Notice: work with "r-component" or directives.
+
+
+
 
 #### Class Methods
 
