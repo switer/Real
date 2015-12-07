@@ -161,6 +161,28 @@ describe('# Directive', function () {
         c.$update()
         assert(shouldUpdated, 'shouldUpdated should be called.')
     })
+    it('directive-methods:afterUpdate', function () {
+        var afterUpdated = false
+        var index = 0
+        Reve.directive('afterupdate', {
+            afterUpdate: function (diff) {
+                afterUpdated = true
+                assert(diff)
+            },
+            update: function (v) {
+                index++ && assert.equal(v, 2)
+            }
+        })
+        var c = new Reve({
+            data:  {
+                num: 1
+            },
+            template: '<span r-afterupdate="{num}"></span>'
+        })
+        c.$data.num ++
+        c.$update()
+        assert(afterUpdated, 'afterUpdate should be called.')
+    })
     it('directive-methods:unbind', function (done) {
         var unbind = false
         Reve.directive('unbind', {
