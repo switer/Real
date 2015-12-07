@@ -1,5 +1,5 @@
 /**
-* Real v1.4.10
+* Real v1.4.11
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -75,6 +75,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _execute = __webpack_require__(11)
 	var _components = {}
 	var _globalDirectives = {}
+	var _scopeDirectives = []
 	var _isExpr = Expression.isExpr
 	var _strip = Expression.strip
 	var _did = 0
@@ -223,12 +224,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // compile directives of the VM
 	    var _diretives = util.extend({}, buildInDirectives, _globalDirectives)
 	    var attSels = util.keys(_diretives)
-	    var querySelectorAll = Query(el, componentDec, util.map(attSels, function (sel) {
+	    var querySelectorAll = Query(
+	        el, 
+	        [componentDec].concat(util.map(_scopeDirectives, function (sel) {
 	            return conf.namespace + sel
-	        }))
+	        })), 
+	        util.map(attSels, function (sel) {
+	            return conf.namespace + sel
+	        })
+	    )
+
 	    if (supportQuerySelector) {
 	        // nested component
-	        var grandChilds = util.slice(el.querySelectorAll(componentSel + ' ' + componentSel))
+	        // Block selector cartesian product
+	        var scopeSelectors = [componentDec].concat(_scopeDirectives)
+	        var selectors = []
+	        util.forEach(scopeSelectors, function (name1) {
+	            return util.forEach(scopeSelectors, function (name2) {
+	                selectors.push('[' + name1 + '] [' + name2 + ']')
+	            })
+	        })
+	        var grandChilds = util.slice(el.querySelectorAll(selectors))
 	    }
 	    var childs = util.slice(querySelectorAll(componentSel))
 
@@ -451,6 +467,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return c
 	}
 	Reve.directive = function (id, def) {
+	    if (def.scope) _scopeDirectives.push(id) 
 	    _globalDirectives[id] = def
 	}
 
@@ -500,6 +517,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var bind = def.bind
 	    var upda = def.update
 	    var shouldUpdate = def.shouldUpdate
+	    var afterUpdate = def.afterUpdate
 	    var prev
 
 	    // set properties
@@ -513,26 +531,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	     */
 	    function _update() {
 	        if (d.$destroyed) return consoler.warn('Directive "' + name + '" already destroyed.')
+
+	        var hasDiff = false
 	        // empty expression also can trigger update, such `r-text` directive
 	        if (!isExpr) {
 	            if (shouldUpdate && shouldUpdate.call(d)) {
 	                upda && upda.call(d)
 	            }
-	            return
-	        }
+	        } else {
+	            var nexv = d.$exec(expr) // [error, result]
+	            var r = nexv[1]
 
-	        var nexv = d.$exec(expr) // [error, result]
-	        var r = nexv[1]
-	        if (!nexv[0] && util.diff(r, prev)) {
-	            // shouldUpdate(nextValue, preValue)
-	            if (shouldUpdate && !shouldUpdate.call(d, r, prev)) {
-	                return false
+	            if (!nexv[0] && util.diff(r, prev)) {
+	                hasDiff = true
+
+	                // shouldUpdate(nextValue, preValue)
+	                if (!shouldUpdate || shouldUpdate.call(d, r, prev)) {
+	                    var p = prev
+	                    prev = r
+	                    // update(nextValue, preValue)
+	                    upda && upda.call(d, r, p)
+	                }
 	            }
-	            var p = prev
-	            prev = r
-	            // update(nextValue, preValue)
-	            upda && upda.call(d, r, p)
 	        }
+	        afterUpdate && afterUpdate.call(d, hasDiff)
 	    }
 
 	    /**
@@ -1135,10 +1157,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * Query all elements that inde "sels", and which element match scoped selector will be skipped.
 	 * All selector is attribute selector
 	 * @param {Element} el container element
-	 * @param {String} scopedSel scope element's selector
+	 * @param {Array} scopedSels scope element's selector
 	 * @param {Array} seles selectors
 	 */
-	module.exports = function (el, scopedSel, sels) {
+	module.exports = function (el, scopedSels, sels) {
 		if (!supportQuerySelector) {
 			var _elements = {}
 			util.walk(el, function (node) {
@@ -1149,15 +1171,19 @@ return /******/ (function(modules) { // webpackBootstrap
 						_elements[sel].push(node)
 					}
 				})
-				if (util.hasAttribute(node, scopedSel)) {
-					if (!_elements[scopedSel]) _elements[scopedSel] = []
-					_elements[scopedSel].push(node)
-					return false
-				}
+				// check scope attributes
+				var isBlock
+				util.forEach(scopedSels, function (scopedSel) {
+					if (util.hasAttribute(node, scopedSel)) {
+						isBlock = true
+						if (!_elements[scopedSel]) _elements[scopedSel] = []
+						_elements[scopedSel].push(node)
+					}
+				})
+				if (isBlock) return false
 				return true
 			})
 		}
-
 
 		return function (selector) {
 			if (supportQuerySelector) return el.querySelectorAll(selector)
@@ -1204,6 +1230,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return '.' + k.replace(/^["']|["']$/g, '')
 	    })
 	}
+	function _isNon (o) {
+	    return util.isUndef(o) || o === null
+	}
 	/**
 	 *  set value to object by keypath
 	 */
@@ -1234,10 +1263,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    throw new Error('Can\' not access "' + errorInfo[0] + '" of "'+ errorInfo[1] + '" when set value of "' + keypath + '"')
 	}
+	function _get(obj, keypath) {
+	    var parts = _keyPathNormalize(keypath).split('.')
+	    var dest = obj
 
+	    util.some(parts, function(key) {
+	        if (_isNon(dest)) {
+	            dest = void(0)
+	            return true
+	        }
+	        dest = dest[key]
+	    })
+	    return dest
+	}
 	module.exports = {
 	    normalize: _keyPathNormalize,
-	    set: _set
+	    set: _set,
+	    get: _get
 	}
 
 /***/ },
@@ -1255,6 +1297,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var util = __webpack_require__(2)
 	var consoler = __webpack_require__(6)
 	var Expression = __webpack_require__(9)
+	var keypath = __webpack_require__(7)
 
 	function noop () {}
 	function templateShouldUpdate() {
@@ -1452,6 +1495,82 @@ return /******/ (function(modules) { // webpackBootstrap
 	        unbind: function () {
 	            this.render = noop
 	            this.expressions = this.cache = this.textNode = null
+	        }
+	    },
+	    model: {
+	        bind: function (prop) {
+	            var tagName = this.$el.tagName
+	            var type = tagName.toLowerCase()
+	            var $el = this._$el = $(this.$el)
+	            
+	            type = type == 'input' ? $el.attr('type') || 'text' : type
+
+	            switch (type) {
+	                case 'tel':
+	                case 'url':
+	                case 'text':
+	                case 'search':
+	                case 'password':
+	                case 'textarea':
+	                    this.evtType = 'input'
+	                    break
+	                
+	                case 'date':
+	                case 'week':
+	                case 'time':
+	                case 'month':
+	                case 'datetime':
+	                case 'datetime-local':
+	                case 'color':
+	                case 'range':
+	                case 'number':
+	                case 'select':
+	                case 'checkbox':
+	                    this.evtType = 'change'
+	                    break
+	                default:
+	                    consoler.warn('"' + conf.namespace + 'model" only support input,textarea,select')
+	                    return
+	            }
+
+	            var that = this
+	            var vm = this.$vm
+	            var vType = this.vType = type == 'checkbox' ? 'checked':'value'
+	            this._prop = prop
+	            /**
+	             *  DOM input 2 state
+	             */
+	            this._requestChange = function () {
+	                if (!that._prop) return
+	                vm.$set(that._prop, that.$el[vType])
+	            }
+	            /**
+	             *  State 2 DOM input
+	             */
+	            this._update = function () {
+	                if (!that._prop) return
+
+	                var pv = that.$el[vType]
+	                var nv = keypath.get(vm.$data, that._prop)
+	                if (pv !== nv) {
+	                    that.$el[vType] = nv
+	                }
+	            }
+	            $(this.$el).on(this.evtType, this._requestChange)
+
+	        },
+	        update: function (prop) {
+	            if (!prop) consoler.error('Invalid property key "' + prop + '"')
+	            else {
+	                this._prop = prop
+	            }
+	        },
+	        afterUpdate: function () {
+	            // to compare state value and DOM value, update DOM value if not equal 
+	            this._update()
+	        },
+	        unbind: function () {
+	            this._requestChange = this._update = noop
 	        }
 	    }
 	}

@@ -493,7 +493,7 @@ function Directive(vm, tar, def, name, expr) {
                 }
             }
         }
-        afterUpdate && afterUpdate(hasDiff)
+        afterUpdate && afterUpdate.call(d, hasDiff)
     }
 
     /**

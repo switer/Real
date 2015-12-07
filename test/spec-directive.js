@@ -340,4 +340,31 @@ describe('# Build-in Directives', function () {
         })
         assert.equal(c.$el.innerHTML, 'real,author: switer<span>1</span>')
     })
+
+    function dispatchEvent(element, type) {
+        if ("createEvent" in document) {
+            var evt = document.createEvent("HTMLEvents");
+            evt.initEvent(type, false, true);
+            element.dispatchEvent(evt);
+        }
+        else
+            element.fireEvent("on" + type);
+    }
+    it('r-model', function (){
+
+        var c = new Reve({
+            data: {
+                val: ''
+            },
+            template: '<input type="text" r-model="val"/>'
+        })
+        var inp = c.$el.querySelector('input')
+        inp.value = 'real'
+        dispatchEvent(inp, 'input')
+        assert.equal(c.$data.val, 'real')
+
+        c.$set('val', 'real2')
+        assert.equal(inp.value, 'real2')
+
+    })
 })
