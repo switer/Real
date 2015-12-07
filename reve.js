@@ -456,6 +456,7 @@ function Directive(vm, tar, def, name, expr) {
     var bind = def.bind
     var upda = def.update
     var shouldUpdate = def.shouldUpdate
+    var afterUpdate = def.afterUpdate
     var prev
 
     // set properties
@@ -469,26 +470,30 @@ function Directive(vm, tar, def, name, expr) {
      */
     function _update() {
         if (d.$destroyed) return consoler.warn('Directive "' + name + '" already destroyed.')
+
+        var hasDiff = false
         // empty expression also can trigger update, such `r-text` directive
         if (!isExpr) {
             if (shouldUpdate && shouldUpdate.call(d)) {
                 upda && upda.call(d)
             }
-            return
-        }
+        } else {
+            var nexv = d.$exec(expr) // [error, result]
+            var r = nexv[1]
 
-        var nexv = d.$exec(expr) // [error, result]
-        var r = nexv[1]
-        if (!nexv[0] && util.diff(r, prev)) {
-            // shouldUpdate(nextValue, preValue)
-            if (shouldUpdate && !shouldUpdate.call(d, r, prev)) {
-                return false
+            if (!nexv[0] && util.diff(r, prev)) {
+                hasDiff = true
+
+                // shouldUpdate(nextValue, preValue)
+                if (!shouldUpdate || shouldUpdate.call(d, r, prev)) {
+                    var p = prev
+                    prev = r
+                    // update(nextValue, preValue)
+                    upda && upda.call(d, r, p)
+                }
             }
-            var p = prev
-            prev = r
-            // update(nextValue, preValue)
-            upda && upda.call(d, r, p)
         }
+        afterUpdate && afterUpdate(hasDiff)
     }
 
     /**
