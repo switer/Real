@@ -1,5 +1,14 @@
 'use strict';
 
+global.document = {
+    createElement: function () {
+        return {
+            getElementsByTagName: function () {
+                return []
+            }
+        }
+    }
+}
 var assert = require('assert')
 var equal = assert.equal
 var util = require('../lib/util')
