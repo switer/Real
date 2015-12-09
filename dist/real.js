@@ -1,5 +1,5 @@
 /**
-* Real v1.4.14
+* Real v1.4.15
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -935,10 +935,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    return ks
 	}
+	var undef = void(0)
 	var escapeRex = new RegExp(_keys(escapeCharMap).join('|'), 'g')
 	var DEFAULT_DIFF_LEVEL = 5
 	var util = {
 	    type: function(obj) {
+	        if (obj === null) return 'null'
+	        else if (obj === undef) return 'undefined' 
 	        return /\[object (\w+)\]/.exec(Object.prototype.toString.call(obj))[1].toLowerCase()
 	    },
 	    keys: function (obj) {
