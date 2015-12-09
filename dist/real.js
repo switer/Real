@@ -1,5 +1,5 @@
 /**
-* Real v1.4.13
+* Real v1.4.14
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -63,14 +63,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var $ = __webpack_require__(1)
 	var util = __webpack_require__(2)
-	var conf = __webpack_require__(4)
-	var is = __webpack_require__(3)
-	var Query = __webpack_require__(5)
-	var consoler = __webpack_require__(6)
-	var KP = __webpack_require__(7)
-	var buildInDirectives = __webpack_require__(8)
-	var Expression = __webpack_require__(9)
-	var detection = __webpack_require__(10)
+	var conf = __webpack_require__(5)
+	var is = __webpack_require__(4)
+	var Query = __webpack_require__(6)
+	var consoler = __webpack_require__(7)
+	var KP = __webpack_require__(8)
+	var buildInDirectives = __webpack_require__(9)
+	var Expression = __webpack_require__(10)
+	var detection = __webpack_require__(3)
 	var supportQuerySelector = detection.supportQuerySelector
 	var _execute = __webpack_require__(11)
 	var _components = {}
@@ -695,7 +695,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 	var util = __webpack_require__(2)
-	var is = __webpack_require__(3)
+	var is = __webpack_require__(4)
 
 	function Selector(sel) {
 	    if (util.type(sel) == 'string') {
@@ -911,9 +911,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 2 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
+
+	var detection = __webpack_require__(3)
 
 	function hasOwn (obj, prop) {
 	    return obj && obj.hasOwnProperty(prop)
@@ -950,13 +952,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    bind: function (fn, ctx) {
 	        if (fn.bind) return fn.bind(ctx)
-	        function bfn () {
-	            fn.apply(ctx, arguments)
+	        return function () {
+	            return fn.apply(ctx, arguments)
 	        }
-	        bfn.toString = function () {
-	            return fn.toString()
-	        }
-	        return bfn
 	    },
 	    extend: function(obj) {
 	        if (this.type(obj) != 'object') return obj;
@@ -1106,6 +1104,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (el.hasAttribute) return el.hasAttribute(an)
 	        else if (!el.getAttribute) return false
 	        return el.getAttribute(an) !== null
+	    },
+	    split: function (str, sep) {
+	        if (detection.ie && detection.ie <= 8) {
+	            // IE8 below, convert regexp sep to string sep
+	            // http://stackoverflow.com/questions/11144628/ie8-parses-this-simple-regex-differently-from-all-other-browsers
+	            var placeholder = '[\uFFF3|\uFFF4]'
+	            str = str.replace(sep, function () {
+	                return placeholder
+	            })
+	            return str.split(placeholder)
+	        } else {
+	            return str.split(sep)
+	        }
 	    }
 	}
 
@@ -1113,6 +1124,33 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 3 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	function detect() {
+	    var undef,
+	        v = 3,
+	        div = document.createElement('div'),
+	        all = div.getElementsByTagName('i');
+
+	    while (
+	        div.innerHTML = '<!--[if gt IE ' + (++v) + ']><i></i><![endif]-->',
+	        all[0]
+	    );
+
+	    return v > 4 ? v : undef;
+	}
+
+	var ie = detect()
+	module.exports = {
+		ie: ie,
+		supportQuerySelector: document.querySelector && document.querySelectorAll
+	}
+
+
+/***/ },
+/* 4 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1133,7 +1171,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports) {
 
 	var conf = {
@@ -1144,13 +1182,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = conf
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var util = __webpack_require__(2)
-	var is = __webpack_require__(3)
+	var is = __webpack_require__(4)
 	var supportQuerySelector = document.querySelector && document.querySelectorAll
 
 	/**
@@ -1193,7 +1231,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1229,7 +1267,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1297,7 +1335,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -1307,11 +1345,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var $ = __webpack_require__(1)
-	var conf = __webpack_require__(4)
+	var conf = __webpack_require__(5)
 	var util = __webpack_require__(2)
-	var consoler = __webpack_require__(6)
-	var Expression = __webpack_require__(9)
-	var keypath = __webpack_require__(7)
+	var consoler = __webpack_require__(7)
+	var Expression = __webpack_require__(10)
+	var keypath = __webpack_require__(8)
 
 	function noop () {}
 	function templateShouldUpdate() {
@@ -1372,7 +1410,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                var expressions = this.expressions = util.map(veilExpr.match(reg), function (exp) {
 	                    return Expression.strip(exp)
 	                })
-	                var parts = veilExpr.split(reg)
+	                var parts = util.split(veilExpr, reg)
 	                var cache = this.cache = new Array(expressions.length)
 	                var that =this
 	                
@@ -1464,7 +1502,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var expressions = this.expressions = util.map(veilExpr.match(reg), function (exp) {
 	                return Expression.strip(exp)
 	            })
-	            var parts = veilExpr.split(reg)
+	            var parts = util.split(veilExpr, reg)
 	            var cache = this.cache = new Array(expressions.length)
 	            var that = this
 
@@ -1591,7 +1629,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1621,32 +1659,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 10 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	function detect() {
-	    var undef
-	    var v = 3
-	    var div = document.createElement('div')
-	    var all = div.getElementsByTagName('i')
-
-	    while (
-	        div.innerHTML = '<!--[if gt IE ' + (++v) + ']><i></i><![endif]-->',
-	        all[0]
-	    )
-	    return v > 4 ? v : undef;
-	}
-
-	var ie = detect()
-	module.exports = {
-		ie: ie,
-		supportQuerySelector: document.querySelector && document.querySelectorAll
-	}
-
-
-/***/ },
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -1672,7 +1684,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            ? __$args__[1]
 	            : '{' + __$args__[1] + '}') // expr
 	        
-	        var $consoler = __webpack_require__(6)
+	        var $consoler = __webpack_require__(7)
 	        // __$args__[2] // label
 	        // __$args__[3] // target
 	        switch (e.name) {
