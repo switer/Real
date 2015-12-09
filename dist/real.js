@@ -1,5 +1,5 @@
 /**
-* Real v1.4.12
+* Real v1.4.13
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1037,7 +1037,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var n
 
 	        if (_t == 'array') {
-	            n = obj.map(function (item) {
+	            n = util.map(obj, function (item) {
 	                return that.immutable(item)
 	            })
 	        } else if (_t == 'object') {
