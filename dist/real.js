@@ -1,5 +1,5 @@
 /**
-* Real v1.4.11
+* Real v1.4.12
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1199,18 +1199,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var co = console
+	function log(type, args) {
+		var printer = co[type]
+
+		if (printer && typeof printer.apply == 'function') {
+			printer.apply(co, args)
+		} else {
+			var logs = []
+			logs.push('[' + type.toUpperCase() + ']')
+			for (var i = 0; i < args.length; i ++) {
+				logs.push(args[i])
+			}
+			co.log(logs.join(' '))
+		}
+	}
 	module.exports = {
 		log: function () {
-			co.log && co.log.apply(co, arguments)
+			log('log', arguments)
 		},
 		error: function () {
-			(co.error || this.log).apply(co, arguments)
+			log('error', arguments)
 		},
 		warn: function () {
-			(co.warn || this.log).apply(co, arguments)
+			log('warn', arguments)
 		},
 		info: function () {
-			(co.info || this.log).apply(co, arguments)
+			log('info', arguments)
 		}
 	}
 
