@@ -25,4 +25,24 @@ describe('# Instance Methods', function () {
         con.appendChild(el)
         assert.equal(con.innerText, 'real')
     })
+    it('$root', function () {
+
+        var c = new Reve({
+            template: '<div class="con"></div>',
+            data: {
+                name: 'real'
+            }
+        })
+        var cc = new Reve({
+            el: document.createElement('img')
+        })
+        var ccc = new Reve({
+            el: document.createElement('img')
+        })
+
+        cc.$appendTo(c)
+        ccc.$appendTo(cc)
+
+        assert.equal(ccc.$root(), c)
+    })
 })
