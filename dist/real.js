@@ -1,5 +1,5 @@
 /**
-* Real v1.4.15
+* Real v1.4.16
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1239,10 +1239,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
-	var co = console
+	var co = window.console
 	function log(type, args) {
-		var printer = co[type]
+		// IE8 below console could be not defined, if Devtool panel is not opened.
+		if (!co) return
 
+		var printer = co[type]
 		if (printer && typeof printer.apply == 'function') {
 			printer.apply(co, args)
 		} else {
