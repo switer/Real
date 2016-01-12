@@ -1,5 +1,5 @@
 /**
-* Real v1.4.16
+* Real v1.4.17
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -129,7 +129,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var isHTMLElement = is.Element(el)
 
 	    if (isHTMLElement && options.template) {
-	        if (hasReplaceOption) {
+	        if (util.hasAttribute(el, 'r-notemplate')) {
+	            // skip render template
+	        } else if (hasReplaceOption) {
 	            var child = _fragmentWrap(options.template)
 	            var children = _fragmentChildren(child)
 	            if (!children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)

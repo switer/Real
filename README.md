@@ -295,6 +295,11 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	If 'r-updateid' is presented, call `$update(id)` will update those matching directives or components.
 	> Notice: work with "r-component" or directives.
 
+- **r-notemplate**
+
+	If 'r-updateid' is presented, will not render component's template option, and render innerHTML only.
+	> Notice: work with "r-component".Using in server-side render case.
+
 
 
 
