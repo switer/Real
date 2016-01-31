@@ -1,4 +1,25 @@
 describe('# Component', function () {
+    it('Nested components', function () {
+        var call = 0
+        Reve.component('outer', {
+            ready: function () {
+                call ++
+                assert.equal(this.$data.title , 'real:outer')
+            }
+        })
+        Reve.component('inner', {
+            ready: function () {
+                call ++
+                assert.equal(this.$data.title , 'real:outer:inner')
+            }
+        })
+        var c = new Reve({
+            data: {title: 'real'},
+            template: '<div r-component="outer" r-data="{title: title + \':outer\'}">' + 
+                        '<div r-component="inner" r-data="{title: title + \':inner\'}"></div></div>'
+        })
+        assert.equal(call, 2)
+    })
     it('component-directives:r-data', function () {
         Reve.component('header', {
             template: '<div class="c-header"><span r-text="replace">{title}</span></div>'
