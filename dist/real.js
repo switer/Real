@@ -1,5 +1,5 @@
 /**
-* Real v1.4.17
+* Real v1.5.0
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1034,6 +1034,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        }
 	    },
+	    domRange: function (tar, before, after) {
+	        var children = []
+	        var nodes = tar.childNodes
+	        var start = false
+	        for (var i = 0; i < nodes.length; i++) {
+	            var item = nodes[i]
+	            if (item === after) break
+	            else if (start) {
+	                children.push(item)
+	            } else if (item == before) {
+	                start = true
+	            }
+	        }
+	        return children
+	    },
 	    immutable: function (obj) {
 	        var that = this
 	        var _t = this.type(obj)
@@ -1359,10 +1374,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var keypath = __webpack_require__(8)
 
 	function noop () {}
-	function templateShouldUpdate() {
+	function _templateShouldUpdate() {
 	    var that = this
-	    return util.some(this.expressions, function(exp, index) {
-	        var pv = that.cache[index]
+	    return util.some(this._expressions, function(exp, index) {
+	        var pv = that._caches[index]
 	        var nv = that.$exec(exp)
 	        if (!nv[0]) {
 	            return !!that.$diff(pv, nv[1])
@@ -1402,59 +1417,93 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    },
 	    'html': {
-	        bind: function (value, expression) {
+	        bind: function (opt) {
 	            // if express is not empty will set innerHTML with expression result.
 	            // Otherwise render content template then set innerHTML.
-	            var templated = this.templated = !expression
+	            var reg = Expression.exprRegexp
+	            var template = this.$el.innerHTML
 
-	            if (templated) {
-	                var reg = Expression.exprRegexp
-	                var template = this.$el.innerHTML
+	            if (!template) {
+	                template = ''
+	                consoler.warn('Content template should not empty of "' + conf.namespace + 'html".', this.$el)
+	            }
 
-	                if (!template) consoler.warn('Content template should not empty of "' + conf.namespace + 'html".', this.$el)
+	            var veilExpr = Expression.veil(template)
 
-	                var veilExpr = Expression.veil(template)
-	                var expressions = this.expressions = util.map(veilExpr.match(reg), function (exp) {
-	                    return Expression.strip(exp)
+	            var expressions = this._expressions = util.map(veilExpr.match(reg), function (exp) {
+	                return Expression.strip(exp)
+	            })
+	            var parts = util.split(veilExpr, reg)
+	            var caches = this._caches = new Array(expressions.length)
+	            var that = this
+
+	            /**
+	             * Computed all expression and get concated result
+	             */
+	            function compute () {
+	                // set value
+	                util.forEach(expressions, function(exp, index) {
+	                    var v = that.$exec(exp)
+	                    if (!v[0]) caches[index] = v[1]
 	                })
-	                var parts = util.split(veilExpr, reg)
-	                var cache = this.cache = new Array(expressions.length)
-	                var that =this
-	                
-	                this.render = function () {
-	                    // set value
-	                    util.forEach(expressions, function(exp, index) {
-	                        var v = that.$exec(exp)
-	                        if (!v[0]) cache[index] = v[1]
+	                // get content
+	                var frags = []
+	                util.forEach(parts, function(item, index) {
+	                    frags.push(item)
+	                    if (index < expressions.length) {
+	                        frags.push(caches[index])
+	                    }
+	                })
+	                return Expression.unveil(frags.join(''))
+	            }
+
+	            if (opt == 'inner') {
+	                this._render = function () {
+	                    this.$el.innerHTML = compute()
+	                }
+	            } else {
+	                var parent = this.$el.parentNode
+	                var tmpCon = document.createElement('div')
+	                var fragCon = fragCon = document.createDocumentFragment()
+	                var before = document.createComment('<' + conf.namespace + 'html>' + template)
+	                var after = document.createComment('</' + conf.namespace + 'html>')
+
+	                fragCon.appendChild(before)
+	                fragCon.appendChild(after)
+	                parent.replaceChild(fragCon, this.$el)
+
+	                this._render = function () {
+	                    var result = compute()
+	                    var childRange = util.domRange(parent, before, after)
+
+	                    /**
+	                     * Convert html to nodes
+	                     */
+	                    tmpCon.innerHTML = result
+	                    util.forEach(tmpCon.childNodes, function (node) {
+	                        fragCon.appendChild(node)
 	                    })
-	                    // get content
-	                    var frags = []
-	                    util.forEach(parts, function(item, index) {
-	                        frags.push(item)
-	                        if (index < expressions.length) {
-	                            frags.push(cache[index])
-	                        }
+	                    /**
+	                     * Remve last children
+	                     */
+	                    util.forEach(childRange, function (child) {
+	                        parent.removeChild(child)
 	                    })
-	                    var result = Expression.unveil(frags.join(''))
-	                    that.$el.innerHTML = result
+	                    parent.insertBefore(fragCon, after)
 	                }
 	            }
 
+
 	        },
 	        shouldUpdate: function () {
-	            if (!this.templated) return true
-	            else return templateShouldUpdate.apply(this, arguments)
+	            return _templateShouldUpdate.apply(this, arguments)
 	        },
-	        update: function(nextHTML) {
-	            if (!this.templated) {
-	                this.$el.innerHTML = util.isUndef(nextHTML) ? '' : nextHTML
-	            } else {
-	                this.render()
-	            }
+	        update: function() {
+	            this._render()
 	        },
 	        unbind: function () {
-	            this.render = noop
-	            this.expressions = this.cache = null
+	            this._render = noop
+	            this._expressions = this._caches = null
 	        }
 	    },
 	    'on': {
@@ -1502,15 +1551,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    'text': {
 	        bind: function (opt) {
-	            var replace = opt === 'replace'
+	            var replace = opt != 'inner'
 	            var reg = Expression.exprRegexp
 	            var expr = this.expr = this.$el.innerHTML
 	            var veilExpr = Expression.veil(expr)
-	            var expressions = this.expressions = util.map(veilExpr.match(reg), function (exp) {
+	            var expressions = this._expressions = util.map(veilExpr.match(reg), function (exp) {
 	                return Expression.strip(exp)
 	            })
 	            var parts = util.split(veilExpr, reg)
-	            var cache = this.cache = new Array(expressions.length)
+	            var caches = this._caches = new Array(expressions.length)
 	            var that = this
 
 	            var $textNode 
@@ -1518,14 +1567,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	                // set value
 	                util.forEach(expressions, function(exp, index) {
 	                    var v = that.$exec(exp)
-	                    if (!v[0]) cache[index] = v[1]
+	                    if (!v[0]) caches[index] = v[1]
 	                })
 	                // get content
 	                var frags = []
 	                util.forEach(parts, function(item, index) {
 	                    frags.push(item)
 	                    if (index < expressions.length) {
-	                        frags.push(cache[index])
+	                        frags.push(caches[index])
 	                    }
 	                })
 	                var result = Expression.unveil(frags.join(''))
@@ -1547,13 +1596,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	            this.render()
 	        },
-	        shouldUpdate: templateShouldUpdate,
+	        shouldUpdate: _templateShouldUpdate,
 	        update: function () {
 	            this.render()
 	        },
 	        unbind: function () {
 	            this.render = noop
-	            this.expressions = this.cache = this.textNode = null
+	            this._expressions = this._caches = this.textNode = null
 	        }
 	    },
 	    model: {
