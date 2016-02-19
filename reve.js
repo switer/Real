@@ -180,20 +180,21 @@ Reve.prototype.$compile = function (el) {
         // Block selector cartesian product
         var scopeSelectors = [componentDec].concat(_scopeDirectives)
         var selectors = []
+        // Selector's cartesian product
         util.forEach(scopeSelectors, function (name1) {
             return util.forEach(scopeSelectors, function (name2) {
                 selectors.push('[' + name1 + '] [' + name2 + ']')
             })
         })
-        var grandChilds = util.slice(el.querySelectorAll(selectors))
+        var scopedChilds = util.slice(el.querySelectorAll(selectors))
     }
-    var childs = util.slice(querySelectorAll(componentSel))
+    var scopedElements = util.slice(querySelectorAll([componentSel]))
 
     // compile components
-    util.forEach(childs, util.bind(function (tar) {
+    util.forEach(scopedElements, util.bind(function (tar) {
         // prevent cross level component parse and repeat parse
         if (tar._component) return
-        if (supportQuerySelector && ~util.indexOf(grandChilds, tar)) return
+        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
 
         var cname = _getAttribute(tar, componentDec)
         if (!cname) {
@@ -275,7 +276,7 @@ Reve.prototype.$compile = function (el) {
 
         var def = _diretives[dname]
         dname = NS + dname
-        var bindingDrts = util.slice(querySelectorAll('[' + dname + ']'))
+        var bindingDrts = util.slice(querySelectorAll(['[' + dname + ']']))
         // compile directive of container 
         if (util.hasAttribute(el, dname)) bindingDrts.unshift(el)
 
@@ -451,6 +452,7 @@ function Directive(vm, tar, def, name, expr) {
     d.$rawExpr = rawExpr
     d.$name = name
     d.$destroyed = false
+    d.$scoped = !!def.scoped
     // updateId is used to update directive/component which DOM match the "updateid"
     d.$updateId = _getAttribute(tar, conf.namespace + 'updateid') || ''
     this._$unbind = def.unbind
