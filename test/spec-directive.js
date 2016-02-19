@@ -245,41 +245,58 @@ describe('# Build-in Directives', function () {
             data: {
                 html: ''
             },
-            template: '<div r-html="{html}"></div>'
+            template: '<div r-html>{html}</div>'
         })
-        var tar = c.$el.querySelector('div')
-        assert.equal(tar.innerHTML, '')
+        var EMPTY = '<!--<r-html>{html}--><!--</r-html>-->'
+        var tar = c.$el
+        assert.equal(tar.innerHTML, EMPTY)
         c.$set('html', '<div class="name"></div>')
         assert(!!tar.querySelector('.name'))
         c.$set('html', undefined)
-        assert.equal(tar.innerHTML, '', '"undefined" value should equal to empty string')
+        assert.equal(tar.innerHTML, EMPTY, '"undefined" value should equal to empty string')
         c.$set('html', null)
-        assert.equal(tar.innerHTML, '', 'Set innerHTML with "null" should be empty string')
+        assert.equal(tar.innerHTML, EMPTY, 'Set innerHTML with "null" should be empty string')
         c.$set('html', 0)
-        assert.equal(tar.innerHTML, '0')
+        assert.equal(tar.innerHTML, '<!--<r-html>{html}-->0<!--</r-html>-->')
         c.$set('html', false)
-        assert.equal(tar.innerHTML, 'false')
+        assert.equal(tar.innerHTML, '<!--<r-html>{html}-->false<!--</r-html>-->')
     })
-    it('r-html:template', function () {
+    it('r-html:multiple', function () {
         var c = new Reve({
             data: {
-                html: ''
+                name: '<span>real</span>',
+                sex: '<div>male</div>'
             },
-            template: '<div r-html="">Render to:<span>{html}</span></div>'
+            template: '<div r-html>{name}</div><div r-html>{sex}</div>'
         })
-        var tar = c.$el.querySelector('div')
-        assert.equal(tar.innerHTML, 'Render to:<span></span>')
-        c.$set('html', '<div class="name"></div>')
-        assert(!!tar.querySelector('span .name'))
-        c.$set('html', undefined)
-        assert.equal(tar.innerHTML, 'Render to:<span></span>')
-        c.$set('html', null)
-        assert.equal(tar.innerHTML, 'Render to:<span></span>')
-        c.$set('html', 0)
-        assert.equal(tar.innerHTML, 'Render to:<span>0</span>')
-        c.$set('html', false)
-        assert.equal(tar.innerHTML, 'Render to:<span>false</span>')
+        var tar = c.$el
+        assert.equal(tar.innerHTML, '<!--<r-html>{name}--><span>real</span><!--</r-html>--><!--<r-html>{sex}--><div>male</div><!--</r-html>-->')
+        c.$set({
+            name: 'real',
+            sex: 'male'
+        })
+        assert.equal(tar.innerHTML, '<!--<r-html>{name}-->real<!--</r-html>--><!--<r-html>{sex}-->male<!--</r-html>-->')
     })
+    // it('r-html:template', function () {
+    //     var c = new Reve({
+    //         data: {
+    //             html: ''
+    //         },
+    //         template: '<div r-html="">Render to:<span>{html}</span></div>'
+    //     })
+    //     var tar = c.$el.querySelector('div')
+    //     assert.equal(tar.innerHTML, 'Render to:<span></span>')
+    //     c.$set('html', '<div class="name"></div>')
+    //     assert(!!tar.querySelector('span .name'))
+    //     c.$set('html', undefined)
+    //     assert.equal(tar.innerHTML, 'Render to:<span></span>')
+    //     c.$set('html', null)
+    //     assert.equal(tar.innerHTML, 'Render to:<span></span>')
+    //     c.$set('html', 0)
+    //     assert.equal(tar.innerHTML, 'Render to:<span>0</span>')
+    //     c.$set('html', false)
+    //     assert.equal(tar.innerHTML, 'Render to:<span>false</span>')
+    // })
     it('r-on', function (done) {
         var c = new Reve({
             data: {},
