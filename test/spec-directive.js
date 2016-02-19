@@ -330,15 +330,32 @@ describe('# Build-in Directives', function () {
                 author: '',
                 num: 0
             },
-            template: '<span r-text="replace">{name},author: {author}</span><span r-text>{num}</span>'
+            template: '<span r-text>{name},author: {author}</span><span r-text>{num}</span>'
         })
-        assert.equal(c.$el.innerHTML, ',author: <span>0</span>')
+        assert.equal(c.$el.innerHTML, ',author: 0')
         c.$set({
             name: 'real',
             author: 'switer',
             num: 1
         })
-        assert.equal(c.$el.innerHTML, 'real,author: switer<span>1</span>')
+        assert.equal(c.$el.innerHTML, 'real,author: switer1')
+    })
+    it('r-text:inner', function () {
+        var c = new Reve({
+            data: {
+                name: '',
+                author: '',
+                num: 0
+            },
+            template: '<span r-text="inner">{name},author: {author}</span><span r-text>{num}</span>'
+        })
+        assert.equal(c.$el.innerHTML, '<span>,author: </span>0')
+        c.$set({
+            name: 'real',
+            author: 'switer',
+            num: 1
+        })
+        assert.equal(c.$el.innerHTML, '<span>real,author: switer</span>1')
     })
 
     function dispatchEvent(element, type) {
