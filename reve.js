@@ -8,13 +8,14 @@ var Query = require('./lib/query')
 var consoler = require('./lib/consoler')
 var KP = require('./lib/keypath')
 var buildInDirectives = require('./lib/build-in')
+var buildInScopedDirectives = require('./lib/scoped-directives')
 var Expression = require('./lib/expression')
 var detection = require('./lib/detection')
 var supportQuerySelector = detection.supportQuerySelector
 var _execute = require('./lib/execute')
 var _components = {}
-var _globalDirectives = {}
-var _scopeDirectives = []
+var _externalDirectives = {}
+var _scopedDirectives = []
 var _isExpr = Expression.isExpr
 var _strip = Expression.strip
 var _did = 0
@@ -160,38 +161,45 @@ Reve.prototype.$compile = function (el) {
     var $directives = this.$directives
     var $components = this.$components
     var componentDec = NS + 'component'
-    var componentSel = '[' + componentDec + ']'
     var vm = this
     // compile directives of the VM
-    var _diretives = util.extend({}, buildInDirectives, _globalDirectives)
+    var _diretives = util.extend({}, buildInDirectives, buildInScopedDirectives, _externalDirectives)
     var attSels = util.keys(_diretives)
+    var scopedDec = util.keys(buildInScopedDirectives).concat(_scopedDirectives)
+    var allScopedDec = [componentDec].concat(util.map(scopedDec, function (name) {
+        return conf.namespace + name
+    }))
     var querySelectorAll = Query(
         el, 
-        [componentDec].concat(util.map(_scopeDirectives, function (sel) {
-            return conf.namespace + sel
-        })), 
-        util.map(attSels, function (sel) {
-            return conf.namespace + sel
+        allScopedDec, 
+        // normal attribute directives
+        util.map(attSels, function (name) {
+            return conf.namespace + name
         })
     )
 
     if (supportQuerySelector) {
         // nested component
         // Block selector cartesian product
-        var scopeSelectors = [componentDec].concat(_scopeDirectives)
+        var scopeSelectors = allScopedDec
         var selectors = []
         // Selector's cartesian product
-        util.forEach(scopeSelectors, function (name1) {
-            return util.forEach(scopeSelectors, function (name2) {
-                selectors.push('[' + name1 + '] [' + name2 + ']')
+        util.forEach(scopeSelectors, function (dec1) {
+            return util.forEach(scopeSelectors, function (dec2) {
+                selectors.push('[' + dec1 + '] [' + dec2 + ']')
             })
         })
         var scopedChilds = util.slice(el.querySelectorAll(selectors))
     }
-    var scopedElements = util.slice(querySelectorAll([componentSel]))
+    var scopedElements = querySelectorAll(util.map(scopedDec, function (name) {
+        return '[' + conf.namespace + name + ']'
+    }))
+    var componentElements = querySelectorAll(['[' + componentDec + ']'])
 
-    // compile components
-    util.forEach(scopedElements, util.bind(function (tar) {
+    /**
+     * compile components
+     */
+    util.forEach(componentElements, util.bind(function (tar) {
         // prevent cross level component parse and repeat parse
         if (tar._component) return
         if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
@@ -269,19 +277,51 @@ Reve.prototype.$compile = function (el) {
             }
         }
         $components.push(c)
-
     }, this))
 
+    /**
+     * compile scoped directives
+     */
+    function instanceScopedDirective(tar, dec, dname) {
+        // don't compile child scope
+        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
+
+        var drefs = tar._diretives || []
+        // prevent repetitive binding
+        if (drefs && ~util.indexOf(drefs, dname)) return
+
+        var def = _diretives[dname]
+        var expr = _getAttribute(tar, dname) || ''
+        var d = new Directive(vm, tar, def, dname, expr)
+
+        $directives.push(d)
+        drefs.push(dec)
+        tar._diretives = drefs
+    }
+    util.forEach(scopedElements, function (tar) {
+        util.some(scopedDec, function(dname) {
+            var dec = conf.namespace + dname
+            if (util.hasAttribute(tar, dec)) {
+                _removeAttribute(tar, dec)
+                instanceScopedDirective(tar, dec, dname)
+                return true
+            }
+        })
+    })
+
+    /**
+     * compile normal atributes directives
+     */
     util.forEach(util.keys(_diretives), function (dname) {
 
         var def = _diretives[dname]
         dname = NS + dname
-        var bindingDrts = util.slice(querySelectorAll(['[' + dname + ']']))
+        var bindings = util.slice(querySelectorAll(['[' + dname + ']']))
         // compile directive of container 
-        if (util.hasAttribute(el, dname)) bindingDrts.unshift(el)
+        if (util.hasAttribute(el, dname)) bindings.unshift(el)
 
-        util.forEach(bindingDrts, function (tar) {
-
+        util.forEach(bindings, function (tar) {
+            // save all directives as node properties
             var drefs = tar._diretives || []
             var expr = _getAttribute(tar, dname) || ''
             // prevent repetitive binding
@@ -409,8 +449,8 @@ Reve.component = function (id, options) {
     return c
 }
 Reve.directive = function (id, def) {
-    if (def.scope) _scopeDirectives.push(id) 
-    _globalDirectives[id] = def
+    if (def.scope) _scopedDirectives.push(id) 
+    _externalDirectives[id] = def
 }
 
 /**
