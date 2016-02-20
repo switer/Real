@@ -385,7 +385,6 @@ describe('# Build-in Directives', function () {
             element.fireEvent("on" + type);
     }
     it('r-model', function (){
-
         var c = new Reve({
             data: {
                 val: ''
@@ -399,6 +398,22 @@ describe('# Build-in Directives', function () {
 
         c.$set('val', 'real2')
         assert.equal(inp.value, 'real2')
+    })
+
+    it('r-if:default unmount', function (){
+        var c = new Reve({
+            template: '<div><div r-if="{show}" class="if-class"><span r-text>{show}</span></div></div>',
+            data: function() {
+                return {
+                    show: false  
+                }
+            }
+        })
+        assert(!c.$el.querySelector('.if-class'))
+        c.$set('show', true)
+        console.log(c.$el)
+        console.log(!c.$el.querySelector('.if-class'))
+        assert(!!c.$el.querySelector('.if-class'))
 
     })
 })

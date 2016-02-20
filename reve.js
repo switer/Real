@@ -291,18 +291,18 @@ Reve.prototype.$compile = function (el) {
         if (drefs && ~util.indexOf(drefs, dname)) return
 
         var def = _diretives[dname]
-        var expr = _getAttribute(tar, dname) || ''
-        var d = new Directive(vm, tar, def, dname, expr)
+        var expr = _getAttribute(tar, dec) || ''
+        var d = new Directive(vm, tar, def, dec, expr)
 
         $directives.push(d)
         drefs.push(dec)
         tar._diretives = drefs
+        _removeAttribute(tar, dec)
     }
     util.forEach(scopedElements, function (tar) {
         util.some(scopedDec, function(dname) {
             var dec = conf.namespace + dname
             if (util.hasAttribute(tar, dec)) {
-                _removeAttribute(tar, dec)
                 instanceScopedDirective(tar, dec, dname)
                 return true
             }
