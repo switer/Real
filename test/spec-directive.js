@@ -402,18 +402,38 @@ describe('# Build-in Directives', function () {
 
     it('r-if:default unmount', function (){
         var c = new Reve({
-            template: '<div><div r-if="{show}" class="if-class"><span r-text>{show}</span></div></div>',
+            template: '<div><div r-if="{show}" class="if-class"><span r-text>{title}</span></div></div>',
             data: function() {
                 return {
-                    show: false  
+                    show: false,
+                    title: ''
                 }
             }
         })
         assert(!c.$el.querySelector('.if-class'))
         c.$set('show', true)
-        console.log(c.$el)
-        console.log(!c.$el.querySelector('.if-class'))
-        assert(!!c.$el.querySelector('.if-class'))
+        var target = c.$el.querySelector('.if-class')
+        assert(!!target)
+        assert.equal(target.innerText, '')
+        c.$set('title', 'real')
+        assert.equal(target.innerText, 'real')
 
+        // update child directive when unmount
+        c.$set('show', false)
+        assert(!c.$el.querySelector('.if-class'))
+    })
+    it('r-if:default mounted', function (){
+        var c = new Reve({
+            template: '<div><div r-if="{show}" class="if-class"><span r-text>{title}</span></div></div>',
+            data: function() {
+                return {
+                    show: true,
+                    title: 'real'
+                }
+            }
+        })
+        var target = c.$el.querySelector('.if-class')
+        assert(!!target)
+        assert.equal(target.innerText, 'real')
     })
 })
