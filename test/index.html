@@ -55,8 +55,8 @@
 		</div>
 		<div 
 			class="footer" 
-			r-component="c-footer" 
-			r-replace="true" 
+			r-component="c-footer"
+			r-replace="true"
 			r-data="{header: header}"
 		></div>
 		<button r-on="{click: onUpdateById}">Click to update "text"</button>
@@ -98,10 +98,9 @@
 			ready: function () {},
 		})
 		Reve.component('c-footer' ,{
-			template: '<h6 r-html="{\'Footer Match:\' + header}"></h6>',
+			template: '<h6 r-component="c-footer"><span r-html="{\'Footer Match:\' + header}"></span></h6>',
 			shouldUpdate: function (next, pre) {
-				console.log('c-footer:shouldUpdate()', next, pre)
-				return false
+				return true
 			}
 		})
 		var $child = new Reve({

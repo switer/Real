@@ -1,5 +1,5 @@
 /**
-* Real v1.4.17
+* Real v1.4.18
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -173,6 +173,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    } else {
 	        throw new Error('Unvalid "el" option.')
 	    }
+	    // prevent instance circularly
+	    _removeAttribute(el, NS + 'component')
 
 	    this.$el = el
 	    this.$methods = {}
@@ -1194,7 +1196,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var util = __webpack_require__(2)
 	var is = __webpack_require__(4)
-	var supportQuerySelector = document.querySelector && document.querySelectorAll
+	var supportQuerySelector = __webpack_require__(3).supportQuerySelector
 
 	/**
 	 * Query all elements that inde "sels", and which element match scoped selector will be skipped.

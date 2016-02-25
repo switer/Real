@@ -112,6 +112,8 @@ function Reve(options) {
     } else {
         throw new Error('Unvalid "el" option.')
     }
+    // prevent instance circularly
+    _removeAttribute(el, NS + 'component')
 
     this.$el = el
     this.$methods = {}
