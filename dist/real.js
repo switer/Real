@@ -1,5 +1,5 @@
 /**
-* Real v1.4.18
+* Real v1.4.19
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -581,7 +581,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	     */
 	    bind && bind.apply(d, bindParams)
 	    // error will stop update
-	    !hasError && upda && upda.call(d, prev)
+	    if (!hasError) {
+	        upda && upda.call(d, prev)
+	        afterUpdate && afterUpdate.call(d, true)
+	    }
 	}
 	/**
 	 *  execute wrap with directive name and current ViewModel
@@ -1459,35 +1462,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.expressions = this.cache = null
 	        }
 	    },
-	    'on': {
-	        multi: true,
-	        bind: function(evtType, handler, expression) {
-	            this._expr = expression
-	            this.type = evtType
-	        },
-	        update: function(handler) {
-	            this.unbind()
-
-	            var fn = handler
-	            if (util.type(fn) !== 'function')
-	                return consoler.warn('"' + conf.namespace + 'on" only accept function. {' + this._expr + '}')
-
-	            // this.fn = util.bind(fn, this.$vm)
-	            var that = this
-	            this.fn = function (e) {
-	                e.$currentTarget = that.$el
-	                fn.call(that.$vm, e)
-	            }
-	            $(this.$el).on(this.type, this.fn, false)
-
-	        },
-	        unbind: function() {
-	            if (this.fn) {
-	                $(this.$el).off(this.type, this.fn)
-	                this.fn = null
-	            }
-	        }
-	    },
 	    'show': {
 	        update: function(next) {
 	            this.$el.style.display = next ? '' : 'none'
@@ -1558,7 +1532,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.expressions = this.cache = this.textNode = null
 	        }
 	    },
-	    model: {
+	    'model': {
 	        bind: function (prop) {
 	            var tagName = this.$el.tagName
 	            var type = tagName.toLowerCase()
@@ -1573,7 +1547,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                case 'search':
 	                case 'password':
 	                case 'textarea':
-	                    this.evtType = 'input'
+	                    this.evtType = 'keydown'
 	                    break
 	                
 	                case 'date':
@@ -1632,6 +1606,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	        },
 	        unbind: function () {
 	            this._requestChange = this._update = noop
+	        }
+	    },
+	    'on': {
+	        multi: true,
+	        bind: function(evtType, handler, expression) {
+	            this._expr = expression
+	            this.type = evtType
+	        },
+	        update: function(handler) {
+	            this.unbind()
+
+	            var fn = handler
+	            if (util.type(fn) !== 'function')
+	                return consoler.warn('"' + conf.namespace + 'on" only accept function. {' + this._expr + '}')
+
+	            // this.fn = util.bind(fn, this.$vm)
+	            var that = this
+	            this.fn = function (e) {
+	                e.$currentTarget = that.$el
+	                fn.call(that.$vm, e)
+	            }
+	            $(this.$el).on(this.type, this.fn, false)
+
+	        },
+	        unbind: function() {
+	            if (this.fn) {
+	                $(this.$el).off(this.type, this.fn)
+	                this.fn = null
+	            }
 	        }
 	    }
 	}
