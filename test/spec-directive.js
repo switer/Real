@@ -394,7 +394,7 @@ describe('# Build-in Directives', function () {
         })
         var inp = c.$el.querySelector('input')
         inp.value = 'real'
-        dispatchEvent(inp, 'keydown')
+        dispatchEvent(inp, 'change')
         assert.equal(c.$data.val, 'real')
 
         c.$set('val', 'real2')

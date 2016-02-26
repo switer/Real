@@ -1,5 +1,5 @@
 /**
-* Real v1.5.2
+* Real v1.5.3
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1167,9 +1167,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	var ie = detect()
+	var inp = document.createElement('input')
 	module.exports = {
 		ie: ie,
-		supportQuerySelector: document.querySelector && document.querySelectorAll
+		supportQuerySelector: document.querySelector && document.querySelectorAll,
+	    supportChangeEvent: 'onchange' in inp,
+	    supportKeyupEvent: 'onkeyup' in inp
 	}
 
 
@@ -1374,6 +1377,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var conf = __webpack_require__(5)
 	var util = __webpack_require__(2)
 	var consoler = __webpack_require__(7)
+	var detection = __webpack_require__(3)
 	var Expression = __webpack_require__(10)
 	var keypath = __webpack_require__(8)
 
@@ -1595,7 +1599,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	                case 'search':
 	                case 'password':
 	                case 'textarea':
-	                    this.evtType = 'keydown'
+	                    if (detection.supportChangeEvent) {
+	                        this.evtType = 'change'
+	                    } else if (detection.supportKeyupEvent) {
+	                        this.evtType = 'keyup'
+	                    } else {
+	                        this.evtType = 'input'
+	                    }
 	                    break
 	                
 	                case 'date':
