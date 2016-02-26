@@ -112,7 +112,8 @@ function Reve(options) {
     } else {
         throw new Error('Unvalid "el" option.')
     }
-
+    // prevent instance circularly
+    _removeAttribute(el, NS + 'component')
     this.$el = el
     this.$methods = {}
     this.$data = (util.type(options.data) == 'function' ? options.data():options.data) || {}
@@ -520,7 +521,7 @@ function Directive(vm, tar, def, name, expr) {
     // error will stop update
     if(!hasError) {
         upda && upda.call(d, prev)
-        afterUpdate && afterUpdate.call(d)
+        afterUpdate && afterUpdate.call(d, true)
     }
 }
 /**

@@ -1,5 +1,5 @@
 /**
-* Real v1.5.1
+* Real v1.5.2
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -173,7 +173,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    } else {
 	        throw new Error('Unvalid "el" option.')
 	    }
-
+	    // prevent instance circularly
+	    _removeAttribute(el, NS + 'component')
 	    this.$el = el
 	    this.$methods = {}
 	    this.$data = (util.type(options.data) == 'function' ? options.data():options.data) || {}
@@ -581,7 +582,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // error will stop update
 	    if(!hasError) {
 	        upda && upda.call(d, prev)
-	        afterUpdate && afterUpdate.call(d)
+	        afterUpdate && afterUpdate.call(d, true)
 	    }
 	}
 	/**
@@ -1212,7 +1213,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var util = __webpack_require__(2)
 	var is = __webpack_require__(4)
-	var supportQuerySelector = document.querySelector && document.querySelectorAll
+	var supportQuerySelector = __webpack_require__(3).supportQuerySelector
 
 	/**
 	 * Query all elements that inde "sels", and which element match scoped selector will be skipped.
