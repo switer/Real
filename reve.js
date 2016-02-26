@@ -518,7 +518,10 @@ function Directive(vm, tar, def, name, expr) {
      */
     bind && bind.apply(d, bindParams)
     // error will stop update
-    !hasError && upda && upda.call(d, prev)
+    if(!hasError) {
+        upda && upda.call(d, prev)
+        afterUpdate && afterUpdate.call(d)
+    }
 }
 /**
  *  execute wrap with directive name and current ViewModel

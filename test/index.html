@@ -34,7 +34,7 @@
 			}"
 			r-autorefresh="{onRefresh}"
 		>
-			<center r-html="{title}"></center>
+			<center r-html>{title}</center>
 			<button class="c-button" 
 				r-component="c-button" 
 				r-ref="button"
@@ -53,6 +53,8 @@
 				click: onChangeHeader
 			}">change child component's title</button>
 		</div>
+		<p><center><input type="text" r-model="header"/></center></p>
+		<!-- <p><center><textarea r-model="header"></textarea></center></p> -->
 		<div 
 			class="footer" 
 			r-component="c-footer" 
@@ -60,7 +62,9 @@
 			r-data="{header: header}"
 		></div>
 		<button r-on="{click: onUpdateById}">Click to update "text"</button>
-		<div r-updateid="text" r-html="{updateid}"></div>
+		<div>
+			<span r-text>{updateid}</span>
+		</div>
 		<img r-lazy="https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png" />
 	</div>
 	<script>
@@ -98,11 +102,7 @@
 			ready: function () {},
 		})
 		Reve.component('c-footer' ,{
-			template: '<h6 r-html="{\'Footer Match:\' + header}"></h6>',
-			shouldUpdate: function (next, pre) {
-				console.log('c-footer:shouldUpdate()', next, pre)
-				return false
-			}
+			template: '<div><h6 r-html>"{\'Footer Match:\' + header}"</h6></div>'
 		})
 		var $child = new Reve({
 			template: '<div>I am a child ViewModel</div>'
