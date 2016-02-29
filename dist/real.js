@@ -1,5 +1,5 @@
 /**
-* Real v1.5.3
+* Real v1.5.4
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1669,6 +1669,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	        multi: true,
 	        bind: function(evtType, handler, expression) {
 	            this._expr = expression
+	            var tagName = this.$el.tagName
+	            // IE8 below do not support onchange event
+	            if (evtType == 'vchange') {
+	                if ((tagName == 'INPUT' || tagName == 'TEXTAREA') && !('onchange' in this.$el)) {
+	                    if ('onkeyup' in this.$el) {evtType = 'keyup'}
+	                    else evtType = 'input'
+	                } else {
+	                    evtType = 'change'
+	                }
+	            }
 	            this.type = evtType
 	        },
 	        update: function(handler) {

@@ -312,6 +312,19 @@ describe('# Build-in Directives', function () {
         event.initEvent('click', true, true);
         tar.dispatchEvent(event)
     })
+    it('r-on:vchange', function (done) {
+        var c = new Reve({
+            data: {},
+            template: '<input type="text" r-on="{vchange: onChange}"/>',
+            methods: {
+                onChange: function () {
+                    done()
+                }
+            }
+        })
+        var inp = c.$el.querySelector('input')
+        dispatchEvent(inp, 'change')
+    })
     it('r-show', function () {
         var c = new Reve({
             data: {
