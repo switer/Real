@@ -1,5 +1,5 @@
 /**
-* Real v1.5.4
+* Real v1.5.5
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -99,6 +99,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$shouldUpdate = options.shouldUpdate
 	    this.$directives = []
 	    this.$components = []
+	    this._$beforeDestroy = option.destroy
 
 	    var el = options.el
 	    var hasReplaceOption = util.hasOwn(options, 'replace') 
@@ -432,6 +433,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 	Reve.prototype.$destroy = function () {
 	    if (this.$destroyed) return
+	    // call destroy method before destroy
+	    this._$beforeDestroy && this._$beforeDestroy()
 	    // update child components
 	    util.forEach(this.$components, function (c) {
 	        c.$destroy()
@@ -441,6 +444,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        d.$destroy()
 	    })
 	    this.$el = this.$components = this.$directives = this.$data = this.$methods = this.$refs = null
+	    this.$set = this.$update = this.$compile = this.$root = this.$appendTo = noop
 	    this.$destroyed = true
 	}
 	/**
@@ -1662,6 +1666,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this._update()
 	        },
 	        unbind: function () {
+	            $(this.$el).off(this.evtType, this._requestChange)
 	            this._requestChange = this._update = noop
 	        }
 	    },
@@ -1688,7 +1693,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (util.type(fn) !== 'function')
 	                return consoler.warn('"' + conf.namespace + 'on" only accept function. {' + this._expr + '}')
 
-	            // this.fn = util.bind(fn, this.$vm)
 	            var that = this
 	            this.fn = function (e) {
 	                e.$currentTarget = that.$el

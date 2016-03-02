@@ -38,6 +38,7 @@ function Reve(options) {
     this.$shouldUpdate = options.shouldUpdate
     this.$directives = []
     this.$components = []
+    this._$beforeDestroy = option.destroy
 
     var el = options.el
     var hasReplaceOption = util.hasOwn(options, 'replace') 
@@ -371,6 +372,8 @@ Reve.prototype.$update = function (updId/*updIds*/, handler) {
  */
 Reve.prototype.$destroy = function () {
     if (this.$destroyed) return
+    // call destroy method before destroy
+    this._$beforeDestroy && this._$beforeDestroy()
     // update child components
     util.forEach(this.$components, function (c) {
         c.$destroy()
@@ -380,6 +383,7 @@ Reve.prototype.$destroy = function () {
         d.$destroy()
     })
     this.$el = this.$components = this.$directives = this.$data = this.$methods = this.$refs = null
+    this.$set = this.$update = this.$compile = this.$root = this.$appendTo = noop
     this.$destroyed = true
 }
 /**
