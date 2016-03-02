@@ -1,5 +1,5 @@
 /**
-* Real v1.5.5
+* Real v1.5.6
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -99,7 +99,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$shouldUpdate = options.shouldUpdate
 	    this.$directives = []
 	    this.$components = []
-	    this._$beforeDestroy = option.destroy
+	    this._$beforeDestroy = options.destroy
 
 	    var el = options.el
 	    var hasReplaceOption = util.hasOwn(options, 'replace') 

@@ -38,7 +38,7 @@ function Reve(options) {
     this.$shouldUpdate = options.shouldUpdate
     this.$directives = []
     this.$components = []
-    this._$beforeDestroy = option.destroy
+    this._$beforeDestroy = options.destroy
 
     var el = options.el
     var hasReplaceOption = util.hasOwn(options, 'replace') 
