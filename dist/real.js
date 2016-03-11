@@ -1,5 +1,5 @@
 /**
-* Real v1.5.6
+* Real v1.5.7
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -491,6 +491,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var bindParams = []
 	    var isExpr = !!_isExpr(expr)
 	    var rawExpr = expr
+	    var source = tar.outerHTML
 
 	    isExpr && (expr = _strip(expr))
 
@@ -1268,6 +1269,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var co = window.console
+	var isCompeletedSupport = co.log && co.error && co.warn && co.info
 	function log(type, args) {
 		// IE8 below console could be not defined, if Devtool panel is not opened.
 		if (!co) return
@@ -1284,7 +1286,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			co.log(logs.join(' '))
 		}
 	}
-	module.exports = {
+	module.exports = isCompeletedSupport ? co : {
 		log: function () {
 			log('log', arguments)
 		},
@@ -1545,7 +1547,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var caches = this._caches = new Array(expressions.length)
 	            var that = this
 
-	            var $textNode 
+	            var $textNode
+	            var $el = this.$el
 	            this.render = function () {
 	                // set value
 	                util.forEach(expressions, function(exp, index) {
@@ -1565,7 +1568,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    // TODO, Number Mobile bug, trying to using replaceChild
 	                    $textNode.nodeValue = result
 	                } else {
-	                    that.$el.innerText = result
+	                    this.$el['innerText' in $el ? 'innerText' : 'textContent'] = result
 	                }
 	            }
 	            if (replace) {

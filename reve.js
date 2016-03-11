@@ -430,6 +430,7 @@ function Directive(vm, tar, def, name, expr) {
     var bindParams = []
     var isExpr = !!_isExpr(expr)
     var rawExpr = expr
+    var source = tar.outerHTML
 
     isExpr && (expr = _strip(expr))
 
