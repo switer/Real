@@ -1,5 +1,5 @@
 /**
-* Real v1.5.7
+* Real v1.5.8
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1269,7 +1269,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict';
 
 	var co = window.console
-	var isCompeletedSupport = co.log && co.error && co.warn && co.info
+	var isCompeletedSupport = co && co.log && co.error && co.warn && co.info
 	function log(type, args) {
 		// IE8 below console could be not defined, if Devtool panel is not opened.
 		if (!co) return
