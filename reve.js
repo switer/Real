@@ -558,25 +558,61 @@ function _removeAttribute (el, an) {
 function _setAttribute (el, an, av) {
     return el && el.setAttribute && el.setAttribute(an, av)
 }
+function _mergeAttribute(_from, to) {
+    if (_isExpr(_from) && _isExpr(to)) {
+        var sep = conf.directiveSep
+        var ccStr = _strip(to) + sep + _strip(_from)
+        var map = {}
+        util.forEach(ccStr.split(sep), function (item) {
+            item = util.trim(item)
+            if (!item) return
+            else {
+                var k, v
+                v = item.replace(/^[^:]+\:/, function (m) {
+                    // skip illegal attribute
+                    k = util.trim(m.replace(/:$/, ''))
+                    return ''
+                })
+                if(k) map[k] = v
+            }
+        })
+        // from first
+        return Expression.wrapExpr(util.map(util.keys(map), function (k) {
+            return k + ':' + map[k]
+        }).join(sep))
+    }
+    return _from
+}
 function _cloneAttributes(el, target) {
     var attrs = util.slice(el.attributes)
-
+    var needMergedAttrs = util.map(['data', 'style', 'methods', 'attr', 'on'], function (n) {
+        return conf.namespace + n
+    })
     util.forEach(attrs, function (att) {
         // In IE9 below, attributes and properties are merged...
         var aname = att.name
         var avalue = att.value
+        var NS = conf.namespace
+
         // unclone function property
         if (util.type(avalue) == 'function') return
         // IE9 below will get all inherited function properties
         if (/^on/.test(aname) && avalue === 'null') return
-        if (aname == 'class') {
-            target.className = target.className + (target.className ? ' ' : '') + avalue
-        } else {
-            try {
-                target.setAttribute(aname, avalue)
-            } catch(e) {
-                // In IE, set some attribute will cause error...
+
+        try {
+            if (aname == 'class') {
+                target.className = target.className + (target.className ? ' ' : '') + avalue
+                return
             }
+            if (util.some(needMergedAttrs, function (n) {
+                return aname === n
+            })) {
+                avalue = _mergeAttribute(avalue, _getAttribute(target, aname))
+            }
+            target.setAttribute(aname, avalue)
+        } catch(e) {
+            // In IE, set some attribute will cause error...
+            consoler.warn('set attribute fail:'+ e +', name:'+aname + ', value:' + avalue)
         }
     })
     return target

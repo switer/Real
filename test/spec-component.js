@@ -80,4 +80,30 @@ describe('# Component', function () {
         c.$update('header')
         assert.equal(tar.innerHTML, 'reve')
     })
+    it('merged-attributes:r-attr', function () {
+        Reve.component('header', {
+            template: '<div class="c-header" r-attr="{title: 1;inner: 2}"></div>',
+            ready: function (){
+                assert.equal(this.$el.getAttribute('title'), 'outer')
+                assert.equal(this.$el.getAttribute('inner'), 2)
+            }
+        })
+        var c = new Reve({
+            data:{title: 'real'},
+            template: '<div><div r-component="header" r-attr="{title: \'outer\'}" r-replace="true"></div></div>'
+        })
+    })
+    it('merged-attributes:r-style', function () {
+        Reve.component('header', {
+            template: '<div class="c-header" r-style="{color: \'white\'}"></div>',
+            ready: function (){
+                assert.equal(this.$el.style.display, 'none')
+                assert.equal(this.$el.style.color, 'white')
+            }
+        })
+        var c = new Reve({
+            data:{title: 'real'},
+            template: '<div><div r-component="header" r-style="{display: \'none\';}" r-replace="true"></div></div>'
+        })
+    })
 })
