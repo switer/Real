@@ -179,7 +179,7 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	Framework: <span r-text>real</span> !
 	```
 
-- **r-props** `(since v1.5.9)`
+- **r-props** `(since v1.5.10)`
 	
 	Using with root element of the component. For inject data from DOM to $data.
 
