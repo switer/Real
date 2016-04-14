@@ -21,6 +21,9 @@ var _did = 0
 var _diff = function () {
     return util.diff.apply(util, arguments)
 }
+var _getData = function (data) {
+    return (util.type(data) == 'function' ? data():data) || {}
+}
 
 /**
  * Constructor Function and Class.
@@ -117,8 +120,15 @@ function Reve(options) {
     _removeAttribute(el, NS + 'component')
     this.$el = el
     this.$methods = {}
-    this.$data = (util.type(options.data) == 'function' ? options.data():options.data) || {}
     this.$refs = {}
+    
+    // from options.data
+    var data = _getData(options.data)
+    // prop NS-props
+    var props = this._$parseProps()
+    // from DOM interface
+    var _data = _getData(options._data)
+    this.$data = util.extend(data, props, _data) 
 
     util.objEach(options.methods, function (key, m) {
         vm.$methods[key] = vm[key] = util.bind(m, vm)
@@ -128,6 +138,17 @@ function Reve(options) {
 
     this.$compile(el)
     _ready && _ready.call(vm)
+}
+/**
+ * @private
+ */
+Reve.prototype._$parseProps = function () {
+    var attr = conf.namespace + 'props'
+    var props = _getAttribute(this.$el, attr)
+    _removeAttribute(this.$el, attr)
+    return props
+        ? _execLiteral(props, this, attr)
+        : null
 }
 Reve.prototype.$set = function (/*[keypath, ]*/value) {
     var keypath = util.type(value) == 'string' ? value : ''
@@ -236,7 +257,7 @@ Reve.prototype.$compile = function (el) {
         tar._component = componentDec
         var c = new Component({
             el: tar,
-            data: data,
+            _data: data,
             parent: vm,
             // methods will not trace changes
             methods: methods,
@@ -394,11 +415,10 @@ Reve.prototype.$destroy = function () {
 function Ctor (options) {
     var baseMethods = options.methods
     function Class (opts) {
-        var baseData = options.data ? options.data() : {}
+        var baseData = _getData(options.data)
         var instanOpts = util.extend({}, options, opts)
-        util.type(instanOpts.data) == 'function' && (instanOpts.data = instanOpts.data())  
         instanOpts.methods = util.extend({}, baseMethods, instanOpts.methods)
-        instanOpts.data = util.extend({}, baseData, instanOpts.data)
+        instanOpts.data = util.extend({}, baseData, _getData(instanOpts.data))
         Reve.call(this, instanOpts)
     }
     Class.prototype = Reve.prototype
@@ -585,7 +605,7 @@ function _mergeAttribute(_from, to) {
 }
 function _cloneAttributes(el, target) {
     var attrs = util.slice(el.attributes)
-    var needMergedAttrs = util.map(['data', 'style', 'methods', 'attr', 'on'], function (n) {
+    var needMergedAttrs = util.map(['data', 'style', 'methods', 'attr', 'on', 'props'], function (n) {
         return conf.namespace + n
     })
     util.forEach(attrs, function (att) {

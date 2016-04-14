@@ -412,6 +412,28 @@ describe('# Build-in Directives', function () {
 
         c.$set('val', 'real2')
         assert.equal(inp.value, 'real2')
+    })
+    it('r-props', function (){
+        var el = document.createElement('div')
+        el.setAttribute('r-props', '{name: "abc"}')
+        el.innerHTML = '<div r-component="c-props" r-data="{ key1: \'interface\'; }" r-replace="true"> </div>'
 
+        Reve.component('c-props', {
+            data: {
+                key1: 'data',
+                key2: 'data',
+                key3: 'data'
+            },
+            ready: function () {
+                assert.equal(this.$data.key1, 'interface')
+                assert.equal(this.$data.key2, 'props')
+                assert.equal(this.$data.key3, 'data')
+            },
+            template: '<div r-props="{key1: \'props\';key2: \'props\'}"></div>'
+        })
+        var c = new Reve({
+            el: el
+        })
+        assert.equal(c.$data.name, 'abc')
     })
 })
