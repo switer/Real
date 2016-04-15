@@ -1,5 +1,5 @@
 /**
-* Real v1.5.10
+* Real v1.5.11
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -157,7 +157,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (hasReplaceOption) {
 	            var frag = _fragmentWrap(options.template)
 	            el = _fragmentChildren(frag)[0] 
-	            !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
+	            if (!el) 
+	                consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
 	        }
 	        if (!el) {
 	            el = document.createElement('div')
@@ -171,7 +172,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (hasChildren) {
 	                var oldel = el
 	                el = children[0]
-	                oldel.parentNode && oldel.parentNode.replaceChild(el, oldel)
+	                if(oldel.parentNode) 
+	                    oldel.parentNode.replaceChild(el, oldel)
 	            }
 	        }
 	    } else {
