@@ -96,7 +96,8 @@ function Reve(options) {
         if (hasReplaceOption) {
             var frag = _fragmentWrap(options.template)
             el = _fragmentChildren(frag)[0] 
-            !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
+            if (!el) 
+                consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
         }
         if (!el) {
             el = document.createElement('div')
@@ -110,7 +111,8 @@ function Reve(options) {
             if (hasChildren) {
                 var oldel = el
                 el = children[0]
-                oldel.parentNode && oldel.parentNode.replaceChild(el, oldel)
+                if(oldel.parentNode) 
+                    oldel.parentNode.replaceChild(el, oldel)
             }
         }
     } else {
