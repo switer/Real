@@ -28,9 +28,9 @@ var _getData = function (data) {
 /**
  * Constructor Function and Class.
  * @param {Object} options Instance options
- * @return {Object} Reve component instance
+ * @return {Object} Real component instance
  */
-function Reve(options) {
+function Real(options) {
     var vm = this
     var NS = conf.namespace
     var _ready = options.ready
@@ -118,7 +118,7 @@ function Reve(options) {
     } else {
         throw new Error('Unvalid "el" option.')
     }
-    // prevent instance circularly
+    // prealnt instance circularly
     _removeAttribute(el, NS + 'component')
     this.$el = el
     this.$methods = {}
@@ -144,7 +144,7 @@ function Reve(options) {
 /**
  * @private
  */
-Reve.prototype._$parseProps = function () {
+Real.prototype._$parseProps = function () {
     var attr = conf.namespace + 'props'
     var props = _getAttribute(this.$el, attr)
     _removeAttribute(this.$el, attr)
@@ -152,7 +152,7 @@ Reve.prototype._$parseProps = function () {
         ? _execLiteral(props, this, attr)
         : null
 }
-Reve.prototype.$set = function (/*[keypath, ]*/value) {
+Real.prototype.$set = function (/*[keypath, ]*/value) {
     var keypath = util.type(value) == 'string' ? value : ''
     if (keypath) {
         value = arguments[1]
@@ -165,7 +165,7 @@ Reve.prototype.$set = function (/*[keypath, ]*/value) {
 /**
  * Get root component instance of the ViewModel
  */
-Reve.prototype.$root = function () {
+Real.prototype.$root = function () {
     var parent = this
     while(parent.$parent) {
         parent = parent.$parent 
@@ -178,7 +178,7 @@ Reve.prototype.$root = function () {
  * @param  {Element} | {String} el The HTMLElement of HTML template need to compile
  * @return {Element} | {DocumentFragment}
  */
-Reve.prototype.$compile = function (el) {
+Real.prototype.$compile = function (el) {
     if (util.type(el) == 'string') el = _fragmentWrap(el)
 
     var NS = conf.namespace
@@ -216,7 +216,7 @@ Reve.prototype.$compile = function (el) {
 
     // compile components
     util.forEach(childs, util.bind(function (tar) {
-        // prevent cross level component parse and repeat parse
+        // prealnt cross level component parse and repeat parse
         if (tar._component) return
         if (supportQuerySelector && ~util.indexOf(grandChilds, tar)) return
 
@@ -308,7 +308,7 @@ Reve.prototype.$compile = function (el) {
 
             var drefs = tar._diretives || []
             var expr = _getAttribute(tar, dname) || ''
-            // prevent repetitive binding
+            // prealnt repetitive binding
             if (drefs && ~util.indexOf(drefs, dname)) return
             _removeAttribute(tar, dname)
 
@@ -337,10 +337,10 @@ Reve.prototype.$compile = function (el) {
 }
 /**
  * Append child ViewModel to parent VideModel
- * @param  {Reve} parent            Parent container ViewModel
+ * @param  {Real} parent            Parent container ViewModel
  * @param  {Function} appendHandler Custom append function
  */
-Reve.prototype.$appendTo = function (parent, appendHandler) {
+Real.prototype.$appendTo = function (parent, appendHandler) {
     if (!parent || !parent.$el) 
         throw new Error('Unvalid parent viewmodel instance.')
 
@@ -353,7 +353,7 @@ Reve.prototype.$appendTo = function (parent, appendHandler) {
 /**
  * Update bindings, binding option can enable/disable
  */
-Reve.prototype.$update = function (updId/*updIds*/, handler) {
+Real.prototype.$update = function (updId/*updIds*/, handler) {
     var $components = this.$components
     var $directives = this.$directives
 
@@ -393,7 +393,7 @@ Reve.prototype.$update = function (updId/*updIds*/, handler) {
 /**
  * Destroy the ViewModel, relase variables.
  */
-Reve.prototype.$destroy = function () {
+Real.prototype.$destroy = function () {
     if (this.$destroyed) return
     // call destroy method before destroy
     this._$beforeDestroy && this._$beforeDestroy()
@@ -410,9 +410,9 @@ Reve.prototype.$destroy = function () {
     this.$destroyed = true
 }
 /**
- * Create Reve subc-lass that inherit Reve
- * @param {Object} options Reve instance options
- * @return {Function} sub-lass of Reve
+ * Create Real subc-lass that inherit Real
+ * @param {Object} options Real instance options
+ * @return {Function} sub-lass of Real
  */
 function Ctor (options) {
     var baseMethods = options.methods
@@ -421,27 +421,27 @@ function Ctor (options) {
         var instanOpts = util.extend({}, options, opts)
         instanOpts.methods = util.extend({}, baseMethods, instanOpts.methods)
         instanOpts.data = util.extend({}, baseData, _getData(instanOpts.data))
-        Reve.call(this, instanOpts)
+        Real.call(this, instanOpts)
     }
-    Class.prototype = Reve.prototype
+    util.inherit(class, Real)
     return Class
 }
-Reve.create = function (options) {
+Real.create = function (options) {
     return Ctor(options)
 }
-Reve.component = function (id, options) {
+Real.component = function (id, options) {
     var c = Ctor(options)
     _components[id] = c
     return c
 }
-Reve.directive = function (id, def) {
+Real.directive = function (id, def) {
     if (def.scope) _scopeDirectives.push(id) 
     _globalDirectives[id] = def
 }
 
 /**
- * Abstract direcitve
- * @param {Reve}    vm      Reve instance
+ * Abstract direcitve constructor
+ * @param {Real}    vm      Real instance
  * @param {Element} tar     Target DOM of the direcitve
  * @param {Object}  def     Directive definition
  * @param {String}  name    Attribute name of the directive
@@ -688,6 +688,6 @@ function _getElementsByClassName(search) {
 }
 function noop() {}
 
-Reve.$ = $
-Reve.util = util
-module.exports = Reve
+Real.$ = $
+Real.util = util
+module.exports = Real
