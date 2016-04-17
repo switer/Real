@@ -72,6 +72,12 @@ function Real(options) {
     var isHTMLElement = is.Element(el)
 
     if (isHTMLElement && options.template) {
+        /**
+         * If el is passed and has template option
+         * if without "replace", it will render template to innerHTML,
+         * otherwise template rendering to innerHTML and replace the component element with
+         * root element of template.
+         */
         if (util.hasAttribute(el, 'r-notemplate')) {
             // skip render template
         } else if (hasReplaceOption) {
