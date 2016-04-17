@@ -1937,7 +1937,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 *  execute wrap with directive name and current ViewModel
 	 */
 	Directive.prototype.$exec = function (expr) {
-	    return _execute(this.$vm, this.$scope, expr, this.$name)
+	    return _execute(this.$vm, expr, this.$name)
 	}
 	Directive.prototype.$destroy = function () {
 	    if (this.$destroyed) return
