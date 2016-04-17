@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>debug</title>
+    <script src="../dist/real.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div r-if="{show}" class="if-class">
+            <span r-text>{title}</span>
+        </div>
+        <button r-on="{click: onShow}">Click to show</button>
+    </div>
+    <script>
+        new Real({
+            data: function() {
+                return {
+                    show: false,
+                    // title: 'hhh'
+                }
+            },
+            el: '#app',
+            methods: {
+                onShow: function () {
+                    this.$set('show', true)
+                }
+            }
+        })
+    </script>
+</body>
+</html>

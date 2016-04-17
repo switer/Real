@@ -20,12 +20,19 @@ var _scopedDirectives = []
 var _isExpr = Expression.isExpr
 var _strip = Expression.strip
 var _getAttribute = util.getAttribute
+var _did = 0
+var _diff = function () {
+    return util.diff.apply(util, arguments)
+}
+var _getData = function (data) {
+    return (util.type(data) == 'function' ? data():data) || {}
+}
 /**
  * Constructor Function and Class.
  * @param {Object} options Instance options
- * @return {Object} Reve component instance
+ * @return {Object} Real component instance
  */
-function Reve(options) {
+function Real(options) {
     var vm = this
     var NS = conf.namespace
     var _ready = options.ready
@@ -36,6 +43,7 @@ function Reve(options) {
     this.$shouldUpdate = options.shouldUpdate
     this.$directives = []
     this.$components = []
+    this._$beforeDestroy = options.destroy
 
     var el = options.el
     var hasReplaceOption = util.hasOwn(options, 'replace') 
@@ -66,6 +74,12 @@ function Reve(options) {
     var isHTMLElement = is.Element(el)
 
     if (isHTMLElement && options.template) {
+        /**
+         * If el is passed and has template option
+         * if without "replace", it will render template to innerHTML,
+         * otherwise template rendering to innerHTML and replace the component element with
+         * root element of template.
+         */
         if (util.hasAttribute(el, 'r-notemplate')) {
             // skip render template
         } else if (hasReplaceOption) {
@@ -90,7 +104,8 @@ function Reve(options) {
         if (hasReplaceOption) {
             var frag = _fragmentWrap(options.template)
             el = _fragmentChildren(frag)[0] 
-            !el && consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
+            if (!el) 
+                consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
         }
         if (!el) {
             el = document.createElement('div')
@@ -104,17 +119,26 @@ function Reve(options) {
             if (hasChildren) {
                 var oldel = el
                 el = children[0]
-                oldel.parentNode && oldel.parentNode.replaceChild(el, oldel)
+                if(oldel.parentNode) 
+                    oldel.parentNode.replaceChild(el, oldel)
             }
         }
     } else {
         throw new Error('Unvalid "el" option.')
     }
-
+    // prealnt instance circularly
+    _removeAttribute(el, NS + 'component')
     this.$el = el
     this.$methods = {}
-    this.$data = (util.type(options.data) == 'function' ? options.data():options.data) || {}
     this.$refs = {}
+    
+    // from options.data
+    var data = _getData(options.data)
+    // prop NS-props
+    var props = this._$parseProps()
+    // from DOM interface
+    var _data = _getData(options._data)
+    this.$data = util.extend(data, props, _data) 
 
     util.objEach(options.methods, function (key, m) {
         vm.$methods[key] = vm[key] = util.bind(m, vm)
@@ -125,7 +149,18 @@ function Reve(options) {
     this.$compile(el)
     _ready && _ready.call(vm)
 }
-Reve.prototype.$set = function (/*[keypath, ]*/value) {
+/**
+ * @private
+ */
+Real.prototype._$parseProps = function () {
+    var attr = conf.namespace + 'props'
+    var props = _getAttribute(this.$el, attr)
+    _removeAttribute(this.$el, attr)
+    return props
+        ? _execLiteral(props, this, attr)
+        : null
+}
+Real.prototype.$set = function (/*[keypath, ]*/value) {
     var keypath = util.type(value) == 'string' ? value : ''
     if (keypath) {
         value = arguments[1]
@@ -138,7 +173,7 @@ Reve.prototype.$set = function (/*[keypath, ]*/value) {
 /**
  * Get root component instance of the ViewModel
  */
-Reve.prototype.$root = function () {
+Real.prototype.$root = function () {
     var parent = this
     while(parent.$parent) {
         parent = parent.$parent 
@@ -151,7 +186,7 @@ Reve.prototype.$root = function () {
  * @param  {Element} | {String} el The HTMLElement of HTML template need to compile
  * @return {Element} | {DocumentFragment}
  */
-Reve.prototype.$compile = function (el, scope) {
+Real.prototype.$compile = function (el, scope) {
     if (util.type(el) == 'string') el = _fragmentWrap(el)
 
     var NS = conf.namespace
@@ -240,7 +275,7 @@ Reve.prototype.$compile = function (el, scope) {
         tar._component = componentDec
         var c = new Component({
             el: tar,
-            data: data,
+            _data: data,
             parent: vm,
             // methods will not trace changes
             methods: methods,
@@ -321,7 +356,7 @@ Reve.prototype.$compile = function (el, scope) {
             // save all directives as node properties
             var drefs = tar._diretives || []
             var expr = _getAttribute(tar, dname) || ''
-            // prevent repetitive binding
+            // prealnt repetitive binding
             if (drefs && ~util.indexOf(drefs, dname)) return
             _removeAttribute(tar, dname)
 
@@ -350,10 +385,10 @@ Reve.prototype.$compile = function (el, scope) {
 }
 /**
  * Append child ViewModel to parent VideModel
- * @param  {Reve} parent            Parent container ViewModel
+ * @param  {Real} parent            Parent container ViewModel
  * @param  {Function} appendHandler Custom append function
  */
-Reve.prototype.$appendTo = function (parent, appendHandler) {
+Real.prototype.$appendTo = function (parent, appendHandler) {
     if (!parent || !parent.$el) 
         throw new Error('Unvalid parent viewmodel instance.')
 
@@ -366,7 +401,7 @@ Reve.prototype.$appendTo = function (parent, appendHandler) {
 /**
  * Update bindings, binding option can enable/disable
  */
-Reve.prototype.$update = function (updId/*updIds*/, handler) {
+Real.prototype.$update = function (updId/*updIds*/, handler) {
     var $components = this.$components
     var $directives = this.$directives
 
@@ -406,8 +441,10 @@ Reve.prototype.$update = function (updId/*updIds*/, handler) {
 /**
  * Destroy the ViewModel, relase variables.
  */
-Reve.prototype.$destroy = function () {
+Real.prototype.$destroy = function () {
     if (this.$destroyed) return
+    // call destroy method before destroy
+    this._$beforeDestroy && this._$beforeDestroy()
     // update child components
     util.forEach(this.$components, function (c) {
         c.$destroy()
@@ -417,35 +454,35 @@ Reve.prototype.$destroy = function () {
         d.$destroy()
     })
     this.$el = this.$components = this.$directives = this.$data = this.$methods = this.$refs = null
+    this.$set = this.$update = this.$compile = this.$root = this.$appendTo = noop
     this.$destroyed = true
 }
 /**
- * Create Reve subc-lass that inherit Reve
- * @param {Object} options Reve instance options
- * @return {Function} sub-lass of Reve
+ * Create Real subc-lass that inherit Real
+ * @param {Object} options Real instance options
+ * @return {Function} sub-lass of Real
  */
 function Ctor (options) {
     var baseMethods = options.methods
     function Class (opts) {
-        var baseData = options.data ? options.data() : {}
+        var baseData = _getData(options.data)
         var instanOpts = util.extend({}, options, opts)
-        util.type(instanOpts.data) == 'function' && (instanOpts.data = instanOpts.data())  
         instanOpts.methods = util.extend({}, baseMethods, instanOpts.methods)
-        instanOpts.data = util.extend({}, baseData, instanOpts.data)
-        Reve.call(this, instanOpts)
+        instanOpts.data = util.extend({}, baseData, _getData(instanOpts.data))
+        Real.call(this, instanOpts)
     }
-    Class.prototype = Reve.prototype
+    util.inherit(Class, Real)
     return Class
 }
-Reve.create = function (options) {
+Real.create = function (options) {
     return Ctor(options)
 }
-Reve.component = function (id, options) {
+Real.component = function (id, options) {
     var c = Ctor(options)
     _components[id] = c
     return c
 }
-Reve.directive = function (id, def) {
+Real.directive = function (id, def) {
     if (def.scope) _scopedDirectives.push(id) 
     _externalDirectives[id] = def
 }
@@ -454,7 +491,8 @@ function _execLiteral (expr, vm, name) {
     if (!_isExpr(expr)) return {}
     expr = expr.replace(conf.directiveSep_regexp, ',')
                .replace(/,\s*}$/, '}')
-    var r = _execute(vm, , name) 
+
+    var r = _execute(vm, expr, name)
     return r[0] ? {} : r[1]
 }
 
@@ -464,25 +502,61 @@ function _removeAttribute (el, an) {
 function _setAttribute (el, an, av) {
     return el && el.setAttribute && el.setAttribute(an, av)
 }
+function _mergeAttribute(_from, to) {
+    if (_isExpr(_from) && _isExpr(to)) {
+        var sep = conf.directiveSep
+        var ccStr = _strip(to) + sep + _strip(_from)
+        var map = {}
+        util.forEach(ccStr.split(sep), function (item) {
+            item = util.trim(item)
+            if (!item) return
+            else {
+                var k, v
+                v = item.replace(/^[^:]+\:/, function (m) {
+                    // skip illegal attribute
+                    k = util.trim(m.replace(/:$/, ''))
+                    return ''
+                })
+                if(k) map[k] = v
+            }
+        })
+        // from first
+        return Expression.wrapExpr(util.map(util.keys(map), function (k) {
+            return k + ':' + map[k]
+        }).join(sep))
+    }
+    return _from
+}
 function _cloneAttributes(el, target) {
     var attrs = util.slice(el.attributes)
-
+    var needMergedAttrs = util.map(['data', 'style', 'methods', 'attr', 'on', 'props'], function (n) {
+        return conf.namespace + n
+    })
     util.forEach(attrs, function (att) {
         // In IE9 below, attributes and properties are merged...
         var aname = att.name
         var avalue = att.value
+        var NS = conf.namespace
+
         // unclone function property
         if (util.type(avalue) == 'function') return
         // IE9 below will get all inherited function properties
         if (/^on/.test(aname) && avalue === 'null') return
-        if (aname == 'class') {
-            target.className = target.className + (target.className ? ' ' : '') + avalue
-        } else {
-            try {
-                target.setAttribute(aname, avalue)
-            } catch(e) {
-                // In IE, set some attribute will cause error...
+
+        try {
+            if (aname == 'class') {
+                target.className = target.className + (target.className ? ' ' : '') + avalue
+                return
             }
+            if (util.some(needMergedAttrs, function (n) {
+                return aname === n
+            })) {
+                avalue = _mergeAttribute(avalue, _getAttribute(target, aname))
+            }
+            target.setAttribute(aname, avalue)
+        } catch(e) {
+            // In IE, set some attribute will cause error...
+            consoler.warn('set attribute fail:'+ e +', name:'+aname + ', value:' + avalue)
         }
     })
     return target
@@ -534,6 +608,7 @@ function _getElementsByClassName(search) {
         return results
     }
 }
-Reve.$ = $
-Reve.util = util
-module.exports = Reve
+function noop() {}
+Real.$ = $
+Real.util = util
+module.exports = Real

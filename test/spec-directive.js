@@ -312,6 +312,19 @@ describe('# Build-in Directives', function () {
         event.initEvent('click', true, true);
         tar.dispatchEvent(event)
     })
+    it('r-on:vchange', function (done) {
+        var c = new Reve({
+            data: {},
+            template: '<input type="text" r-on="{vchange: onChange}"/>',
+            methods: {
+                onChange: function () {
+                    done()
+                }
+            }
+        })
+        var inp = c.$el.querySelector('input')
+        dispatchEvent(inp, 'change')
+    })
     it('r-show', function () {
         var c = new Reve({
             data: {
@@ -393,13 +406,12 @@ describe('# Build-in Directives', function () {
         })
         var inp = c.$el.querySelector('input')
         inp.value = 'real'
-        dispatchEvent(inp, 'input')
+        dispatchEvent(inp, 'change')
         assert.equal(c.$data.val, 'real')
 
         c.$set('val', 'real2')
         assert.equal(inp.value, 'real2')
     })
-
     it('r-if:default unmount', function (){
         var c = new Reve({
             template: '<div><div r-if="{show}" class="if-class"><span r-text>{title}</span></div></div>',
@@ -435,5 +447,28 @@ describe('# Build-in Directives', function () {
         var target = c.$el.querySelector('.if-class')
         assert(!!target)
         assert.equal(target.innerText, 'real')
+    })
+    it('r-props', function (){
+        var el = document.createElement('div')
+        el.setAttribute('r-props', '{name: "abc"}')
+        el.innerHTML = '<div r-component="c-props" r-data="{ key1: \'interface\'; }" r-replace="true"> </div>'
+
+        Reve.component('c-props', {
+            data: {
+                key1: 'data',
+                key2: 'data',
+                key3: 'data'
+            },
+            ready: function () {
+                assert.equal(this.$data.key1, 'interface')
+                assert.equal(this.$data.key2, 'props')
+                assert.equal(this.$data.key3, 'data')
+            },
+            template: '<div r-props="{key1: \'props\';key2: \'props\'}"></div>'
+        })
+        var c = new Reve({
+            el: el
+        })
+        assert.equal(c.$data.name, 'abc')
     })
 })
