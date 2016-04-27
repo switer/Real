@@ -8,6 +8,7 @@ describe('# Component', function () {
         })
         assert.equal(c.$components[0].$name, 'header')
         assert(typeof c.$components[0].$id == 'number')
+        assert.equal(c.$refs.header.$el.getAttribute('_r-component'), 'header')
     })
     it('Nested components', function () {
         var call = 0

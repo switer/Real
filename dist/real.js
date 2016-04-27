@@ -1,5 +1,5 @@
 /**
-* Real v1.5.12
+* Real v1.5.13
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -193,6 +193,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    // prealnt instance circularly
 	    _removeAttribute(el, NS + 'component')
+	    // expose cid to DOM for debug
+	    _setAttribute(el, '_' + NS + 'cid', this.$id)
+
 	    this.$el = el
 	    this.$methods = {}
 	    this.$refs = {}
@@ -349,7 +352,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            replace: !!replaceOpt
 	        })
 	        // for component inspecting
-	        _setAttribute(c.$el, 'data-rcomponent', cname)
+	        _setAttribute(c.$el, '_' + NS + 'component', cname)
 
 	        if (refid) {
 	            this.$refs[refid] = c

@@ -132,6 +132,9 @@ function Real(options) {
     }
     // prealnt instance circularly
     _removeAttribute(el, NS + 'component')
+    // expose cid to DOM for debug
+    _setAttribute(el, '_' + NS + 'cid', this.$id)
+
     this.$el = el
     this.$methods = {}
     this.$refs = {}
@@ -288,7 +291,7 @@ Real.prototype.$compile = function (el, scope) {
             replace: !!replaceOpt
         })
         // for component inspecting
-        _setAttribute(c.$el, 'data-rcomponent', cname)
+        _setAttribute(c.$el, '_' + NS + 'component', cname)
 
         if (refid) {
             this.$refs[refid] = c
