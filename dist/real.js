@@ -81,7 +81,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _isExpr = Expression.isExpr
 	var _strip = Expression.strip
 	var _getAttribute = util.getAttribute
-	var _did = 0
+	var _cid = 0
 	var _diff = function () {
 	    return util.diff.apply(util, arguments)
 	}
@@ -94,13 +94,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @return {Object} Real component instance
 	 */
 	function Real(options) {
+	    options = options || {}
+
 	    var vm = this
 	    var NS = conf.namespace
 	    var _ready = options.ready
 	    var _created = options.created
 	    var _binding = util.hasOwn(options, 'binding') ? options.binding : true
+	    this.$id = _cid ++
+	    this.$name = options.name || ''
 	    this.$parent = options.parent || null
-	    this.$binding = _binding
+	    this.$binding = !!_binding
 	    this.$shouldUpdate = options.shouldUpdate
 	    this.$directives = []
 	    this.$components = []
@@ -337,6 +341,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var c = new Component({
 	            el: tar,
 	            _data: data,
+	            name: cname,
 	            parent: vm,
 	            // methods will not trace changes
 	            methods: methods,

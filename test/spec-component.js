@@ -1,4 +1,14 @@
 describe('# Component', function () {
+    it('Instance', function () {
+        Reve.component('header', {
+            template: '<div class="c-header"></div>'
+        })
+        var c = new Reve({
+            template: '<div r-component="header" r-ref="header"></div>'
+        })
+        assert.equal(c.$components[0].$name, 'header')
+        assert(typeof c.$components[0].$id == 'number')
+    })
     it('Nested components', function () {
         var call = 0
         Reve.component('outer', {
