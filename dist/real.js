@@ -1,5 +1,5 @@
 /**
-* Real v1.5.13
+* Real v1.5.14
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1290,6 +1290,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 7 */
 /***/ function(module, exports) {
 
+	/**
+	 * Console shim for IE8 below
+	 */
 	'use strict';
 
 	var co = window.console
@@ -1741,6 +1744,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
+	/**
+	 * Expression manipulation
+	 */
 	'use strict';
 
 	var util = __webpack_require__(2)
