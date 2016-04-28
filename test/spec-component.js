@@ -1,4 +1,36 @@
 describe('# Component', function () {
+    it('Instance', function () {
+        Reve.component('header', {
+            template: '<div class="c-header"></div>'
+        })
+        var c = new Reve({
+            template: '<div r-component="header" r-ref="header"></div>'
+        })
+        assert.equal(c.$components[0].$name, 'header')
+        assert(typeof c.$components[0].$id == 'number')
+        assert.equal(c.$refs.header.$el.getAttribute('_r-component'), 'header')
+    })
+    it('Nested components', function () {
+        var call = 0
+        Reve.component('outer', {
+            ready: function () {
+                call ++
+                assert.equal(this.$data.title , 'real:outer')
+            }
+        })
+        Reve.component('inner', {
+            ready: function () {
+                call ++
+                assert.equal(this.$data.title , 'real:outer:inner')
+            }
+        })
+        var c = new Reve({
+            data: {title: 'real'},
+            template: '<div r-component="outer" r-data="{title: title + \':outer\'}">' + 
+                        '<div r-component="inner" r-data="{title: title + \':inner\'}"></div></div>'
+        })
+        assert.equal(call, 2)
+    })
     it('component-directives:r-data', function () {
         Reve.component('header', {
             template: '<div class="c-header"><span r-text="replace">{title}</span></div>'

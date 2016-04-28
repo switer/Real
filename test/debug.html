@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>debug</title>
+    <script src="../dist/real.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div r-component="child" r-props="{show: show}"></div>
+    </div>
+    <script>
+        Reve.component('child', {
+            shouldUpdate: function(next) {
+                console.log(next)
+            }
+        })
+        var c = new Reve({
+            data: function() {
+                return {
+                    show: false,
+                }
+            },
+            el: '#app',
+            methods: {
+                onShow: function () {
+                    this.$set('show', true)
+                }
+            }
+        })
+        c.$set('show', true)
+
+    </script>
+</body>
+</html>

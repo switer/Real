@@ -398,7 +398,6 @@ describe('# Build-in Directives', function () {
             element.fireEvent("on" + type);
     }
     it('r-model', function (){
-
         var c = new Reve({
             data: {
                 val: ''
@@ -413,10 +412,50 @@ describe('# Build-in Directives', function () {
         c.$set('val', 'real2')
         assert.equal(inp.value, 'real2')
     })
+    it('r-if:default unmount', function (){
+        var c = new Reve({
+            template: '<div><div r-if="{show}" class="if-class"><span r-text>{title}</span></div></div>',
+            data: function() {
+                return {
+                    show: false,
+                    title: ''
+                }
+            }
+        })
+        assert(!c.$el.querySelector('.if-class'))
+        c.$set('show', true)
+        var target = c.$el.querySelector('.if-class')
+        assert(!!target)
+        assert.equal(target.innerText, '')
+        c.$set('title', 'real')
+        assert.equal(target.innerText, 'real')
+
+        // update child directive when unmount
+        c.$set('show', false)
+        assert(!c.$el.querySelector('.if-class'))
+    })
+    it('r-if:default mounted', function (){
+        var c = new Reve({
+            template: '<div><div r-if="{show}" class="if-class"><span r-text>{title}</span></div></div>',
+            data: function() {
+                return {
+                    show: true,
+                    title: 'real'
+                }
+            }
+        })
+        var target = c.$el.querySelector('.if-class')
+        assert(!!target)
+        assert.equal(target.innerText, 'real')
+    })
     it('r-props', function (){
         var el = document.createElement('div')
         el.setAttribute('r-props', '{name: "abc"}')
-        el.innerHTML = '<div r-component="c-props" r-data="{ key1: \'interface\'; }" r-replace="true"> </div>'
+        el.innerHTML = 
+        '<div r-component="c-props"\
+            r-data="{ key1: \'interface\'; }" \
+            r-props="{ key1: \'prop1frominerface\';key4: \'propfromInterface\'}" \
+            r-replace="true"> </div>'
 
         Reve.component('c-props', {
             data: {
@@ -428,6 +467,7 @@ describe('# Build-in Directives', function () {
                 assert.equal(this.$data.key1, 'interface')
                 assert.equal(this.$data.key2, 'props')
                 assert.equal(this.$data.key3, 'data')
+                assert.equal(this.$data.key4, 'propfromInterface')
             },
             template: '<div r-props="{key1: \'props\';key2: \'props\'}"></div>'
         })

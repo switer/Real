@@ -8,36 +8,42 @@ var Query = require('./lib/query')
 var consoler = require('./lib/consoler')
 var KP = require('./lib/keypath')
 var buildInDirectives = require('./lib/build-in')
+var buildInScopedDirectives = require('./lib/scoped-directives')
 var Expression = require('./lib/expression')
+var Directive = require('./lib/directive')
 var detection = require('./lib/detection')
 var supportQuerySelector = detection.supportQuerySelector
 var _execute = require('./lib/execute')
 var _components = {}
-var _globalDirectives = {}
-var _scopeDirectives = []
+var _externalDirectives = {}
+var _scopedDirectives = []
 var _isExpr = Expression.isExpr
 var _strip = Expression.strip
-var _did = 0
+var _getAttribute = util.getAttribute
+var _cid = 0
 var _diff = function () {
     return util.diff.apply(util, arguments)
 }
 var _getData = function (data) {
     return (util.type(data) == 'function' ? data():data) || {}
 }
-
 /**
  * Constructor Function and Class.
  * @param {Object} options Instance options
  * @return {Object} Real component instance
  */
 function Real(options) {
+    options = options || {}
+
     var vm = this
     var NS = conf.namespace
     var _ready = options.ready
     var _created = options.created
     var _binding = util.hasOwn(options, 'binding') ? options.binding : true
+    this.$id = _cid ++
+    this.$name = options.name || ''
     this.$parent = options.parent || null
-    this.$binding = _binding
+    this.$binding = !!_binding
     this.$shouldUpdate = options.shouldUpdate
     this.$directives = []
     this.$components = []
@@ -126,6 +132,9 @@ function Real(options) {
     }
     // prealnt instance circularly
     _removeAttribute(el, NS + 'component')
+    // expose cid to DOM for debug
+    _setAttribute(el, '_' + NS + 'cid', this.$id)
+
     this.$el = el
     this.$methods = {}
     this.$refs = {}
@@ -184,47 +193,55 @@ Real.prototype.$root = function () {
  * @param  {Element} | {String} el The HTMLElement of HTML template need to compile
  * @return {Element} | {DocumentFragment}
  */
-Real.prototype.$compile = function (el) {
+Real.prototype.$compile = function (el, scope) {
     if (util.type(el) == 'string') el = _fragmentWrap(el)
 
     var NS = conf.namespace
-    var $directives = this.$directives
-    var $components = this.$components
+    var $directives = scope ? scope.$directives : this.$directives
+    var $components = scope ? scope.$components : this.$components
     var componentDec = NS + 'component'
-    var componentSel = '[' + componentDec + ']'
     var vm = this
     // compile directives of the VM
-    var _diretives = util.extend({}, buildInDirectives, _globalDirectives)
+    var _diretives = util.extend({}, buildInDirectives, buildInScopedDirectives, _externalDirectives)
     var attSels = util.keys(_diretives)
+    var scopedDec = util.keys(buildInScopedDirectives).concat(_scopedDirectives)
+    var allScopedDec = [componentDec].concat(util.map(scopedDec, function (name) {
+        return conf.namespace + name
+    }))
     var querySelectorAll = Query(
         el, 
-        [componentDec].concat(util.map(_scopeDirectives, function (sel) {
-            return conf.namespace + sel
-        })), 
-        util.map(attSels, function (sel) {
-            return conf.namespace + sel
+        allScopedDec, 
+        // normal attribute directives
+        util.map(attSels, function (name) {
+            return conf.namespace + name
         })
     )
 
     if (supportQuerySelector) {
         // nested component
         // Block selector cartesian product
-        var scopeSelectors = [componentDec].concat(_scopeDirectives)
+        var scopeSelectors = allScopedDec
         var selectors = []
-        util.forEach(scopeSelectors, function (name1) {
-            return util.forEach(scopeSelectors, function (name2) {
-                selectors.push('[' + name1 + '] [' + name2 + ']')
+        // Selector's cartesian product
+        util.forEach(scopeSelectors, function (dec1) {
+            return util.forEach(scopeSelectors, function (dec2) {
+                selectors.push('[' + dec1 + '] [' + dec2 + ']')
             })
         })
-        var grandChilds = util.slice(el.querySelectorAll(selectors))
+        var scopedChilds = util.slice(el.querySelectorAll(selectors))
     }
-    var childs = util.slice(querySelectorAll(componentSel))
+    var scopedElements = querySelectorAll(util.map(scopedDec, function (name) {
+        return '[' + conf.namespace + name + ']'
+    }))
+    var componentElements = querySelectorAll(['[' + componentDec + ']'])
 
-    // compile components
-    util.forEach(childs, util.bind(function (tar) {
-        // prealnt cross level component parse and repeat parse
+    /**
+     * compile components
+     */
+    util.forEach(componentElements, util.bind(function (tar) {
+        // prevent cross level component parse and repeat parse
         if (tar._component) return
-        if (supportQuerySelector && ~util.indexOf(grandChilds, tar)) return
+        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
 
         var cname = _getAttribute(tar, componentDec)
         if (!cname) {
@@ -237,13 +254,15 @@ Real.prototype.$compile = function (el) {
 
         var refid = _getAttribute(tar, NS + 'ref')
         var cdata = _getAttribute(tar, NS + 'data')
+        var cprops = _getAttribute(tar, NS + 'props')
         var cmethods = _getAttribute(tar, NS + 'methods')
         var bindingOpt = _getAttribute(tar, NS + 'binding')
         var updId = _getAttribute(tar, NS + 'updateid') || ''
         var replaceOpt = _getAttribute(tar, NS + 'replace')
         var data = {}
+        var props = {}
         var methods = {}
-        var preData
+        var preData = {}
 
         replaceOpt = util.hasAttribute(tar, NS + 'replace')
             ? replaceOpt == 'true' || replaceOpt == '1'
@@ -255,25 +274,35 @@ Real.prototype.$compile = function (el) {
             _removeAttribute(tar, NS + a)
         })
 
+        // data first then props
+        // data will create binding of panrent
         if (cdata) {
             data = _execLiteral(cdata, this, NS + 'data')            
             preData = util.immutable(data)
         }
+        // props will not create binding
+        if (cprops) {
+            props = _execLiteral(cprops, this, NS + 'props')            
+        }
+        // methods will not create binding
         if (cmethods) {
             methods = _execLiteral(cmethods, this, NS + 'methods')
         }
         tar._component = componentDec
         var c = new Component({
             el: tar,
-            _data: data,
+            _data: util.extend(props, data),
+            name: cname,
             parent: vm,
             // methods will not trace changes
             methods: methods,
+            // if binding is disable, parent component will not trigger child's updating
+            // unbinding if data is empty
             binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true,
             replace: !!replaceOpt
         })
         // for component inspecting
-        _setAttribute(c.$el, 'data-rcomponent', cname)
+        _setAttribute(c.$el, '_' + NS + 'component', cname)
 
         if (refid) {
             this.$refs[refid] = c
@@ -299,19 +328,51 @@ Real.prototype.$compile = function (el) {
             }
         }
         $components.push(c)
-
     }, this))
 
+    /**
+     * compile scoped directives
+     */
+    function instanceScopedDirective(tar, dec, dname) {
+        // don't compile child scope
+        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
+
+        var drefs = tar._diretives || []
+        // prevent repetitive binding
+        if (drefs && ~util.indexOf(drefs, dname)) return
+
+        var def = _diretives[dname]
+        var expr = _getAttribute(tar, dec) || ''
+        var d = new Directive(vm, tar, def, dec, expr, scope)
+
+        $directives.push(d)
+        drefs.push(dec)
+        tar._diretives = drefs
+        _removeAttribute(tar, dec)
+    }
+    util.forEach(scopedElements, function (tar) {
+        util.some(scopedDec, function(dname) {
+            var dec = conf.namespace + dname
+            if (util.hasAttribute(tar, dec)) {
+                instanceScopedDirective(tar, dec, dname)
+                return true
+            }
+        })
+    })
+
+    /**
+     * compile normal atributes directives
+     */
     util.forEach(util.keys(_diretives), function (dname) {
 
         var def = _diretives[dname]
         dname = NS + dname
-        var bindingDrts = util.slice(querySelectorAll('[' + dname + ']'))
+        var bindings = util.slice(querySelectorAll(['[' + dname + ']']))
         // compile directive of container 
-        if (util.hasAttribute(el, dname)) bindingDrts.unshift(el)
+        if (util.hasAttribute(el, dname)) bindings.unshift(el)
 
-        util.forEach(bindingDrts, function (tar) {
-
+        util.forEach(bindings, function (tar) {
+            // save all directives as node properties
             var drefs = tar._diretives || []
             var expr = _getAttribute(tar, dname) || ''
             // prealnt repetitive binding
@@ -327,11 +388,11 @@ Real.prototype.$compile = function (el) {
                     function(item) {
                         // discard empty expression 
                         if (!util.trim(item)) return
-                        d = new Directive(vm, tar, def, dname, '{' + item + '}')
+                        d = new Directive(vm, tar, def, dname, '{' + item + '}', scope)
                         $directives.push(d)
                     })
             } else {
-                d = new Directive(vm, tar, def, dname, expr)
+                d = new Directive(vm, tar, def, dname, expr, scope)
                 $directives.push(d)
             }
             drefs.push(dname)
@@ -429,7 +490,7 @@ function Ctor (options) {
         instanOpts.data = util.extend({}, baseData, _getData(instanOpts.data))
         Real.call(this, instanOpts)
     }
-    util.inherit(class, Real)
+    util.inherit(Class, Real)
     return Class
 }
 Real.create = function (options) {
@@ -441,145 +502,19 @@ Real.component = function (id, options) {
     return c
 }
 Real.directive = function (id, def) {
-    if (def.scope) _scopeDirectives.push(id) 
-    _globalDirectives[id] = def
-}
-
-/**
- * Abstract direcitve constructor
- * @param {Real}    vm      Real instance
- * @param {Element} tar     Target DOM of the direcitve
- * @param {Object}  def     Directive definition
- * @param {String}  name    Attribute name of the directive
- * @param {String}  expr    Attribute value of the directive
- */
-function Directive(vm, tar, def, name, expr) {
-    var d = this
-    var bindParams = []
-    var isExpr = !!_isExpr(expr)
-    var rawExpr = expr
-    var source = tar.outerHTML
-
-    isExpr && (expr = _strip(expr))
-
-    if (def.multi) {
-        // extract key and expr from "key: expression" format
-        var key
-        var keyRE = /^[^:]+:/
-        if (!keyRE.test(expr)) {
-            return consoler.error('Invalid expression of "{' + expr + '}", it should be in this format: ' + name + '="{ key: expression }".')
-        }
-        expr = expr.replace(keyRE, function(m) {
-            key = util.trim(m.replace(/:$/, ''))
-            return ''
-        })
-        expr = util.trim(expr)
-
-        bindParams.push(key)
-    }
-
-    d.$el = tar
-    d.$vm = vm
-    d.$id = _did++
-    d.$expr = expr
-    d.$rawExpr = rawExpr
-    d.$name = name
-    d.$destroyed = false
-    // updateId is used to update directive/component which DOM match the "updateid"
-    d.$updateId = _getAttribute(tar, conf.namespace + 'updateid') || ''
-    this._$unbind = def.unbind
-
-    var bind = def.bind
-    var upda = def.update
-    var shouldUpdate = def.shouldUpdate
-    var afterUpdate = def.afterUpdate
-    var prev
-
-    // set properties
-    util.objEach(def, function(k, v) {
-        d[k] = v
-    })
-
-    this.$diff = _diff
-    /**
-     *  update handler
-     */
-    function _update() {
-        if (d.$destroyed) return consoler.warn('Directive "' + name + '" already destroyed.')
-
-        var hasDiff = false
-        // empty expression also can trigger update, such `r-text` directive
-        if (!isExpr) {
-            if (shouldUpdate && shouldUpdate.call(d)) {
-                upda && upda.call(d)
-            }
-        } else {
-            var nexv = d.$exec(expr) // [error, result]
-            var r = nexv[1]
-
-            if (!nexv[0] && util.diff(r, prev)) {
-                hasDiff = true
-
-                // shouldUpdate(nextValue, preValue)
-                if (!shouldUpdate || shouldUpdate.call(d, r, prev)) {
-                    var p = prev
-                    prev = r
-                    // update(nextValue, preValue)
-                    upda && upda.call(d, r, p)
-                }
-            }
-        }
-        afterUpdate && afterUpdate.call(d, hasDiff)
-    }
-
-    /**
-     *  If expression is a string iteral, use it as value
-     */
-    var hasError
-    if (isExpr) {
-        prev =  d.$exec(expr)
-        hasError = prev[0]
-        prev = prev[1]
-    } else {
-        prev = expr
-    }
-    bindParams.push(prev)
-    bindParams.push(expr)
-    d.$update = _update
-    /**
-     * bind([propertyName, ]expression-value, expression)
-     * propertyName will be passed if and only if "multi:true"
-     */
-    bind && bind.apply(d, bindParams)
-    // error will stop update
-    if(!hasError) {
-        upda && upda.call(d, prev)
-        afterUpdate && afterUpdate.call(d, true)
-    }
-}
-/**
- *  execute wrap with directive name and current ViewModel
- */
-Directive.prototype.$exec = function (expr) {
-    return _execute(this.$vm, expr, this.$name)
-}
-Directive.prototype.$destroy = function () {
-    if (this.$destroyed) return
-
-    this._$unbind && this._$unbind.call(this)
-    this.$update = this.$destroy = this.$exec = noop
-    this.$el = null
-    this.$destroyed = true
+    if (def.scope) _scopedDirectives.push(id) 
+    _externalDirectives[id] = def
 }
 
 function _execLiteral (expr, vm, name) {
     if (!_isExpr(expr)) return {}
-    var r = _execute(vm, expr.replace(new RegExp(conf.directiveSep, 'g'), ',').replace(/,\s*}$/, '}'), name) 
+    expr = expr.replace(conf.directiveSep_regexp, ',')
+               .replace(/,\s*}$/, '}')
+
+    var r = _execute(vm, expr, name)
     return r[0] ? {} : r[1]
 }
-function _getAttribute (el, an) {
-    return el && el.getAttribute(an)
-}
+
 function _removeAttribute (el, an) {
     return el && el.removeAttribute(an)
 }
@@ -693,7 +628,6 @@ function _getElementsByClassName(search) {
     }
 }
 function noop() {}
-
 Real.$ = $
 Real.util = util
 module.exports = Real

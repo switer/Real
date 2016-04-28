@@ -1,5 +1,5 @@
 /**
-* Real v1.5.11
+* Real v1.5.13
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -69,36 +69,42 @@ return /******/ (function(modules) { // webpackBootstrap
 	var consoler = __webpack_require__(7)
 	var KP = __webpack_require__(8)
 	var buildInDirectives = __webpack_require__(9)
+	var buildInScopedDirectives = __webpack_require__(11)
 	var Expression = __webpack_require__(10)
+	var Directive = __webpack_require__(12)
 	var detection = __webpack_require__(3)
 	var supportQuerySelector = detection.supportQuerySelector
-	var _execute = __webpack_require__(11)
+	var _execute = __webpack_require__(13)
 	var _components = {}
-	var _globalDirectives = {}
-	var _scopeDirectives = []
+	var _externalDirectives = {}
+	var _scopedDirectives = []
 	var _isExpr = Expression.isExpr
 	var _strip = Expression.strip
-	var _did = 0
+	var _getAttribute = util.getAttribute
+	var _cid = 0
 	var _diff = function () {
 	    return util.diff.apply(util, arguments)
 	}
 	var _getData = function (data) {
 	    return (util.type(data) == 'function' ? data():data) || {}
 	}
-
 	/**
 	 * Constructor Function and Class.
 	 * @param {Object} options Instance options
-	 * @return {Object} Reve component instance
+	 * @return {Object} Real component instance
 	 */
-	function Reve(options) {
+	function Real(options) {
+	    options = options || {}
+
 	    var vm = this
 	    var NS = conf.namespace
 	    var _ready = options.ready
 	    var _created = options.created
 	    var _binding = util.hasOwn(options, 'binding') ? options.binding : true
+	    this.$id = _cid ++
+	    this.$name = options.name || ''
 	    this.$parent = options.parent || null
-	    this.$binding = _binding
+	    this.$binding = !!_binding
 	    this.$shouldUpdate = options.shouldUpdate
 	    this.$directives = []
 	    this.$components = []
@@ -133,6 +139,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var isHTMLElement = is.Element(el)
 
 	    if (isHTMLElement && options.template) {
+	        /**
+	         * If el is passed and has template option
+	         * if without "replace", it will render template to innerHTML,
+	         * otherwise template rendering to innerHTML and replace the component element with
+	         * root element of template.
+	         */
 	        if (util.hasAttribute(el, 'r-notemplate')) {
 	            // skip render template
 	        } else if (hasReplaceOption) {
@@ -179,8 +191,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    } else {
 	        throw new Error('Unvalid "el" option.')
 	    }
-	    // prevent instance circularly
+	    // prealnt instance circularly
 	    _removeAttribute(el, NS + 'component')
+	    // expose cid to DOM for debug
+	    _setAttribute(el, '_' + NS + 'cid', this.$id)
+
 	    this.$el = el
 	    this.$methods = {}
 	    this.$refs = {}
@@ -205,7 +220,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	/**
 	 * @private
 	 */
-	Reve.prototype._$parseProps = function () {
+	Real.prototype._$parseProps = function () {
 	    var attr = conf.namespace + 'props'
 	    var props = _getAttribute(this.$el, attr)
 	    _removeAttribute(this.$el, attr)
@@ -213,7 +228,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        ? _execLiteral(props, this, attr)
 	        : null
 	}
-	Reve.prototype.$set = function (/*[keypath, ]*/value) {
+	Real.prototype.$set = function (/*[keypath, ]*/value) {
 	    var keypath = util.type(value) == 'string' ? value : ''
 	    if (keypath) {
 	        value = arguments[1]
@@ -226,7 +241,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	/**
 	 * Get root component instance of the ViewModel
 	 */
-	Reve.prototype.$root = function () {
+	Real.prototype.$root = function () {
 	    var parent = this
 	    while(parent.$parent) {
 	        parent = parent.$parent 
@@ -239,47 +254,55 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param  {Element} | {String} el The HTMLElement of HTML template need to compile
 	 * @return {Element} | {DocumentFragment}
 	 */
-	Reve.prototype.$compile = function (el) {
+	Real.prototype.$compile = function (el, scope) {
 	    if (util.type(el) == 'string') el = _fragmentWrap(el)
 
 	    var NS = conf.namespace
-	    var $directives = this.$directives
-	    var $components = this.$components
+	    var $directives = scope ? scope.$directives : this.$directives
+	    var $components = scope ? scope.$components : this.$components
 	    var componentDec = NS + 'component'
-	    var componentSel = '[' + componentDec + ']'
 	    var vm = this
 	    // compile directives of the VM
-	    var _diretives = util.extend({}, buildInDirectives, _globalDirectives)
+	    var _diretives = util.extend({}, buildInDirectives, buildInScopedDirectives, _externalDirectives)
 	    var attSels = util.keys(_diretives)
+	    var scopedDec = util.keys(buildInScopedDirectives).concat(_scopedDirectives)
+	    var allScopedDec = [componentDec].concat(util.map(scopedDec, function (name) {
+	        return conf.namespace + name
+	    }))
 	    var querySelectorAll = Query(
 	        el, 
-	        [componentDec].concat(util.map(_scopeDirectives, function (sel) {
-	            return conf.namespace + sel
-	        })), 
-	        util.map(attSels, function (sel) {
-	            return conf.namespace + sel
+	        allScopedDec, 
+	        // normal attribute directives
+	        util.map(attSels, function (name) {
+	            return conf.namespace + name
 	        })
 	    )
 
 	    if (supportQuerySelector) {
 	        // nested component
 	        // Block selector cartesian product
-	        var scopeSelectors = [componentDec].concat(_scopeDirectives)
+	        var scopeSelectors = allScopedDec
 	        var selectors = []
-	        util.forEach(scopeSelectors, function (name1) {
-	            return util.forEach(scopeSelectors, function (name2) {
-	                selectors.push('[' + name1 + '] [' + name2 + ']')
+	        // Selector's cartesian product
+	        util.forEach(scopeSelectors, function (dec1) {
+	            return util.forEach(scopeSelectors, function (dec2) {
+	                selectors.push('[' + dec1 + '] [' + dec2 + ']')
 	            })
 	        })
-	        var grandChilds = util.slice(el.querySelectorAll(selectors))
+	        var scopedChilds = util.slice(el.querySelectorAll(selectors))
 	    }
-	    var childs = util.slice(querySelectorAll(componentSel))
+	    var scopedElements = querySelectorAll(util.map(scopedDec, function (name) {
+	        return '[' + conf.namespace + name + ']'
+	    }))
+	    var componentElements = querySelectorAll(['[' + componentDec + ']'])
 
-	    // compile components
-	    util.forEach(childs, util.bind(function (tar) {
+	    /**
+	     * compile components
+	     */
+	    util.forEach(componentElements, util.bind(function (tar) {
 	        // prevent cross level component parse and repeat parse
 	        if (tar._component) return
-	        if (supportQuerySelector && ~util.indexOf(grandChilds, tar)) return
+	        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
 
 	        var cname = _getAttribute(tar, componentDec)
 	        if (!cname) {
@@ -292,13 +315,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        var refid = _getAttribute(tar, NS + 'ref')
 	        var cdata = _getAttribute(tar, NS + 'data')
+	        var cprops = _getAttribute(tar, NS + 'props')
 	        var cmethods = _getAttribute(tar, NS + 'methods')
 	        var bindingOpt = _getAttribute(tar, NS + 'binding')
 	        var updId = _getAttribute(tar, NS + 'updateid') || ''
 	        var replaceOpt = _getAttribute(tar, NS + 'replace')
 	        var data = {}
+	        var props = {}
 	        var methods = {}
-	        var preData
+	        var preData = {}
 
 	        replaceOpt = util.hasAttribute(tar, NS + 'replace')
 	            ? replaceOpt == 'true' || replaceOpt == '1'
@@ -310,25 +335,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	            _removeAttribute(tar, NS + a)
 	        })
 
+	        // data first then props
+	        // data will create binding of panrent
 	        if (cdata) {
 	            data = _execLiteral(cdata, this, NS + 'data')            
 	            preData = util.immutable(data)
 	        }
+	        // props will not create binding
+	        if (cprops) {
+	            props = _execLiteral(cprops, this, NS + 'props')            
+	        }
+	        // methods will not create binding
 	        if (cmethods) {
 	            methods = _execLiteral(cmethods, this, NS + 'methods')
 	        }
 	        tar._component = componentDec
 	        var c = new Component({
 	            el: tar,
-	            _data: data,
+	            _data: util.extend(props, data),
+	            name: cname,
 	            parent: vm,
 	            // methods will not trace changes
 	            methods: methods,
+	            // if binding is disable, parent component will not trigger child's updating
+	            // unbinding if data is empty
 	            binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true,
 	            replace: !!replaceOpt
 	        })
 	        // for component inspecting
-	        _setAttribute(c.$el, 'data-rcomponent', cname)
+	        _setAttribute(c.$el, '_' + NS + 'component', cname)
 
 	        if (refid) {
 	            this.$refs[refid] = c
@@ -354,22 +389,54 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        }
 	        $components.push(c)
-
 	    }, this))
 
+	    /**
+	     * compile scoped directives
+	     */
+	    function instanceScopedDirective(tar, dec, dname) {
+	        // don't compile child scope
+	        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
+
+	        var drefs = tar._diretives || []
+	        // prevent repetitive binding
+	        if (drefs && ~util.indexOf(drefs, dname)) return
+
+	        var def = _diretives[dname]
+	        var expr = _getAttribute(tar, dec) || ''
+	        var d = new Directive(vm, tar, def, dec, expr, scope)
+
+	        $directives.push(d)
+	        drefs.push(dec)
+	        tar._diretives = drefs
+	        _removeAttribute(tar, dec)
+	    }
+	    util.forEach(scopedElements, function (tar) {
+	        util.some(scopedDec, function(dname) {
+	            var dec = conf.namespace + dname
+	            if (util.hasAttribute(tar, dec)) {
+	                instanceScopedDirective(tar, dec, dname)
+	                return true
+	            }
+	        })
+	    })
+
+	    /**
+	     * compile normal atributes directives
+	     */
 	    util.forEach(util.keys(_diretives), function (dname) {
 
 	        var def = _diretives[dname]
 	        dname = NS + dname
-	        var bindingDrts = util.slice(querySelectorAll('[' + dname + ']'))
+	        var bindings = util.slice(querySelectorAll(['[' + dname + ']']))
 	        // compile directive of container 
-	        if (util.hasAttribute(el, dname)) bindingDrts.unshift(el)
+	        if (util.hasAttribute(el, dname)) bindings.unshift(el)
 
-	        util.forEach(bindingDrts, function (tar) {
-
+	        util.forEach(bindings, function (tar) {
+	            // save all directives as node properties
 	            var drefs = tar._diretives || []
 	            var expr = _getAttribute(tar, dname) || ''
-	            // prevent repetitive binding
+	            // prealnt repetitive binding
 	            if (drefs && ~util.indexOf(drefs, dname)) return
 	            _removeAttribute(tar, dname)
 
@@ -382,11 +449,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    function(item) {
 	                        // discard empty expression 
 	                        if (!util.trim(item)) return
-	                        d = new Directive(vm, tar, def, dname, '{' + item + '}')
+	                        d = new Directive(vm, tar, def, dname, '{' + item + '}', scope)
 	                        $directives.push(d)
 	                    })
 	            } else {
-	                d = new Directive(vm, tar, def, dname, expr)
+	                d = new Directive(vm, tar, def, dname, expr, scope)
 	                $directives.push(d)
 	            }
 	            drefs.push(dname)
@@ -398,10 +465,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	/**
 	 * Append child ViewModel to parent VideModel
-	 * @param  {Reve} parent            Parent container ViewModel
+	 * @param  {Real} parent            Parent container ViewModel
 	 * @param  {Function} appendHandler Custom append function
 	 */
-	Reve.prototype.$appendTo = function (parent, appendHandler) {
+	Real.prototype.$appendTo = function (parent, appendHandler) {
 	    if (!parent || !parent.$el) 
 	        throw new Error('Unvalid parent viewmodel instance.')
 
@@ -414,7 +481,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	/**
 	 * Update bindings, binding option can enable/disable
 	 */
-	Reve.prototype.$update = function (updId/*updIds*/, handler) {
+	Real.prototype.$update = function (updId/*updIds*/, handler) {
 	    var $components = this.$components
 	    var $directives = this.$directives
 
@@ -454,7 +521,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	/**
 	 * Destroy the ViewModel, relase variables.
 	 */
-	Reve.prototype.$destroy = function () {
+	Real.prototype.$destroy = function () {
 	    if (this.$destroyed) return
 	    // call destroy method before destroy
 	    this._$beforeDestroy && this._$beforeDestroy()
@@ -471,9 +538,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$destroyed = true
 	}
 	/**
-	 * Create Reve subc-lass that inherit Reve
-	 * @param {Object} options Reve instance options
-	 * @return {Function} sub-lass of Reve
+	 * Create Real subc-lass that inherit Real
+	 * @param {Object} options Real instance options
+	 * @return {Function} sub-lass of Real
 	 */
 	function Ctor (options) {
 	    var baseMethods = options.methods
@@ -482,159 +549,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var instanOpts = util.extend({}, options, opts)
 	        instanOpts.methods = util.extend({}, baseMethods, instanOpts.methods)
 	        instanOpts.data = util.extend({}, baseData, _getData(instanOpts.data))
-	        Reve.call(this, instanOpts)
+	        Real.call(this, instanOpts)
 	    }
-	    Class.prototype = Reve.prototype
+	    util.inherit(Class, Real)
 	    return Class
 	}
-	Reve.create = function (options) {
+	Real.create = function (options) {
 	    return Ctor(options)
 	}
-	Reve.component = function (id, options) {
+	Real.component = function (id, options) {
 	    var c = Ctor(options)
 	    _components[id] = c
 	    return c
 	}
-	Reve.directive = function (id, def) {
-	    if (def.scope) _scopeDirectives.push(id) 
-	    _globalDirectives[id] = def
-	}
-
-	/**
-	 * Abstract direcitve
-	 * @param {Reve}    vm      Reve instance
-	 * @param {Element} tar     Target DOM of the direcitve
-	 * @param {Object}  def     Directive definition
-	 * @param {String}  name    Attribute name of the directive
-	 * @param {String}  expr    Attribute value of the directive
-	 */
-	function Directive(vm, tar, def, name, expr) {
-	    var d = this
-	    var bindParams = []
-	    var isExpr = !!_isExpr(expr)
-	    var rawExpr = expr
-	    var source = tar.outerHTML
-
-	    isExpr && (expr = _strip(expr))
-
-	    if (def.multi) {
-	        // extract key and expr from "key: expression" format
-	        var key
-	        var keyRE = /^[^:]+:/
-	        if (!keyRE.test(expr)) {
-	            return consoler.error('Invalid expression of "{' + expr + '}", it should be in this format: ' + name + '="{ key: expression }".')
-	        }
-	        expr = expr.replace(keyRE, function(m) {
-	            key = util.trim(m.replace(/:$/, ''))
-	            return ''
-	        })
-	        expr = util.trim(expr)
-
-	        bindParams.push(key)
-	    }
-
-	    d.$el = tar
-	    d.$vm = vm
-	    d.$id = _did++
-	    d.$expr = expr
-	    d.$rawExpr = rawExpr
-	    d.$name = name
-	    d.$destroyed = false
-	    // updateId is used to update directive/component which DOM match the "updateid"
-	    d.$updateId = _getAttribute(tar, conf.namespace + 'updateid') || ''
-	    this._$unbind = def.unbind
-
-	    var bind = def.bind
-	    var upda = def.update
-	    var shouldUpdate = def.shouldUpdate
-	    var afterUpdate = def.afterUpdate
-	    var prev
-
-	    // set properties
-	    util.objEach(def, function(k, v) {
-	        d[k] = v
-	    })
-
-	    this.$diff = _diff
-	    /**
-	     *  update handler
-	     */
-	    function _update() {
-	        if (d.$destroyed) return consoler.warn('Directive "' + name + '" already destroyed.')
-
-	        var hasDiff = false
-	        // empty expression also can trigger update, such `r-text` directive
-	        if (!isExpr) {
-	            if (shouldUpdate && shouldUpdate.call(d)) {
-	                upda && upda.call(d)
-	            }
-	        } else {
-	            var nexv = d.$exec(expr) // [error, result]
-	            var r = nexv[1]
-
-	            if (!nexv[0] && util.diff(r, prev)) {
-	                hasDiff = true
-
-	                // shouldUpdate(nextValue, preValue)
-	                if (!shouldUpdate || shouldUpdate.call(d, r, prev)) {
-	                    var p = prev
-	                    prev = r
-	                    // update(nextValue, preValue)
-	                    upda && upda.call(d, r, p)
-	                }
-	            }
-	        }
-	        afterUpdate && afterUpdate.call(d, hasDiff)
-	    }
-
-	    /**
-	     *  If expression is a string iteral, use it as value
-	     */
-	    var hasError
-	    if (isExpr) {
-	        prev =  d.$exec(expr)
-	        hasError = prev[0]
-	        prev = prev[1]
-	    } else {
-	        prev = expr
-	    }
-	    bindParams.push(prev)
-	    bindParams.push(expr)
-	    d.$update = _update
-	    /**
-	     * bind([propertyName, ]expression-value, expression)
-	     * propertyName will be passed if and only if "multi:true"
-	     */
-	    bind && bind.apply(d, bindParams)
-	    // error will stop update
-	    if(!hasError) {
-	        upda && upda.call(d, prev)
-	        afterUpdate && afterUpdate.call(d, true)
-	    }
-	}
-	/**
-	 *  execute wrap with directive name and current ViewModel
-	 */
-	Directive.prototype.$exec = function (expr) {
-	    return _execute(this.$vm, expr, this.$name)
-	}
-	Directive.prototype.$destroy = function () {
-	    if (this.$destroyed) return
-
-	    this._$unbind && this._$unbind.call(this)
-	    this.$update = this.$destroy = this.$exec = noop
-	    this.$el = null
-	    this.$destroyed = true
+	Real.directive = function (id, def) {
+	    if (def.scope) _scopedDirectives.push(id) 
+	    _externalDirectives[id] = def
 	}
 
 	function _execLiteral (expr, vm, name) {
 	    if (!_isExpr(expr)) return {}
-	    var r = _execute(vm, expr.replace(new RegExp(conf.directiveSep, 'g'), ',').replace(/,\s*}$/, '}'), name) 
+	    expr = expr.replace(conf.directiveSep_regexp, ',')
+	               .replace(/,\s*}$/, '}')
+
+	    var r = _execute(vm, expr, name)
 	    return r[0] ? {} : r[1]
 	}
-	function _getAttribute (el, an) {
-	    return el && el.getAttribute(an)
-	}
+
 	function _removeAttribute (el, an) {
 	    return el && el.removeAttribute(an)
 	}
@@ -748,11 +689,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	}
 	function noop() {}
-
-	Reve.$ = $
-	Reve.util = util
-	module.exports = Reve
-
+	Real.$ = $
+	Real.util = util
+	module.exports = Real
 
 /***/ },
 /* 1 */
@@ -1160,6 +1099,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    slice: function (a) {
 	        if (!a || !a.length) return []
+	        if (a.slice) return a.slice(0)
 	        var len = a.length
 	        var next = []
 	        for (var i = 0; i < len; i ++) {
@@ -1192,6 +1132,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        else if (!el.getAttribute) return false
 	        return el.getAttribute(an) !== null
 	    },
+	    getAttribute: function (el, an) {
+	        return el && el.getAttribute(an)
+	    },
 	    split: function (str, sep) {
 	        if (detection.ie && detection.ie <= 8) {
 	            // IE8 below, convert regexp sep to string sep
@@ -1204,6 +1147,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        } else {
 	            return str.split(sep)
 	        }
+	    },
+	    inherit: function (clazz, target) {
+	        function F () {}
+	        F.prototype = target.prototype
+	        clazz.prototype = new F()
+	        return clazz
 	    }
 	}
 
@@ -1266,7 +1215,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var conf = {
 		namespace: 'r-',
-		directiveSep: ';'
+		directiveSep: ';',
+	    directiveSep_regexp: /;/g,
+	    mutable_dirtives: ['html', 'text'] 
 	}
 
 	module.exports = conf
@@ -1299,24 +1250,42 @@ return /******/ (function(modules) { // webpackBootstrap
 						_elements[sel].push(node)
 					}
 				})
-				// check scope attributes
-				var isBlock
+				// checking for scoped attributes
+				var isScoped
 				util.forEach(scopedSels, function (scopedSel) {
 					if (util.hasAttribute(node, scopedSel)) {
-						isBlock = true
+						isScoped = true
 						if (!_elements[scopedSel]) _elements[scopedSel] = []
 						_elements[scopedSel].push(node)
 					}
 				})
-				if (isBlock) return false
+				if (isScoped) return false
 				return true
 			})
 		}
 
-		return function (selector) {
-			if (supportQuerySelector) return el.querySelectorAll(selector)
-			selector = selector.match(/^\[(.+?)\]$/)[1]
-			return _elements[selector] || []
+		return function (sels) {
+			if (supportQuerySelector) {
+				return el.querySelectorAll(sels.join(','))
+			} else {
+				var nodeList = []
+				var reduplicative = {}
+				util.forEach(sels, function (selector) {
+					var propName = selector.match(/^\[(.+?)\]$/)[1]
+					if (reduplicative[propName]) return
+					reduplicative[propName] = true
+
+					var targets = _elements[propName] || []
+					if (!nodeList.length) nodeList = nodeList.concat(targets)
+					else {
+						// reduce: remove reduplications
+						util.forEach(targets, function (el) {
+							if (!~util.indexOf(nodeList, el)) nodeList.push(el)
+						})
+					}
+				})
+				return nodeList
+			}
 		}
 	}
 
@@ -1447,14 +1416,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function noop () {}
 	function _templateShouldUpdate() {
-	    var that = this
-	    return util.some(this._expressions, function(exp, index) {
-	        var pv = that._caches[index]
-	        var nv = that.$exec(exp)
+	    return util.some(this._expressions, util.bind(function(exp, index) {
+	        var pv = this._caches[index]
+	        var nv = this.$exec(exp)
 	        if (!nv[0]) {
-	            return !!that.$diff(pv, nv[1])
+	            return !!this.$diff(pv, nv[1])
 	        }
-	    })
+	    }, this))
 	}
 	module.exports = {
 	    'attr': {
@@ -1545,6 +1513,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	                parent.replaceChild(fragCon, this.$el)
 
 	                this._render = function () {
+	                    // parent may be a fragment node
+	                    parent = before.parentNode
+	                    
 	                    var result = compute()
 	                    var childRange = util.domRange(parent, before, after)
 
@@ -1564,8 +1535,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    parent.insertBefore(fragCon, after)
 	                }
 	            }
-
-
 	        },
 	        shouldUpdate: function () {
 	            return _templateShouldUpdate.apply(this, arguments)
@@ -1771,7 +1740,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	}
 
-
 /***/ },
 /* 10 */
 /***/ function(module, exports, __webpack_require__) {
@@ -1807,6 +1775,202 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 11 */
+/***/ function(module, exports) {
+
+	'use strict'
+
+	function noop () {}
+	module.exports = {
+	    if: {
+	        bind: function () {
+	            var that = this
+	            var $el = this.$el
+	            var $parent = $el.parentNode
+	            var _mounted = true
+
+	            this._mount = function () {
+	                if (_mounted) return
+	                _mounted = true
+	                $parent.appendChild($el)
+	            }
+	            this._unmount = function () {
+	                if (!_mounted) return
+	                _mounted = false
+	                $parent.removeChild($el)
+	            }
+	        },
+	        unbind: function () {
+	            this._mount = this._unmount = noop
+	        },
+	        update: function (cnd) {
+	            if (!cnd) return this._unmount()
+	            else if (this._compiled) return this._mount()
+	            else {
+	                this._compiled = true
+	                this.$vm.$compile(this.$el)
+	                this._mount()
+	            }
+	        }
+	    },
+	    repeat: {
+	        bind: function () {
+	            
+	        },
+	        unbind: function () {
+
+	        },
+	        update: function () {
+	            
+	        }
+	    }
+	}
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+	var Expression = __webpack_require__(10)
+	var consoler = __webpack_require__(7)
+	var conf = __webpack_require__(5)
+	var util = __webpack_require__(2)
+	var _execute = __webpack_require__(13)
+	var _isExpr = Expression.isExpr
+	var _strip = Expression.strip
+	var _did = 0
+	var _diff = function () {
+	    return util.diff.apply(util, arguments)
+	}
+	function noop() {}
+	/**
+	 * Abstract direcitve
+	 * @param {Reve}    vm      Reve instance
+	 * @param {Element} tar     Target DOM of the direcitve
+	 * @param {Object}  def     Directive definition
+	 * @param {String}  name    Attribute name of the directive
+	 * @param {String}  expr    Attribute value of the directive
+	 */
+	function Directive(vm, tar, def, name, expr, scope) {
+	    var d = this
+	    var bindParams = []
+	    var isExpr = !!_isExpr(expr)
+	    var rawExpr = expr
+
+	    isExpr && (expr = _strip(expr))
+
+	    if (def.multi) {
+	        // extract key and expr from "key: expression" format
+	        var key
+	        var keyRE = /^[^:]+:/
+	        if (!keyRE.test(expr)) {
+	            return consoler.error('Invalid expression of "{' + expr + '}", it should be in this format: ' + name + '="{ key: expression }".')
+	        }
+	        expr = expr.replace(keyRE, function(m) {
+	            key = util.trim(m.replace(/:$/, ''))
+	            return ''
+	        })
+	        expr = util.trim(expr)
+
+	        bindParams.push(key)
+	    }
+
+	    d.$el = tar
+	    d.$vm = vm
+	    d.$id = _did++
+	    d.$expr = expr
+	    d.$rawExpr = rawExpr
+	    d.$name = name
+	    d.$destroyed = false
+	    d.$scoped = !!def.scoped
+	    d.$scope = scope
+	    // updateId is used to update directive/component which DOM match the "updateid"
+	    d.$updateId = util.getAttribute(tar, conf.namespace + 'updateid') || ''
+	    this._$unbind = def.unbind
+
+	    var bind = def.bind
+	    var upda = def.update
+	    var shouldUpdate = def.shouldUpdate
+	    var afterUpdate = def.afterUpdate
+	    var prev
+
+	    // set properties
+	    util.objEach(def, function(k, v) {
+	        d[k] = v
+	    })
+
+	    this.$diff = _diff
+	    /**
+	     *  update handler
+	     */
+	    function _update() {
+	        if (d.$destroyed) return consoler.warn('Directive "' + name + '" already destroyed.')
+
+	        var hasDiff = false
+	        // empty expression also can trigger update, such `r-text` directive
+	        if (!isExpr) {
+	            if (shouldUpdate && shouldUpdate.call(d)) {
+	                upda && upda.call(d)
+	            }
+	        } else {
+	            var nexv = d.$exec(expr) // [error, result]
+	            var r = nexv[1]
+
+	            if (!nexv[0] && util.diff(r, prev)) {
+	                hasDiff = true
+
+	                // shouldUpdate(nextValue, preValue)
+	                if (!shouldUpdate || shouldUpdate.call(d, r, prev)) {
+	                    var p = prev
+	                    prev = r
+	                    // update(nextValue, preValue)
+	                    upda && upda.call(d, r, p)
+	                }
+	            }
+	        }
+	        afterUpdate && afterUpdate.call(d, hasDiff)
+	    }
+
+	    /**
+	     *  If expression is a string iteral, use it as value
+	     */
+	    var hasError
+	    if (isExpr) {
+	        prev =  d.$exec(expr)
+	        hasError = prev[0]
+	        prev = prev[1]
+	    } else {
+	        prev = expr
+	    }
+	    bindParams.push(prev)
+	    bindParams.push(expr)
+	    d.$update = _update
+	    /**
+	     * bind([propertyName, ]expression-value, expression)
+	     * propertyName will be passed if and only if "multi:true"
+	     */
+	    bind && bind.apply(d, bindParams)
+	    // error will stop update
+	    !hasError && upda && upda.call(d, prev)
+	}
+	/**
+	 *  execute wrap with directive name and current ViewModel
+	 */
+	Directive.prototype.$exec = function (expr) {
+	    return _execute(this.$vm, expr, this.$name)
+	}
+	Directive.prototype.$destroy = function () {
+	    if (this.$destroyed) return
+
+	    this._$unbind && this._$unbind.call(this)
+	    this.$update = this.$destroy = this.$exec = noop
+	    this.$el = null
+	    this.$destroyed = true
+	}
+
+	module.exports = Directive
+
+/***/ },
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
