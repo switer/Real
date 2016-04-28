@@ -7,17 +7,18 @@
 </head>
 <body>
     <div id="app">
-        <div r-if="{show}" class="if-class">
-            <span r-text>{title}</span>
-        </div>
-        <button r-on="{click: onShow}">Click to show</button>
+        <div r-component="child" r-props="{show: show}"></div>
     </div>
     <script>
-        new Real({
+        Reve.component('child', {
+            shouldUpdate: function(next) {
+                console.log(next)
+            }
+        })
+        var c = new Reve({
             data: function() {
                 return {
                     show: false,
-                    // title: 'hhh'
                 }
             },
             el: '#app',
@@ -27,6 +28,8 @@
                 }
             }
         })
+        c.$set('show', true)
+
     </script>
 </body>
 </html>

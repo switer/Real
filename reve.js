@@ -254,13 +254,15 @@ Real.prototype.$compile = function (el, scope) {
 
         var refid = _getAttribute(tar, NS + 'ref')
         var cdata = _getAttribute(tar, NS + 'data')
+        var cprops = _getAttribute(tar, NS + 'props')
         var cmethods = _getAttribute(tar, NS + 'methods')
         var bindingOpt = _getAttribute(tar, NS + 'binding')
         var updId = _getAttribute(tar, NS + 'updateid') || ''
         var replaceOpt = _getAttribute(tar, NS + 'replace')
         var data = {}
+        var props = {}
         var methods = {}
-        var preData
+        var preData = {}
 
         replaceOpt = util.hasAttribute(tar, NS + 'replace')
             ? replaceOpt == 'true' || replaceOpt == '1'
@@ -272,21 +274,30 @@ Real.prototype.$compile = function (el, scope) {
             _removeAttribute(tar, NS + a)
         })
 
+        // data first then props
+        // data will create binding of panrent
         if (cdata) {
             data = _execLiteral(cdata, this, NS + 'data')            
             preData = util.immutable(data)
         }
+        // props will not create binding
+        if (cprops) {
+            props = _execLiteral(cprops, this, NS + 'props')            
+        }
+        // methods will not create binding
         if (cmethods) {
             methods = _execLiteral(cmethods, this, NS + 'methods')
         }
         tar._component = componentDec
         var c = new Component({
             el: tar,
-            _data: data,
+            _data: util.extend(props, data),
             name: cname,
             parent: vm,
             // methods will not trace changes
             methods: methods,
+            // if binding is disable, parent component will not trigger child's updating
+            // unbinding if data is empty
             binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true,
             replace: !!replaceOpt
         })

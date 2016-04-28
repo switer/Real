@@ -451,7 +451,11 @@ describe('# Build-in Directives', function () {
     it('r-props', function (){
         var el = document.createElement('div')
         el.setAttribute('r-props', '{name: "abc"}')
-        el.innerHTML = '<div r-component="c-props" r-data="{ key1: \'interface\'; }" r-replace="true"> </div>'
+        el.innerHTML = 
+        '<div r-component="c-props"\
+            r-data="{ key1: \'interface\'; }" \
+            r-props="{ key1: \'prop1frominerface\';key4: \'propfromInterface\'}" \
+            r-replace="true"> </div>'
 
         Reve.component('c-props', {
             data: {
@@ -463,6 +467,7 @@ describe('# Build-in Directives', function () {
                 assert.equal(this.$data.key1, 'interface')
                 assert.equal(this.$data.key2, 'props')
                 assert.equal(this.$data.key3, 'data')
+                assert.equal(this.$data.key4, 'propfromInterface')
             },
             template: '<div r-props="{key1: \'props\';key2: \'props\'}"></div>'
         })
