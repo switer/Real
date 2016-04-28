@@ -7,12 +7,13 @@
 </head>
 <body>
     <div id="app">
-        <div r-component="child" r-props="{show: show}"></div>
+        <div r-if="{false}" r-component="child"></div>
+        <div r-text r-component="child">{'abc'}</div>
     </div>
     <script>
         Reve.component('child', {
-            shouldUpdate: function(next) {
-                console.log(next)
+            ready: function() {
+                console.log(this.$el)
             }
         })
         var c = new Reve({

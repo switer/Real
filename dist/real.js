@@ -117,17 +117,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	     */
 	    if (util.type(el) == 'string') {
 	        var sel = el
-	        if (supportQuerySelector)
+	        if (supportQuerySelector) {
 	            el = document.querySelector(sel)
-	        else if (/^\./.test(sel)) {
+	        } else if (/^\./.test(sel)) {
 	            el = _getElementsByClassName(sel.replace(/^\./, ''))
 	            el && (el = el[0])
-	        }
-	        else if (/^#/.test(sel))
+	        } else if (/^#/.test(sel)) {
 	            el = document.getElementById(sel.replace(/^#/, ''))
-	        else el = null
+	        } else {
+	            el = null
+	        }
 
-	        if (!el) return consoler.error('Can\'t not found element by selector "' + sel + '"')
+	        if (!el) return consoler.error('Can\'t resolve element by "' + sel + '"')
 	    }
 	    
 	    /**
@@ -142,10 +143,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * otherwise template rendering to innerHTML and replace the component element with
 	         * root element of template.
 	         */
-	        if (util.hasAttribute(el, 'r-notemplate')) {
+	        if (util.hasAttribute(el, NS + '-notemplate')) {
 	            // skip render template, using with SSR
 	        } else if (hasReplaceOption) {
 	            var child = _fragmentWrap(options.template)
+	            // for get first Element of the template as root element of the component
 	            var children = _fragmentChildren(child)
 	            if (!children.length) 
 	                throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
@@ -157,8 +159,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	            _cloneAttributes(el, nextEl)
 	            el = nextEl
 	        } else {
+	            // el is given then set template as innerHTML for the component
 	            if (is.Fragment(el)){
-	                consoler.warn('Container element should not a fragment node when "template" is given. Template:\n', options.template)
+	                consoler.warn('Container element should\'nt a fragment node when "template" is given. Template:\n', options.template)
 	            } else {
 	                el.innerHTML = options.template
 	            }
@@ -166,7 +169,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    } else if (!el && options.template) {
 	        if (hasReplaceOption) {
 	            var frag = _fragmentWrap(options.template)
-	            el = _fragmentChildren(frag)[0] 
+	            // for get first Element of the template as root element of the component
+	            el = _fragmentChildren(frag)[0]
 	            if (!el) 
 	                consoler.warn('Component\'s template should has a child element when using \'replace\' option.', options.template)
 	        }
@@ -187,7 +191,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        }
 	    } else {
-	        throw new Error('Unvalid "el" option.')
+	        throw new Error('illegal "el" option.')
 	    }
 	    // prevent instance circularly
 	    _removeAttribute(el, NS + 'component')
@@ -324,7 +328,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        replaceOpt = util.hasAttribute(tar, NS + 'replace')
 	            ? replaceOpt == 'true' || replaceOpt == '1'
 	            : false
-	        // remove 'r-component' attribute
+	        // remove 'NS-component' attribute
 	        _removeAttribute(tar, componentDec)
 
 	        util.forEach(['ref','data', 'methods', 'binding', 'replace'], function (a) {
