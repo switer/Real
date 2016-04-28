@@ -448,6 +448,20 @@ describe('# Build-in Directives', function () {
         assert(!!target)
         assert.equal(target.innerText, 'real')
     })
+    it('r-if:default mounted & root', function (){
+        var c = new Reve({
+            template: '<div r-if="{show}" class="if-class"><span r-text>{title}</span></div>',
+            data: function() {
+                return {
+                    show: true,
+                    title: 'real'
+                }
+            }
+        })
+        var target = c.$el.querySelector('.if-class')
+        assert(!!target)
+        assert.equal(target.innerText, 'real')
+    })
     it('r-props', function (){
         var el = document.createElement('div')
         el.setAttribute('r-props', '{name: "abc"}')

@@ -143,11 +143,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * root element of template.
 	         */
 	        if (util.hasAttribute(el, 'r-notemplate')) {
-	            // skip render template
+	            // skip render template, using with SSR
 	        } else if (hasReplaceOption) {
 	            var child = _fragmentWrap(options.template)
 	            var children = _fragmentChildren(child)
-	            if (!children.length) throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
+	            if (!children.length) 
+	                throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
 	            var nextEl = children[0]
 	            var parent = el.parentNode
 	            if (parent) {
@@ -188,7 +189,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    } else {
 	        throw new Error('Unvalid "el" option.')
 	    }
-	    // prealnt instance circularly
+	    // prevent instance circularly
 	    _removeAttribute(el, NS + 'component')
 	    // expose cid to DOM for debug
 	    _setAttribute(el, '_' + NS + 'cid', this.$id)
@@ -217,10 +218,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	/**
 	 * @private
 	 */
-	Real.prototype._$parseProps = function () {
+	Real.prototype._$parseProps = function (el) {
 	    var attr = conf.namespace + 'props'
-	    var props = _getAttribute(this.$el, attr)
-	    _removeAttribute(this.$el, attr)
+	    var props = _getAttribute(el || this.$el, attr)
+	    _removeAttribute(el || this.$el, attr)
 	    return props
 	        ? _execLiteral(props, this, attr)
 	        : null
@@ -312,13 +313,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        var refid = _getAttribute(tar, NS + 'ref')
 	        var cdata = _getAttribute(tar, NS + 'data')
-	        var cprops = _getAttribute(tar, NS + 'props')
 	        var cmethods = _getAttribute(tar, NS + 'methods')
 	        var bindingOpt = _getAttribute(tar, NS + 'binding')
 	        var updId = _getAttribute(tar, NS + 'updateid') || ''
 	        var replaceOpt = _getAttribute(tar, NS + 'replace')
 	        var data = {}
-	        var props = {}
 	        var methods = {}
 	        var preData = {}
 
@@ -338,14 +337,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	            data = _execLiteral(cdata, this, NS + 'data')            
 	            preData = util.immutable(data)
 	        }
-	        // props will not create binding
-	        if (cprops) {
-	            props = _execLiteral(cprops, this, NS + 'props')            
-	        }
 	        // methods will not create binding
 	        if (cmethods) {
 	            methods = _execLiteral(cmethods, this, NS + 'methods')
 	        }
+	        // props will not create binding
+	        var props = vm._$parseProps(tar) || {}
 	        tar._component = componentDec
 	        var c = new Component({
 	            el: tar,
@@ -618,8 +615,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (util.type(avalue) == 'function') return
 	        // IE9 below will get all inherited function properties
 	        if (/^on/.test(aname) && avalue === 'null') return
-
 	        try {
+	            // prevent attribute manual throw exception
 	            if (aname == 'class') {
 	                target.className = target.className + (target.className ? ' ' : '') + avalue
 	                return
