@@ -21,9 +21,6 @@ var _isExpr = Expression.isExpr
 var _strip = Expression.strip
 var _getAttribute = util.getAttribute
 var _cid = 0
-var _diff = function () {
-    return util.diff.apply(util, arguments)
-}
 var _getData = function (data) {
     return (util.type(data) == 'function' ? data():data) || {}
 }
@@ -555,7 +552,6 @@ function _cloneAttributes(el, target) {
         // In IE9 below, attributes and properties are merged...
         var aname = att.name
         var avalue = att.value
-        var NS = conf.namespace
 
         // unclone function property
         if (util.type(avalue) == 'function') return

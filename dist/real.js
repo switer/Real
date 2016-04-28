@@ -82,9 +82,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _strip = Expression.strip
 	var _getAttribute = util.getAttribute
 	var _cid = 0
-	var _diff = function () {
-	    return util.diff.apply(util, arguments)
-	}
 	var _getData = function (data) {
 	    return (util.type(data) == 'function' ? data():data) || {}
 	}
@@ -616,7 +613,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // In IE9 below, attributes and properties are merged...
 	        var aname = att.name
 	        var avalue = att.value
-	        var NS = conf.namespace
 
 	        // unclone function property
 	        if (util.type(avalue) == 'function') return
@@ -1504,7 +1500,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            } else {
 	                var parent = this.$el.parentNode
 	                var tmpCon = document.createElement('div')
-	                var fragCon = fragCon = document.createDocumentFragment()
+	                var fragCon = document.createDocumentFragment()
 	                var before = document.createComment('<' + conf.namespace + 'html>' + template)
 	                var after = document.createComment('</' + conf.namespace + 'html>')
 
@@ -1783,7 +1779,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = {
 	    if: {
 	        bind: function () {
-	            var that = this
 	            var $el = this.$el
 	            var $parent = $el.parentNode
 	            var _mounted = true
@@ -1810,17 +1805,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                this.$vm.$compile(this.$el)
 	                this._mount()
 	            }
-	        }
-	    },
-	    repeat: {
-	        bind: function () {
-	            
-	        },
-	        unbind: function () {
-
-	        },
-	        update: function () {
-	            
 	        }
 	    }
 	}
