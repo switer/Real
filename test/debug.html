@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>debug</title>
+    <script src="../dist/real.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div r-if="{false}" r-component="child"></div>
+        <div r-text r-component="child">{'abc'}</div>
+    </div>
+    <script>
+        Reve.component('child', {
+            ready: function() {
+                console.log(this.$el)
+            }
+        })
+        var c = new Reve({
+            data: function() {
+                return {
+                    show: false,
+                }
+            },
+            el: '#app',
+            methods: {
+                onShow: function () {
+                    this.$set('show', true)
+                }
+            }
+        })
+        c.$set('show', true)
+
+    </script>
+</body>
+</html>

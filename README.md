@@ -142,38 +142,46 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **r-html**
 
-	Render given **template** and update target element's innerHTML. If "r-html"'s attribute value is empty, template is innerHTML of target element.
-	Otherwise, template is result of the attribute expression and will set it to target element's innerHTML.
+	HTML rendering directive. Using to render template with VM's data. If attribute value is `inner`, it will render template to target element's innerHTML.
 
 	```html
 	// $data => {title: 'real'}
-	<div r-html="{'Framework is ' + title}"></div>
-	// render to
-	<div>Framework is real</div>
+	<div r-html>Framework is {title}</div>
+	// render to, notice: without wrapping div.
+	Framework is real
 	```
 
-	Using template:
+	Render to target element's innerHTML:
 	```html
 	// $data => {title: 'real'}
-	<div r-html>Framework is <span>{title}</span></div>
+	<div r-html="inner">Framework is <span>{title}</span></div>
 	// render to
 	<div>Framework is <span>real</span></div>
 	```
 
 - **r-text**
 
-	Using `r-text` to render text template. if attribute value is "replace", it will replace current element with a TextNode which value is render result.
-	Otherwise, will update innerText of target element.
+	 Directive for render template to text. If attribute value is `inner`, it will render template to target element's innerText.
 	
 	```html
-	Framework: <span r-text="replace">{name}</span> !
-	
+	Framework: <span r-text>{name}</span> !
 	```
+
 	Assert name is 'Reve', it will be rendered to:
 	```
 	Framework: Reve !
 	```
 
+	Render to target element's innerText:
+	```html
+	Framework: <span r-text="inner">{name}</span> !
+	// render to
+	Framework: <span r-text>real</span> !
+	```
+
+- **r-props** `(since v1.5.10)`
+	
+	Using with root element of the component. For inject data from DOM to $data.
 
 - **r-component**
 
@@ -221,6 +229,28 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	</div>
 	```
 
+- **r-model**
+	
+	Two way binding directive for select/input/textarea element. Value of directive expression is the binding property name in $data,
+	it could be a keypath, such as: **r-model="person[i].name"**. Example:
+
+	```js
+		var c = new Reve({
+            data: {
+                val: ''
+            },
+            template: '<input type="text" r-model="val"/>'
+        })
+
+        // input element will update data with specified property name
+        dispatchEvent(inp, 'input', 'real')
+        assert.equal(c.$data.val, 'real')
+
+        // data changed will update DOM value
+        c.$set('val', 'real2')
+        assert.equal(inp.value, 'real2')
+	```
+
 - **r-ref**
 
 	Add a reference of the component instance to parent component instance.
@@ -233,6 +263,7 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	```js
 	app.$refs.header.$data.title // 'hi, reve'
 	```
+
 
 - **r-data**
 
@@ -271,6 +302,14 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	If 'r-updateid' is presented, call `$update(id)` will update those matching directives or components.
 	> Notice: work with "r-component" or directives.
+
+- **r-notemplate**
+
+	If 'r-updateid' is presented, will not render component's template option, and render innerHTML only.
+	> Notice: work with "r-component".Using in server-side render case.
+
+
+
 
 #### Class Methods
 
