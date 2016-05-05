@@ -1,5 +1,5 @@
 /**
-* Real v1.5.14
+* Real v1.5.15
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -97,6 +97,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var NS = conf.namespace
 	    var _ready = options.ready
 	    var _created = options.created
+	    var _destroy = options.destroy
 	    var _binding = util.hasOwn(options, 'binding') ? options.binding : true
 	    this.$id = _cid ++
 	    this.$name = options.name || ''
@@ -105,7 +106,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$shouldUpdate = options.shouldUpdate
 	    this.$directives = []
 	    this.$components = []
-	    this._$beforeDestroy = options.destroy
+	    this._$beforeDestroy = function () {
+	        _safelyCall(conf.catch, _destroy, vm)
+	    }
 
 	    var el = options.el
 	    var hasReplaceOption = util.hasOwn(options, 'replace') 
@@ -214,10 +217,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        vm.$methods[key] = vm[key] = util.bind(m, vm)
 	    })
 
-	    _created && _created.call(vm)
+	    _safelyCall(conf.catch, _created, vm)
 
 	    this.$compile(el)
-	    _ready && _ready.call(vm)
+	    _safelyCall(conf.catch, _ready, vm)
 	}
 	/**
 	 * @private
@@ -348,6 +351,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // props will not create binding
 	        var props = vm._$parseProps(tar) || {}
 	        tar._component = componentDec
+
 	        var c = new Component({
 	            el: tar,
 	            _data: util.extend(props, data),
@@ -563,6 +567,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	Real.directive = function (id, def) {
 	    if (def.scope) _scopedDirectives.push(id) 
 	    _externalDirectives[id] = def
+	}
+	Real.set = function (k, v) {
+	    conf[k] = v
+	    return Real
+	}
+
+	function _safelyCall(isCatch, fn, ctx) {
+	    if (!fn) return
+
+	    if (isCatch) {
+	        try {
+	            fn.call(ctx)
+	        } catch(e) {
+	            consoler.error(e)
+	        }
+	    } else {
+	        fn.call(ctx)
+	    }
 	}
 
 	function _execLiteral (expr, vm, name) {
@@ -1214,7 +1236,8 @@ return /******/ (function(modules) { // webpackBootstrap
 		namespace: 'r-',
 		directiveSep: ';',
 	    directiveSep_regexp: /;/g,
-	    mutable_dirtives: ['html', 'text'] 
+	    mutable_dirtives: ['html', 'text'], 
+		catch: false // catch error when component instance or not
 	}
 
 	module.exports = conf
