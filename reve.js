@@ -36,6 +36,7 @@ function Real(options) {
     var NS = conf.namespace
     var _ready = options.ready
     var _created = options.created
+    var _destroy = options.destroy
     var _binding = util.hasOwn(options, 'binding') ? options.binding : true
     this.$id = _cid ++
     this.$name = options.name || ''
@@ -44,7 +45,9 @@ function Real(options) {
     this.$shouldUpdate = options.shouldUpdate
     this.$directives = []
     this.$components = []
-    this._$beforeDestroy = options.destroy
+    this._$beforeDestroy = function () {
+        _safelyCall(conf.catch, _destroy, vm)
+    }
 
     var el = options.el
     var hasReplaceOption = util.hasOwn(options, 'replace') 
@@ -153,10 +156,10 @@ function Real(options) {
         vm.$methods[key] = vm[key] = util.bind(m, vm)
     })
 
-    _created && _created.call(vm)
+    _safelyCall(conf.catch, _created, vm)
 
     this.$compile(el)
-    _ready && _ready.call(vm)
+    _safelyCall(conf.catch, _ready, vm)
 }
 /**
  * @private
@@ -287,6 +290,7 @@ Real.prototype.$compile = function (el, scope) {
         // props will not create binding
         var props = vm._$parseProps(tar) || {}
         tar._component = componentDec
+
         var c = new Component({
             el: tar,
             _data: util.extend(props, data),
@@ -502,6 +506,24 @@ Real.component = function (id, options) {
 Real.directive = function (id, def) {
     if (def.scope) _scopedDirectives.push(id) 
     _externalDirectives[id] = def
+}
+Real.set = function (k, v) {
+    conf[k] = v
+    return Real
+}
+
+function _safelyCall(isCatch, fn, ctx) {
+    if (!fn) return
+
+    if (isCatch) {
+        try {
+            fn.call(ctx)
+        } catch(e) {
+            consoler.error(e)
+        }
+    } else {
+        fn.call(ctx)
+    }
 }
 
 function _execLiteral (expr, vm, name) {
