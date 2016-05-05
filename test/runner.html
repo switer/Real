@@ -18,7 +18,8 @@
     <script src="../dist/real.js"></script>
     <script>
         if(navigator.userAgent.match('PhantomJS')) {
-            console.error = function() {}
+            Reve.consoler.error = function() {}
+            Reve.consoler.errorTrace = function() {}
         }
         function template(fn) {
             return fn.toString().replace(/^function\s*\(\s*\)\s*\{\s*\/\*|\*\/\s*\}$/, '')

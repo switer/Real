@@ -519,7 +519,7 @@ function _safelyCall(isCatch, fn, ctx) {
         try {
             fn.call(ctx)
         } catch(e) {
-            consoler.error(e)
+            consoler.errorTrace(e)
         }
     } else {
         fn.call(ctx)
@@ -649,4 +649,5 @@ function _getElementsByClassName(search) {
 function noop() {}
 Real.$ = $
 Real.util = util
+Real.consoler = consoler
 module.exports = Real

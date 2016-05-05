@@ -580,7 +580,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        try {
 	            fn.call(ctx)
 	        } catch(e) {
-	            consoler.error(e)
+	            consoler.errorTrace(e)
 	        }
 	    } else {
 	        fn.call(ctx)
@@ -710,6 +710,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function noop() {}
 	Real.$ = $
 	Real.util = util
+	Real.consoler = consoler
 	module.exports = Real
 
 /***/ },
@@ -1336,7 +1337,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			co.log(logs.join(' '))
 		}
 	}
-	module.exports = isCompeletedSupport ? co : {
+	var logger = isCompeletedSupport ? co : {
 		log: function () {
 			log('log', arguments)
 		},
@@ -1350,6 +1351,26 @@ return /******/ (function(modules) { // webpackBootstrap
 			log('info', arguments)
 		}
 	}
+	// custom error trace methods
+	logger.errorTrace = function (error) {
+		if (!co) return
+
+		if (!co.groupCollapsed || !co.groupEnd) {
+			logger.log(error)
+		} else if (!error.stack) {
+			logger.error(error.message || error)
+		} else {
+			co.groupCollapsed(' %c ' + error.message, 'color: red')
+			var lines = error.stack.split('\n')
+			lines.shift()
+			for (var i =0; i < lines.length; i++) {
+				co.log(lines[i])
+			}
+			co.groupEnd()
+		}
+	}
+
+	module.exports = logger
 
 /***/ },
 /* 8 */
