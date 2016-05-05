@@ -17,6 +17,9 @@
     <div id="app"></div>
     <script src="../dist/real.js"></script>
     <script>
+        if(navigator.userAgent.match('PhantomJS')) {
+            console.error = function() {}
+        }
         function template(fn) {
             return fn.toString().replace(/^function\s*\(\s*\)\s*\{\s*\/\*|\*\/\s*\}$/, '')
         }

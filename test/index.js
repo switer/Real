@@ -11,8 +11,8 @@ global.document = {
 }
 var assert = require('assert')
 var equal = assert.equal
-var util = require('../lib/util')
-var keypath = require('../lib/keypath')
+var util = require('../lib/tools/util')
+var keypath = require('../lib/tools/keypath')
 
 describe('#lib/util', function() {
     it('immutable', function () {

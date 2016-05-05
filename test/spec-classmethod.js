@@ -65,4 +65,19 @@ describe('# Class Methods', function () {
         })
         assert.equal(c.$el.querySelector('.empty').getAttribute('data-empty'), 'empty-value')
     })
+    it('set', function (){
+        Reve.set('catch', true)
+        var c = Reve.component('catch', {
+            el: document.createElement('div'),
+            ready: function () {
+                throw Error('err')
+            }
+        })
+        var c = new Reve({
+            template: '<div r-component="catch"></div>',
+            ready: function () {
+                throw new Error('Err')
+            }
+        })
+    })
 })
