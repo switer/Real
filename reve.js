@@ -85,7 +85,7 @@ function Real(options) {
          * otherwise template rendering to innerHTML and replace the component element with
          * root element of template.
          */
-        if (util.hasAttribute(el, NS + '-notemplate')) {
+        if (util.hasAttribute(el, NS + 'notemplate')) {
             // skip render template, using with SSR
         } else if (hasReplaceOption) {
             var child = _fragmentWrap(options.template)
@@ -255,6 +255,10 @@ Real.prototype.$compile = function (el, scope) {
         var Component = _components[cname]
         if (!Component) {
             return consoler.error('Component \'' + cname + '\' not found.')
+        }
+        // prevent circular instance
+        if (Component.__id === vm.$classid) {
+            return consoler.error('Component in circular instance.', tar)
         }
 
         var refid = _getAttribute(tar, NS + 'ref')
@@ -483,15 +487,19 @@ Real.prototype.$destroy = function () {
  * @param {Object} options Real instance options
  * @return {Function} sub-lass of Real
  */
+var _classid = 0
 function Ctor (options) {
     var baseMethods = options.methods
+    var classid = _classid ++
     function Class (opts) {
         var baseData = _getData(options.data)
         var instanOpts = util.extend({}, options, opts)
         instanOpts.methods = util.extend({}, baseMethods, instanOpts.methods)
         instanOpts.data = util.extend({}, baseData, _getData(instanOpts.data))
+        this.$classid = classid
         Real.call(this, instanOpts)
     }
+    Class.__id = classid
     util.inherit(Class, Real)
     return Class
 }

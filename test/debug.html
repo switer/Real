@@ -7,14 +7,18 @@
 </head>
 <body>
     <div id="app">
-        <div r-if="{false}" r-component="child"></div>
-        <div r-text r-component="child">{'abc'}</div>
+        <a href="/cover/7/74zopcwmpbms39k.html" target="_blank" class="figure" tabindex="-1">
+            <img r-lazyload="http://i.gtimg.cn/qqlive/img/jpgcache/files/qqvideo/7/74zopcwmpbms39k.jpg" alt="" />
+            
+            <div class="figure_caption">
+                <span class="figure_info">2016-04-14期</span>
+            </div>
+            <span class="figure_collect" r-component="c-follow"  r-notemplate="true"><i class="iconfont icon_collect">&#xe603;</i><i class="iconfont icon_collected">&#xe601;</i></span>
+        </a>
     </div>
     <script>
-        Reve.component('child', {
-            ready: function() {
-                console.log(this.$el)
-            }
+        Reve.component('c-follow', {
+            template: '<span class="figure_collect" r-component="c-follow"  r-notemplate="true"><i class="iconfont icon_collect">&#xe603;</i><i class="iconfont icon_collected">&#xe601;</i></span>'
         })
         var c = new Reve({
             data: function() {

@@ -490,4 +490,13 @@ describe('# Build-in Directives', function () {
         })
         assert.equal(c.$data.name, 'abc')
     })
+    it('r-notemplate', function (){
+        Reve.component('c-notemplate', {
+            template: '<span r-component="c-notemplate" r-notemplate="true"><div class="chil-inner"></div></span>'
+        })
+        var c = new Reve({
+            template: '<div><span r-component="c-notemplate"  r-notemplate="true"><div class="parent-inner"></div></span></div>'
+        })
+        assert(!!c.$el.querySelector('.parent-inner'))
+    })
 })

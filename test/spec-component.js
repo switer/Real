@@ -10,6 +10,16 @@ describe('# Component', function () {
         assert(typeof c.$components[0].$id == 'number')
         assert.equal(c.$refs.header.$el.getAttribute('_r-component'), 'header')
     })
+    it('Circular instance', function () {
+        Reve.component('child', {
+            template: '<div r-component="child"></div>'
+        })
+        var c = new Reve({
+            template: '<div r-component="child"></div>'
+        })
+        // will get circular error console
+        assert(!!c.$el.querySelector('[r-component]'))
+    })
     it('Nested components', function () {
         var call = 0
         Reve.component('outer', {

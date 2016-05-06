@@ -70,7 +70,7 @@ describe('# Class Methods', function () {
         var c = Reve.component('catch', {
             el: document.createElement('div'),
             ready: function () {
-                throw Error('err')
+                throw Error('Here match a err')
             }
         })
         var c = new Reve({
