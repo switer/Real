@@ -85,7 +85,7 @@ function Real(options) {
          * otherwise template rendering to innerHTML and replace the component element with
          * root element of template.
          */
-        if (util.hasAttribute(el, NS + 'notemplate')) {
+        if (util.hasAttribute(el, NS + 'notemplate') || options.notemplate) {
             // skip render template, using with SSR
         } else if (hasReplaceOption) {
             var child = _fragmentWrap(options.template)
