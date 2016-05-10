@@ -1,5 +1,5 @@
 /**
-* Real v1.5.17
+* Real v1.5.18
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -146,7 +146,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * otherwise template rendering to innerHTML and replace the component element with
 	         * root element of template.
 	         */
-	        if (util.hasAttribute(el, NS + 'notemplate')) {
+	        if (util.hasAttribute(el, NS + 'notemplate') || options.notemplate) {
 	            // skip render template, using with SSR
 	        } else if (hasReplaceOption) {
 	            var child = _fragmentWrap(options.template)
