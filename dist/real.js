@@ -573,7 +573,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return c
 	}
 	Real.directive = function (id, def) {
-	    if (def.scope) _scopedDirectives.push(id) 
+	    if (def.scoped) _scopedDirectives.push(id) 
 	    _externalDirectives[id] = def
 	}
 	Real.set = function (k, v) {
