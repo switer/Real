@@ -63,12 +63,10 @@ describe('# Directive', function () {
             }
         })
         var c = new Reve({
-            template: '<div r-follow class="main" r-attr="{title: follow}">\
-                            <span r-text>{follow}</span>\
-                        </div>'
+            template: '<div r-follow class="follow" r-attr="{title: follow}"><span r-text>{follow}</span></div>'
         })
-        assert.equal(c.$el.querySelector('.main').getAttribute('title'), 'From directive')
-        assert.equal(c.$el.querySelector('.main').innerText, 'From directive')
+        assert.equal(c.$el.querySelector('.follow').getAttribute('title'), 'From directive')
+        assert.equal(c.$el.querySelector('.follow').innerText, 'From directive')
     })
     it('directive-expression', function () {
         var inited = false

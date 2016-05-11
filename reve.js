@@ -349,13 +349,14 @@ Real.prototype.$compile = function (el, scope) {
 
         var def = _diretives[dname]
         var expr = _getAttribute(tar, dec) || ''
-        var d = new Directive(vm, tar, def, dec, expr, scope)
-
-        $directives.push(d)
         drefs.push(dec)
         tar._diretives = drefs
         _removeAttribute(tar, dec)
+
+        var d = new Directive(vm, tar, def, dec, expr, scope)
+        $directives.push(d)
     }
+
     util.forEach(scopedElements, function (tar) {
         util.some(scopedDec, function(dname) {
             var dec = conf.namespace + dname
@@ -384,6 +385,8 @@ Real.prototype.$compile = function (el, scope) {
             // prealnt repetitive binding
             if (drefs && ~util.indexOf(drefs, dname)) return
             _removeAttribute(tar, dname)
+            drefs.push(dname)
+            tar._diretives = drefs
 
             var sep = conf.directiveSep
             var d
@@ -401,8 +404,6 @@ Real.prototype.$compile = function (el, scope) {
                 d = new Directive(vm, tar, def, dname, expr, scope)
                 $directives.push(d)
             }
-            drefs.push(dname)
-            tar._diretives = drefs
         })
     })
 
@@ -518,6 +519,14 @@ Real.directive = function (id, def) {
 Real.set = function (k, v) {
     conf[k] = v
     return Real
+}
+
+
+function _isScopedElement(el) {
+    if (!el) return false
+    return util.some(util.keys(buildInScopedDirectives).concat(_scopedDirectives), function (k) {
+        return util.hasAttribute(conf.namespace + k)
+    })
 }
 
 function _safelyCall(isCatch, fn, ctx) {
