@@ -41,6 +41,35 @@ describe('# Directive', function () {
         })
         assert(inited)
     })
+    it('directive(name, { scoped: true })', function () {
+        var Follow = Reve.component('c-follow', {
+            data: function () {
+                return {
+                    follow: 'Default'
+                }
+            },
+            template: '<div>Follow</div>'
+        })
+        Reve.directive('follow', {
+            scoped: true,
+            bind: function () {
+                new Follow({
+                    el: this.$el,
+                    data: {
+                        follow: 'From directive'
+                    },
+                    notemplate: true
+                })
+            }
+        })
+        var c = new Reve({
+            template: '<div r-follow class="main" r-attr="{title: follow}">\
+                            <span r-text>{follow}</span>\
+                        </div>'
+        })
+        assert.equal(c.$el.querySelector('.main').getAttribute('title'), 'From directive')
+        assert.equal(c.$el.querySelector('.main').innerText, 'From directive')
+    })
     it('directive-expression', function () {
         var inited = false
         Reve.directive('num', {
