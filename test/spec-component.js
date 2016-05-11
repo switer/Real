@@ -103,6 +103,15 @@ describe('# Component', function () {
         var tar = c.$el.querySelector('.c-header')
         assert.equal(tar, c.$refs.header.$el)
     })
+    it('component-directives:r-replace:replace parent component', function () {
+        Reve.component('header', {})
+        var c = new Reve({
+            replace: true,
+            template: '<div r-component="header" r-ref="header"><div class="c-header"></div></div>'
+        })
+        var tar = c.$el.querySelector('.c-header')
+        assert.equal(c.$el, c.$refs.header.$el)
+    })
     it('component-directives:r-updateid', function () {
         Reve.component('header', {
             template: '<div class="c-header"><span r-text="replace">{title}</span></div>',

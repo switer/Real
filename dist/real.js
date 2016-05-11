@@ -196,10 +196,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    } else {
 	        throw new Error('illegal "el" option.')
 	    }
-	    // prevent instance circularly
-	    _removeAttribute(el, NS + 'component')
-	    // expose cid to DOM for debug
-	    _setAttribute(el, '_' + NS + 'cid', this.$id)
+	    var componentDec = NS + 'component'
+	    if (hasReplaceOption 
+	        && util.hasAttribute(el, componentDec) 
+	        && _getAttribute(el, componentDec) !== options.name) {
+	        // not same name policy, and make parentVM anonymous
+	    } else {
+	        // prevent instance circularly
+	        _removeAttribute(el, componentDec)
+	        // expose cid to DOM for debug
+	        _setAttribute(el, '_' + NS + 'cid', this.$id)
+	    }
 
 	    this.$el = el
 	    this.$methods = {}
@@ -218,7 +225,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    })
 
 	    _safelyCall(conf.catch, _created, vm)
-
 	    this.$compile(el)
 	    _safelyCall(conf.catch, _ready, vm)
 	}
@@ -300,13 +306,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return '[' + conf.namespace + name + ']'
 	    }))
 	    var componentElements = querySelectorAll(['[' + componentDec + ']'])
-
-	    /**
-	     * compile components
-	     */
-	    util.forEach(componentElements, util.bind(function (tar) {
-	        // prevent cross level component parse and repeat parse
+	    var compileComponent = function (tar) {
+	        // prevent cross DOM level parsing or repeat parse
 	        if (tar._component) return
+	            
 	        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
 
 	        var cname = _getAttribute(tar, componentDec)
@@ -322,6 +325,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return consoler.error('Component in circular instance.', tar)
 	        }
 
+	        tar._component = cname
+	        /**
+	         * Parsing begin
+	         */
 	        var refid = _getAttribute(tar, NS + 'ref')
 	        var cdata = _getAttribute(tar, NS + 'data')
 	        var cmethods = _getAttribute(tar, NS + 'methods')
@@ -354,7 +361,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	        // props will not create binding
 	        var props = vm._$parseProps(tar) || {}
-	        tar._component = componentDec
 
 	        var c = new Component({
 	            el: tar,
@@ -395,7 +401,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        }
 	        $components.push(c)
-	    }, this))
+	    }
+	    /**
+	     * compile components
+	     */
+	    if (util.hasAttribute(el, componentDec)){
+	        compileComponent.call(this, el)
+	    }
+	    util.forEach(componentElements, util.bind(compileComponent, this))
 
 	    /**
 	     * compile scoped directives
