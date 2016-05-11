@@ -136,10 +136,12 @@ function Real(options) {
         throw new Error('illegal "el" option.')
     }
     var componentDec = NS + 'component'
+    var isReplaced
     if (hasReplaceOption 
         && util.hasAttribute(el, componentDec) 
         && _getAttribute(el, componentDec) !== options.name) {
         // not same name policy, and make parentVM anonymous
+        isReplaced = true
     } else {
         // prevent instance circularly
         _removeAttribute(el, componentDec)
@@ -147,7 +149,6 @@ function Real(options) {
         _setAttribute(el, '_' + NS + 'cid', this.$id)
     }
 
-    this.$el = el
     this.$methods = {}
     this.$refs = {}
     
@@ -162,9 +163,12 @@ function Real(options) {
     util.objEach(options.methods, function (key, m) {
         vm.$methods[key] = vm[key] = util.bind(m, vm)
     })
-
+    // created lifecycle
     _safelyCall(conf.catch, _created, vm)
-    this.$compile(el)
+    this.$el = el
+    var $compiledEl = this.$compile(el)
+    isReplaced && (this.$el = $compiledEl)
+    // ready lifecycle
     _safelyCall(conf.catch, _ready, vm)
 }
 /**
@@ -257,11 +261,13 @@ Real.prototype.$compile = function (el, scope) {
         }
         var Component = _components[cname]
         if (!Component) {
-            return consoler.error('Component \'' + cname + '\' not found.')
+            consoler.error('Component \'' + cname + '\' not found.')
+            return
         }
         // prevent circular instance
         if (Component.__id === vm.$classid) {
-            return consoler.error('Component in circular instance.', tar)
+            consoler.error('Component in circular instance.', tar)
+            return
         }
 
         tar._component = cname
@@ -340,12 +346,15 @@ Real.prototype.$compile = function (el, scope) {
             }
         }
         $components.push(c)
+
+        return c.$el
     }
     /**
      * compile components
      */
+    var replaceEl
     if (util.hasAttribute(el, componentDec)){
-        compileComponent.call(this, el)
+        replaceEl = compileComponent.call(this, el)
     }
     util.forEach(componentElements, util.bind(compileComponent, this))
 
@@ -420,7 +429,7 @@ Real.prototype.$compile = function (el, scope) {
         })
     })
 
-    return el
+    return replaceEl || el
 }
 /**
  * Append child ViewModel to parent VideModel
