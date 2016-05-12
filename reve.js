@@ -639,10 +639,25 @@ function _cloneAttributes(el, target) {
     return target
 }
 function _fragmentWrap (html) {
-    var div = document.createElement('div')
+    var tmpTag = 'div'
+    var matches = /^\s*<(th|tr|td|thead|tbody)>/i.exec(html)
+    if (matches) {
+        switch (matches[1].toLowerCase()) {
+            case 'th':
+            case 'tr':
+            case 'td':
+                tmpTag = 'tbody'
+                break
+            case 'thead':
+            case 'tbody':
+                tmpTag = 'table'
+                break
+        }
+    }
+    var tmp = document.createElement(tmpTag)
     var frag = document.createDocumentFragment()
-    div.innerHTML = html
-    var children = div.childNodes
+    tmp.innerHTML = html
+    var children = tmp.childNodes
     while(children.length){
         frag.appendChild(children[0])
     }
