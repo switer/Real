@@ -1,5 +1,5 @@
 /**
-* Real v1.5.21-2
+* Real v1.5.21-3
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -107,7 +107,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$directives = []
 	    this.$components = []
 	    this._$beforeDestroy = function () {
-	        _safelyCall(conf.catch, _destroy, vm)
+	        _safelyCall(conf['catch'], _destroy, vm)
 	    }
 
 	    var el = options.el
@@ -216,7 +216,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // from options.data
 	    var data = _getData(options.data)
 	    // prop NS-props
-	    var props = this._$parseProps()
+	    var props = this._$parseProps(el)
 	    // from DOM interface
 	    var _data = _getData(options._data)
 	    this.$data = util.extend(data, props, _data) 
@@ -225,12 +225,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        vm.$methods[key] = vm[key] = util.bind(m, vm)
 	    })
 	    // created lifecycle
-	    _safelyCall(conf.catch, _created, vm)
+	    _safelyCall(conf['catch'], _created, vm)
 	    this.$el = el
 	    var $compiledEl = this.$compile(el)
 	    isReplaced && (this.$el = $compiledEl)
 	    // ready lifecycle
-	    _safelyCall(conf.catch, _ready, vm)
+	    _safelyCall(conf['catch'], _ready, vm)
 	}
 	/**
 	 * @private
@@ -238,6 +238,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	Real.prototype._$parseProps = function (el) {
 	    var attr = conf.namespace + 'props'
 	    var props = _getAttribute(el || this.$el, attr)
+
 	    _removeAttribute(el || this.$el, attr)
 	    return props
 	        ? _execLiteral(props, this, attr)
@@ -367,7 +368,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	        // props will not create binding
 	        var props = vm._$parseProps(tar) || {}
-
 	        var c = new Component({
 	            el: tar,
 	            _data: util.extend(props, data),
@@ -1288,11 +1288,11 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports) {
 
 	var conf = {
-		namespace: 'r-',
-		directiveSep: ';',
-	    directiveSep_regexp: /;/g,
-	    mutable_dirtives: ['html', 'text'], 
-		catch: false // catch error when component instance or not
+		'namespace': 'r-',
+		'directiveSep': ';',
+	    'directiveSep_regexp': /;/g,
+	    'mutable_dirtives': ['html', 'text'], 
+		'catch': false // catch error when component instance or not
 	}
 
 	module.exports = conf

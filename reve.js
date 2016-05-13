@@ -46,7 +46,7 @@ function Real(options) {
     this.$directives = []
     this.$components = []
     this._$beforeDestroy = function () {
-        _safelyCall(conf.catch, _destroy, vm)
+        _safelyCall(conf['catch'], _destroy, vm)
     }
 
     var el = options.el
@@ -155,7 +155,7 @@ function Real(options) {
     // from options.data
     var data = _getData(options.data)
     // prop NS-props
-    var props = this._$parseProps()
+    var props = this._$parseProps(el)
     // from DOM interface
     var _data = _getData(options._data)
     this.$data = util.extend(data, props, _data) 
@@ -164,12 +164,12 @@ function Real(options) {
         vm.$methods[key] = vm[key] = util.bind(m, vm)
     })
     // created lifecycle
-    _safelyCall(conf.catch, _created, vm)
+    _safelyCall(conf['catch'], _created, vm)
     this.$el = el
     var $compiledEl = this.$compile(el)
     isReplaced && (this.$el = $compiledEl)
     // ready lifecycle
-    _safelyCall(conf.catch, _ready, vm)
+    _safelyCall(conf['catch'], _ready, vm)
 }
 /**
  * @private
@@ -177,6 +177,7 @@ function Real(options) {
 Real.prototype._$parseProps = function (el) {
     var attr = conf.namespace + 'props'
     var props = _getAttribute(el || this.$el, attr)
+
     _removeAttribute(el || this.$el, attr)
     return props
         ? _execLiteral(props, this, attr)
@@ -306,7 +307,6 @@ Real.prototype.$compile = function (el, scope) {
         }
         // props will not create binding
         var props = vm._$parseProps(tar) || {}
-
         var c = new Component({
             el: tar,
             _data: util.extend(props, data),

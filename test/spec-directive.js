@@ -501,13 +501,13 @@ describe('# Build-in Directives', function () {
         Reve.component('c-props', {
             data: {
                 key1: 'data',
-                key2: 'data',
-                key3: 'data'
+                key2: 'data2',
+                key3: 'data3'
             },
             ready: function () {
                 assert.equal(this.$data.key1, 'interface')
                 assert.equal(this.$data.key2, 'props')
-                assert.equal(this.$data.key3, 'data')
+                assert.equal(this.$data.key3, 'data3')
                 assert.equal(this.$data.key4, 'propfromInterface')
             },
             template: '<div r-props="{key1: \'props\';key2: \'props\'}"></div>'
