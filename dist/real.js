@@ -1,5 +1,5 @@
 /**
-* Real v1.5.21-3
+* Real v1.5.21-4
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1882,7 +1882,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function noop () {}
 	module.exports = {
-	    if: {
+	    "if": {
 	        bind: function () {
 	            var $el = this.$el
 	            var $parent = $el.parentNode

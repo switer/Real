@@ -7,21 +7,28 @@
 </head>
 <body>
     <script>
-        var Follow = Reve.component('c-follow', {
-            data: function () {
-                return {
-                    follow: 'I am follow'
-                }
+        var el = document.createElement('div')
+        el.setAttribute('r-props', '{name: "abc"}')
+        el.innerHTML = 
+        '<div r-component="c-props"\
+            r-data="{ key1: \'interface\'; }" \
+            r-props="{ key1: \'prop1frominerface\';key4: \'propfromInterface\'}" \
+            r-replace="true"></div>'
+
+        Reve.component('c-props', {
+            data: {
+                key1: 'data',
+                key2: 'data2',
+                key3: 'data3'
             },
-            template: '<div>Follow</div>'
+            ready: function () {
+                console.log(this.$data)
+            },
+            template: '<div r-props="{key1: \'props\';key2: \'props\'}"></div>'
         })
         var c = new Reve({
-            replace: true,
-            template: '<div r-component="c-follow"></div>'
+            el: el
         })
-        console.log(c)
-        console.log(c.$el)
-
     </script>
 </body>
 </html>
