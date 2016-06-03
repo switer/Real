@@ -1,5 +1,5 @@
 /**
-* Real v1.5.21
+* Real v1.5.22
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -197,10 +197,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        throw new Error('illegal "el" option.')
 	    }
 	    var componentDec = NS + 'component'
+	    var isReplaced
 	    if (hasReplaceOption 
 	        && util.hasAttribute(el, componentDec) 
 	        && _getAttribute(el, componentDec) !== options.name) {
 	        // not same name policy, and make parentVM anonymous
+	        isReplaced = true
 	    } else {
 	        // prevent instance circularly
 	        _removeAttribute(el, componentDec)
@@ -208,14 +210,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _setAttribute(el, '_' + NS + 'cid', this.$id)
 	    }
 
-	    this.$el = el
 	    this.$methods = {}
 	    this.$refs = {}
 	    
 	    // from options.data
 	    var data = _getData(options.data)
 	    // prop NS-props
-	    var props = this._$parseProps()
+	    var props = this._$parseProps(el)
 	    // from DOM interface
 	    var _data = _getData(options._data)
 	    this.$data = util.extend(data, props, _data) 
@@ -223,9 +224,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    util.objEach(options.methods, function (key, m) {
 	        vm.$methods[key] = vm[key] = util.bind(m, vm)
 	    })
-
+	    // created lifecycle
 	    _safelyCall(conf.catch, _created, vm)
-	    this.$compile(el)
+	    this.$el = el
+	    var $compiledEl = this.$compile(el)
+	    isReplaced && (this.$el = $compiledEl)
+	    // ready lifecycle
 	    _safelyCall(conf.catch, _ready, vm)
 	}
 	/**
@@ -318,11 +322,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	        var Component = _components[cname]
 	        if (!Component) {
-	            return consoler.error('Component \'' + cname + '\' not found.')
+	            consoler.error('Component \'' + cname + '\' not found.')
+	            return
 	        }
 	        // prevent circular instance
 	        if (Component.__id === vm.$classid) {
-	            return consoler.error('Component in circular instance.', tar)
+	            consoler.error('Component in circular instance.', tar)
+	            return
 	        }
 
 	        tar._component = cname
@@ -401,12 +407,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        }
 	        $components.push(c)
+
+	        return c.$el
 	    }
 	    /**
 	     * compile components
 	     */
+	    var replaceEl
 	    if (util.hasAttribute(el, componentDec)){
-	        compileComponent.call(this, el)
+	        replaceEl = compileComponent.call(this, el)
 	    }
 	    util.forEach(componentElements, util.bind(compileComponent, this))
 
@@ -481,7 +490,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        })
 	    })
 
-	    return el
+	    return replaceEl || el
 	}
 	/**
 	 * Append child ViewModel to parent VideModel
@@ -999,8 +1008,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	var util = {
 	    type: function(obj) {
 	        if (obj === null) return 'null'
-	        else if (obj === undef) return 'undefined' 
-	        return /\[object (\w+)\]/.exec(Object.prototype.toString.call(obj))[1].toLowerCase()
+	        else if (obj === undef) return 'undefined'
+	        var m = /\[object (\w+)\]/.exec(Object.prototype.toString.call(obj))
+	        return m ? m[1].toLowerCase() : ''    
 	    },
 	    keys: function (obj) {
 	        var keys = []

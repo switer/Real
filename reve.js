@@ -155,7 +155,7 @@ function Real(options) {
     // from options.data
     var data = _getData(options.data)
     // prop NS-props
-    var props = this._$parseProps()
+    var props = this._$parseProps(el)
     // from DOM interface
     var _data = _getData(options._data)
     this.$data = util.extend(data, props, _data) 
