@@ -948,8 +948,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	var util = {
 	    type: function(obj) {
 	        if (obj === null) return 'null'
-	        else if (obj === undef) return 'undefined' 
-	        return /\[object (\w+)\]/.exec(Object.prototype.toString.call(obj))[1].toLowerCase()
+	        else if (obj === undef) return 'undefined'
+	        var m = /\[object (\w+)\]/.exec(Object.prototype.toString.call(obj))
+	        return m ? m[1].toLowerCase() : ''
 	    },
 	    keys: function (obj) {
 	        var keys = []
