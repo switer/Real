@@ -1,5 +1,5 @@
 /**
-* Real v1.4.20
+* Real v1.4.20-1
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1154,9 +1154,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	var ie = detect()
+	var inp = document.createElement('input')
 	module.exports = {
 		ie: ie,
-		supportQuerySelector: document.querySelector && document.querySelectorAll
+		supportQuerySelector: document.querySelector && document.querySelectorAll,
+	    supportChangeEvent: 'onchange' in inp,
+	    supportKeyupEvent: 'onkeyup' in inp
 	}
 
 
@@ -1363,6 +1366,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var consoler = __webpack_require__(7)
 	var Expression = __webpack_require__(10)
 	var keypath = __webpack_require__(8)
+	var detection = __webpack_require__(3)
 
 	function noop () {}
 	function templateShouldUpdate() {
@@ -1548,7 +1552,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	                case 'search':
 	                case 'password':
 	                case 'textarea':
-	                    this.evtType = 'keydown'
+	                    if (detection.supportChangeEvent) {
+	                        this.evtType = 'change'
+	                    } else if (detection.supportKeyupEvent) {
+	                        this.evtType = 'keyup'
+	                    } else {
+	                        this.evtType = 'input'
+	                    }
 	                    break
 	                
 	                case 'date':
@@ -1568,7 +1578,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    consoler.warn('"' + conf.namespace + 'model" only support input,textarea,select')
 	                    return
 	            }
-
 	            var that = this
 	            var vm = this.$vm
 	            var vType = this.vType = type == 'checkbox' ? 'checked':'value'
@@ -1606,6 +1615,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this._update()
 	        },
 	        unbind: function () {
+	            $(this.$el).off(this.evtType, this._requestChange)
 	            this._requestChange = this._update = noop
 	        }
 	    },

@@ -350,8 +350,8 @@ describe('# Build-in Directives', function () {
         else
             element.fireEvent("on" + type);
     }
-    it('r-model', function (){
 
+    it('r-model', function (){
         var c = new Reve({
             data: {
                 val: ''
@@ -360,11 +360,10 @@ describe('# Build-in Directives', function () {
         })
         var inp = c.$el.querySelector('input')
         inp.value = 'real'
-        dispatchEvent(inp, 'keydown')
+        dispatchEvent(inp, 'change')
         assert.equal(c.$data.val, 'real')
 
         c.$set('val', 'real2')
         assert.equal(inp.value, 'real2')
-
     })
 })
