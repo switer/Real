@@ -18,6 +18,8 @@
 			.button-group button {line-height: 28px;color: white;background-color: cornflowerblue;border: 0;padding: 6px;
 				outline: 0;border-radius: 4px;margin: 5px;}
 
+		.button.disabled {color: #fff;background-color: #ccc;}
+
 		.footer {display: block;width: 100%;text-align: center;color: #ccc;text-decoration: underline;cursor: pointer;}
 	</style>
 </head>
@@ -59,9 +61,13 @@
 			r-replace="true"
 			r-data="{header: header}"
 		></div>
-		<button r-on="{click: onUpdateById}">Click to update "text"</button>
-		<div r-updateid="text" r-html="{updateid}"></div>
-		<img r-lazy="https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png" />
+		<center>
+			<input type="text" r-model="text"> <button class="button" r-class="{disabled:text}">Submit</button>
+			<p></p>
+			<button r-on="{click: onUpdateById}">Click to update "text"</button>
+			<div r-updateid="text" r-html="{updateid}"></div>
+			<img r-lazy="https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png" />
+		</center>
 	</div>
 	<script>
 		Reve.directive('autorefresh', {
@@ -111,6 +117,7 @@
 			el: '#app',
 			data: function () {
 				return {
+					text: '',
 					show: true,
 					hl: true,
 					header: 'Hi, Reve',
