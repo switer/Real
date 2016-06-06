@@ -1,5 +1,5 @@
 /**
-* Real v1.5.23
+* Real v1.5.24
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1717,10 +1717,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	                case 'search':
 	                case 'password':
 	                case 'textarea':
+	                    // todo: support composite events
 	                    if (detection.supportChangeEvent) {
-	                        this.evtType = 'change'
+	                        // sometime, input doesn't fire change event
+	                        this.evtType = 'change,input'
 	                    } else if (detection.supportKeyupEvent) {
-	                        this.evtType = 'keyup'
+	                        // IE9 doesn't fire input event on backspace/del/cut , inspired by vue
+	                        this.evtType = 'keyup,input'
 	                    } else {
 	                        this.evtType = 'input'
 	                    }
@@ -1752,7 +1755,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	             */
 	            this._requestChange = function () {
 	                if (!that._prop) return
-	                vm.$set(that._prop, that.$el[vType])
+	                var value = that.$el[vType]
+	                var state = vm.$data[that._prop]
+
+	                if (util.diff(value, state)) {
+	                    vm.$set(that._prop, value)
+	                }
 	            }
 	            /**
 	             *  State 2 DOM input
@@ -1766,7 +1774,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    that.$el[vType] = nv
 	                }
 	            }
-	            $(this.$el).on(this.evtType, this._requestChange)
+	            util.forEach(this.evtType.split(','), function (t) {
+	                $el.on(t, that._requestChange)
+	            })
 
 	        },
 	        update: function (prop) {
@@ -1780,7 +1790,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this._update()
 	        },
 	        unbind: function () {
-	            $(this.$el).off(this.evtType, this._requestChange)
+	            var $el = $(this.$el)
+	            util.forEach(this.evtType.split(','), function (t) {
+	                $el.off(t, that._requestChange)
+	            })
 	            this._requestChange = this._update = noop
 	        }
 	    },
