@@ -1,5 +1,5 @@
 /**
-* Real v1.4.20-2
+* Real v1.4.21
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1627,7 +1627,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        unbind: function () {
 	            var $el = $(this.$el)
 	            util.forEach(this.evtType.split(','), function (t) {
-	                $el.off(t, that._requestChange)
+	                $el.off(t, this._requestChange)
 	            })
 	            this._requestChange = this._update = noop
 	        }
