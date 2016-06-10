@@ -1,5 +1,5 @@
 /**
-* Real v1.5.25
+* Real v1.5.26
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -107,7 +107,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$directives = []
 	    this.$components = []
 	    this._$beforeDestroy = function () {
-	        _safelyCall(conf.catch, _destroy, vm)
+	        _safelyCall(conf['catch'], _destroy, vm)
 	    }
 
 	    var el = options.el
@@ -225,12 +225,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        vm.$methods[key] = vm[key] = util.bind(m, vm)
 	    })
 	    // created lifecycle
-	    _safelyCall(conf.catch, _created, vm)
+	    _safelyCall(conf['catch'], _created, vm)
 	    this.$el = el
 	    var $compiledEl = this.$compile(el)
 	    isReplaced && (this.$el = $compiledEl)
 	    // ready lifecycle
-	    _safelyCall(conf.catch, _ready, vm)
+	    _safelyCall(conf['catch'], _ready, vm)
 	}
 	/**
 	 * @private
@@ -1278,7 +1278,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		directiveSep: ';',
 	    directiveSep_regexp: /;/g,
 	    mutable_dirtives: ['html', 'text'], 
-		catch: false // catch error when component instance or not
+		'catch': false // catch error when component instance or not
 	}
 
 	module.exports = conf
@@ -1882,7 +1882,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function noop () {}
 	module.exports = {
-	    if: {
+	    'if': {
 	        bind: function () {
 	            var $el = this.$el
 	            var $parent = $el.parentNode
