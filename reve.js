@@ -46,7 +46,7 @@ function Real(options) {
     this.$directives = []
     this.$components = []
     this._$beforeDestroy = function () {
-        _safelyCall(conf.catch, _destroy, vm)
+        _safelyCall(conf['catch'], _destroy, vm)
     }
 
     var el = options.el
@@ -164,12 +164,12 @@ function Real(options) {
         vm.$methods[key] = vm[key] = util.bind(m, vm)
     })
     // created lifecycle
-    _safelyCall(conf.catch, _created, vm)
+    _safelyCall(conf['catch'], _created, vm)
     this.$el = el
     var $compiledEl = this.$compile(el)
     isReplaced && (this.$el = $compiledEl)
     // ready lifecycle
-    _safelyCall(conf.catch, _ready, vm)
+    _safelyCall(conf['catch'], _ready, vm)
 }
 /**
  * @private
