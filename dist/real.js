@@ -1,5 +1,5 @@
 /**
-* Real v1.5.26
+* Real v1.5.27
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -839,7 +839,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // IE9 below not support classList
 	        // el.classList.add(clazz)
 
-	        var classList = el.className.split(' ')
+	        var classList = el.className.split(/\s+/)
 	        if (!~util.indexOf(classList, clazz)) classList.push(clazz)
 	        el.className = classList.join(' ')
 	    })
