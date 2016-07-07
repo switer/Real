@@ -6,22 +6,20 @@
     <script src="../dist/real.js"></script>
 </head>
 <body>
+    <div class="target"><div r-text><span>Expression: </span>{ number > 10 ? "biger<" : ">smaller" }</div></div>
+    <h1>=></h1>
     <script>
-        var Follow = Reve.component('c-follow', {
+        var tar = document.querySelector('.target')
+        var c = new Reve({
             data: function () {
                 return {
-                    follow: 'I am follow'
+                    number: 10
                 }
             },
-            template: '<div>Follow</div>'
-        })
-        var c = new Reve({
             replace: true,
-            template: '<div r-component="c-follow"></div>'
+            template: '<div><div r-text>{ number > 10 ? "biger >" : "smaller <" }</div></div>'
         })
-        console.log(c)
-        console.log(c.$el)
-
+        document.body.appendChild(c.$el)
     </script>
 </body>
 </html>
