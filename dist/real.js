@@ -1,5 +1,5 @@
 /**
-* Real v1.4.21
+* Real v1.4.22
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1425,7 +1425,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	                var veilExpr = Expression.veil(template)
 	                var expressions = this.expressions = util.map(veilExpr.match(reg), function (exp) {
-	                    return Expression.strip(exp)
+	                    return Expression.angleBrackets(Expression.strip(exp))
 	                })
 	                var parts = util.split(veilExpr, reg)
 	                var cache = this.cache = new Array(expressions.length)
@@ -1488,7 +1488,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var expr = this.expr = this.$el.innerHTML
 	            var veilExpr = Expression.veil(expr)
 	            var expressions = this.expressions = util.map(veilExpr.match(reg), function (exp) {
-	                return Expression.strip(exp)
+	                return Expression.angleBrackets(Expression.strip(exp))
 	            })
 	            var parts = util.split(veilExpr, reg)
 	            var cache = this.cache = new Array(expressions.length)
@@ -1691,6 +1691,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    unveil: function (expr) {
 	        return expr.replace(/\uFFF0/g, '\\{')
 	                   .replace(/\uFFF1/g, '\\}')
+	    },
+	    angleBrackets: function (expr) {
+	        return expr.replace(/&lt;/g, '<')
+	                   .replace(/&gt;/g, '>')
 	    }
 	}
 
