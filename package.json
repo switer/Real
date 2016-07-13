@@ -1,6 +1,6 @@
 {
   "name": "real",
-  "version": "1.5.28",
+  "version": "1.5.29",
   "description": "Web components framework that using in server-side render. Ω support IE6 +",
   "main": "reve.js",
   "scripts": {
