@@ -1875,6 +1875,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    angleBrackets: function (expr) {
 	        return expr.replace(/&lt;/g, '<')
 	                   .replace(/&gt;/g, '>')
+	                   .replace(/&amp;/g, '&')
 	    }
 	}
 
