@@ -1,5 +1,5 @@
 /**
-* Real v1.5.29
+* Real v1.5.30
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -2094,13 +2094,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // __$args__[3] // target
 	        switch (e.name) {
 	            case 'ReferenceError':
-	                $consoler.warn(e.message + __$args__[1])
+	                $consoler.warn(e.message + __$args__[1], '@VM: ', $vm)
 	                break
 	            default:
 	                $consoler.error(
 	                    (__$args__[2] ? '\'' + __$args__[2] + '\': ' : ''),
 	                    e.message + __$args__[1],
-	                    __$args__[3] || ''
+	                    __$args__[3] || '',
+	                    '@VM: ',
+	                    $vm
 	                )
 	        }
 	        return [e]
