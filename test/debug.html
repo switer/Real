@@ -6,19 +6,21 @@
     <script src="../dist/real.js"></script>
 </head>
 <body>
-    <div content="<span>hello</span>">Ahaha</div>
-    <div class="target"><div r-text><span>Expression: </span>{ number > 10 ? "biger<" : ">smaller" }</div></div>
-    <h1>=></h1>
+    <div id="app">
+        <span r-text="{'attr:' + number}">{'inner:' + number}</span>
+        <p>
+            <span r-html>{'inner:' + number}</span>
+        </p>
+        <span r-html="{'attr:<h1>' + number + '</h1>'}">{'inner:' + number}</span>
+    </div>
     <script>
-        var tar = document.querySelector('.target')
         var c = new Reve({
+            el: '#app',
             data: function () {
                 return {
                     number: 10
                 }
-            },
-            replace: true,
-            template: '<div><div r-text>{ number > 10 ? "biger >" : "smaller <" }</div></div>'
+            }
         })
         document.body.appendChild(c.$el)
     </script>

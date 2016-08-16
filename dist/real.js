@@ -1,5 +1,5 @@
 /**
-* Real v1.5.30
+* Real v1.6.0
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1541,25 +1541,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    },
 	    'html': {
+	        constant: true,
 	        bind: function (opt) {
 	            // if express is not empty will set innerHTML with expression result.
 	            // Otherwise render content template then set innerHTML.
 	            var reg = Expression.exprRegexp
+	            var isReplace = opt == 'replace' || opt != 'inner'
+	            var usingAttrExpr = opt != 'replace' && opt != 'inner' && !!opt
 	            var template = this.$el.innerHTML
+	            var expr = usingAttrExpr ? opt : template
 
 	            if (!template) {
 	                template = ''
 	                consoler.warn('Content template should not empty of "' + conf.namespace + 'html".', this.$el)
 	            }
-
-	            var veilExpr = Expression.veil(template)
-
-	            var expressions = this._expressions = util.map(veilExpr.match(reg), function (exp) {
+	            var veilExpr = Expression.veil(expr)
+	            var expressions = this._expressions = util.map(veilExpr.match(reg) || [], function (exp) {
 	                return Expression.angleBrackets(Expression.strip(exp))
-	            })
+	            }) || [expr]
+
+	            console.log(expressions, veilExpr, reg)
 	            var parts = util.split(veilExpr, reg)
 	            var caches = this._caches = new Array(expressions.length)
 	            var that = this
+
 
 	            /**
 	             * Computed all expression and get concated result
@@ -1581,7 +1586,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                return Expression.unveil(frags.join(''))
 	            }
 
-	            if (opt == 'inner') {
+	            if (!isReplace) {
 	                this._render = function () {
 	                    this.$el.innerHTML = compute()
 	                }
@@ -1589,7 +1594,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                var parent = this.$el.parentNode
 	                var tmpCon = document.createElement('div')
 	                var fragCon = document.createDocumentFragment()
-	                var before = document.createComment('<' + conf.namespace + 'html>' + template)
+	                var before = document.createComment('<' + conf.namespace + 'html>' + expr)
 	                var after = document.createComment('</' + conf.namespace + 'html>')
 
 	                fragCon.appendChild(before)
@@ -1607,7 +1612,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                     * Convert html to nodes
 	                     */
 	                    tmpCon.innerHTML = result
-	                    util.forEach(tmpCon.childNodes, function (node) {
+	                    util.forEach(util.slice(tmpCon.childNodes), function (node) {
 	                        fragCon.appendChild(node)
 	                    })
 	                    /**
@@ -1646,14 +1651,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    },
 	    'text': {
+	        constant: true,
 	        bind: function (opt) {
-	            var replace = opt != 'inner'
+	            var isReplace = opt == 'replace' || opt != 'inner'
+	            var usingAttrExpr = opt != 'replace' && opt != 'inner' && !!opt
 	            var reg = Expression.exprRegexp
-	            var expr = this.expr = this.$el.innerHTML
+	            var expr = this.expr = usingAttrExpr ? opt : this.$el.innerHTML
 	            var veilExpr = Expression.veil(expr)
-	            var expressions = this._expressions = util.map(veilExpr.match(reg), function (exp) {
+	            var expressions = this._expressions = util.map(veilExpr.match(reg) || [], function (exp) {
 	                return Expression.angleBrackets(Expression.strip(exp))
-	            })
+	            }) || [veilExpr]
 	            var parts = util.split(veilExpr, reg)
 	            var caches = this._caches = new Array(expressions.length)
 	            var that = this
@@ -1675,14 +1682,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    }
 	                })
 	                var result = Expression.unveil(frags.join(''))
-	                if (replace) {
+	                if (isReplace) {
 	                    // TODO, Number Mobile bug, trying to using replaceChild
 	                    $textNode.nodeValue = result
 	                } else {
 	                    this.$el['innerText' in $el ? 'innerText' : 'textContent'] = result
 	                }
 	            }
-	            if (replace) {
+	            if (isReplace) {
 	                $textNode = this.textNode = document.createTextNode('')
 	                var pn = this.$el.parentNode
 	                if (pn) {
@@ -1985,6 +1992,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var upda = def.update
 	    var shouldUpdate = def.shouldUpdate
 	    var afterUpdate = def.afterUpdate
+	    var isConst = def.constant
 	    var prev
 
 	    // set properties
@@ -2001,7 +2009,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        var hasDiff = false
 	        // empty expression also can trigger update, such `r-text` directive
-	        if (!isExpr) {
+	        if (!isExpr || isConst) {
 	            if (shouldUpdate && shouldUpdate.call(d)) {
 	                upda && upda.call(d)
 	            }
@@ -2028,12 +2036,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	     *  If expression is a string iteral, use it as value
 	     */
 	    var hasError
-	    if (isExpr) {
+	    if (isExpr && !isConst) {
 	        prev =  d.$exec(expr)
 	        hasError = prev[0]
 	        prev = prev[1]
 	    } else {
-	        prev = expr
+	        prev = rawExpr
 	    }
 	    bindParams.push(prev)
 	    bindParams.push(expr)
