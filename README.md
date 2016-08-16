@@ -181,8 +181,16 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	```html
 	Framework: <span r-text="inner">{name}</span> !
 	// render to
-	Framework: <span r-text>real</span> !
+	Framework: <span>real</span> !
 	```
+
+	Expression in attribute:
+	```html
+	<div><span r-text="{name}">real</span></div>
+	// render to
+	<div>real</div>
+	```
+
 
 - **r-props** `(since v1.5.10)`
 	
