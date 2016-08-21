@@ -1,5 +1,5 @@
 /**
-* Real v1.6.0
+* Real v1.6.1
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1560,7 +1560,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                return Expression.angleBrackets(Expression.strip(exp))
 	            }) || [expr]
 
-	            console.log(expressions, veilExpr, reg)
 	            var parts = util.split(veilExpr, reg)
 	            var caches = this._caches = new Array(expressions.length)
 	            var that = this
@@ -2080,6 +2079,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 	var __$util__ = __webpack_require__(2)
+	var __$compiledExprs___ = {}
 	/**
 	 *  Calc expression value
 	 */
@@ -2088,10 +2088,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	     *  $scope is passed when call instance method $compile, 
 	     *  Each "scope" object maybe include "$parent, data, method" properties
 	     */
-	    var $scope = __$util__.extend({}, $vm.$methods, $vm.$data)
 	    var __$args__ = __$util__.slice(arguments)
+	    var __$expr__ = __$args__[1]
+	    var __$fn__ = __$compiledExprs___[__$expr__]
 	    try {
-	        return [null, __$util__.immutable(eval('with($scope){(%s)}'.replace('%s', __$args__[1])))]
+	        if (!__$fn__) {
+	            __$fn__ = __$compiledExprs___[__$expr__] = new Function('$scope', 'with($scope){return (' + __$expr__ + ')}')
+	        }
+	        return [null, __$util__.immutable(__$fn__(
+	            __$util__.extend({}, $vm.$methods, $vm.$data
+	        )))]
 	    } catch (e) {
 	        __$args__[1] =  '. '+ __$args__[2] + '=' + (/^\{/.test(__$args__[1]) 
 	            ? __$args__[1]
