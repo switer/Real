@@ -364,6 +364,18 @@ describe('# Build-in Directives', function () {
         c.$set('show', true)
         assert.equal(tar.style.display, '')
     })
+    it('r-show:true', function () {
+        var c = new Reve({
+            data: {
+                show: true
+            },
+            template: '<div r-show="{show}"></div>'
+        })
+        var tar = c.$el.querySelector('div')
+        assert.equal(tar.style.display, '')
+        c.$set('show', false)
+        assert.equal(tar.style.display, 'none')
+    })
     it('r-style', function () {
         var c = new Reve({
             data: {

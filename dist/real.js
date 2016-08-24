@@ -1,5 +1,5 @@
 /**
-* Real v1.6.1
+* Real v1.6.2
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -2079,6 +2079,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 	var __$util__ = __webpack_require__(2)
+	var __$compile__ = __webpack_require__(14)
 	var __$compiledExprs___ = {}
 	/**
 	 *  Calc expression value
@@ -2093,7 +2094,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var __$fn__ = __$compiledExprs___[__$expr__]
 	    try {
 	        if (!__$fn__) {
-	            __$fn__ = __$compiledExprs___[__$expr__] = new Function('$scope', 'with($scope){return (' + __$expr__ + ')}')
+	            __$fn__ = __$compiledExprs___[__$expr__] = __$compile__(__$expr__)
 	        }
 	        return [null, __$util__.immutable(__$fn__(
 	            __$util__.extend({}, $vm.$methods, $vm.$data
@@ -2123,6 +2124,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	}
 	module.exports = _execute
+
+/***/ },
+/* 14 */
+/***/ function(module, exports) {
+
+	module.exports = function (__$expr__) {
+		if (/^[_$][\w$]*$/.test(__$expr__)) {
+			// access property if begin with _ or $
+			return function ($scope) {
+				return $scope[__$expr__]
+			}
+		} else {
+			return new Function('$scope', 'with($scope){return (' + __$expr__ + ')}')
+		}
+	}
 
 /***/ }
 /******/ ])
