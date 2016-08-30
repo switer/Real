@@ -1,5 +1,5 @@
 /**
-* Real v1.6.2
+* Real v1.6.3
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1551,8 +1551,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var template = this.$el.innerHTML
 	            var expr = usingAttrExpr ? opt : template
 
-	            if (!template) {
-	                template = ''
+	            if (!expr) {
+	                expr = ''
 	                consoler.warn('Content template should not empty of "' + conf.namespace + 'html".', this.$el)
 	            }
 	            var veilExpr = Expression.veil(expr)
