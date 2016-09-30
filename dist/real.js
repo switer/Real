@@ -1,5 +1,5 @@
 /**
-* Real v1.6.3
+* Real v1.6.4
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -700,10 +700,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return target
 	}
 	function _fragmentWrap (html) {
-	    var div = document.createElement('div')
+	    var tmpTag = 'div'
+	    var matches = /^\s*<(th|tr|td|thead|tbody)>/i.exec(html)
+	    if (matches) {
+	        switch (matches[1].toLowerCase()) {
+	            case 'th':
+	            case 'tr':
+	            case 'td':
+	                tmpTag = 'tbody'
+	                break
+	            case 'thead':
+	            case 'tbody':
+	                tmpTag = 'table'
+	                break
+	        }
+	    }
 	    var frag = document.createDocumentFragment()
-	    div.innerHTML = html
-	    var children = div.childNodes
+	    var tmp = document.createElement(tmpTag)
+	    tmp.innerHTML = html
+	    var children = tmp.childNodes
 	    while(children.length){
 	        frag.appendChild(children[0])
 	    }
