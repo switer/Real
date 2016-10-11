@@ -1,5 +1,5 @@
 /**
-* Real v1.6.4
+* Real v1.6.5
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -701,7 +701,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	function _fragmentWrap (html) {
 	    var tmpTag = 'div'
-	    var matches = /^\s*<(th|tr|td|thead|tbody)>/i.exec(html)
+	    var matches = /^\s*<(th|tr|td|thead|tbody)\b/i.exec(html)
 	    if (matches) {
 	        switch (matches[1].toLowerCase()) {
 	            case 'th':
