@@ -639,25 +639,36 @@ function _cloneAttributes(el, target) {
     return target
 }
 function _fragmentWrap (html) {
-    var tmpTag = 'div'
     var matches = /^\s*<(th|tr|td|thead|tbody)\b/i.exec(html)
+    var frag = document.createDocumentFragment()
+    var tmp = document.createElement('div')
+    var children
+
     if (matches) {
+        // IE9下:
+        // 1. thead/tbody/table/th/tr 的 innerHTML 无效，所以要包在template下
+        // 2. td 挂在 thead/tbody 下会多一层 tr
         switch (matches[1].toLowerCase()) {
-            case 'th':
-            case 'tr':
-            case 'td':
-                tmpTag = 'tbody'
-                break
             case 'thead':
             case 'tbody':
-                tmpTag = 'table'
+                tmp.innerHTML = '<table>' + html + '</table>'
+                children = tmp.childNodes[0].childNodes
+                break
+            case 'th':
+            case 'tr':
+                tmp.innerHTML = '<table><tbody>' + html + '</tbody></table>'
+                children = tmp.childNodes[0].childNodes[0].childNodes
+                break
+            case 'td':
+                tmp.innerHTML = '<table><tbody><tr>' + html + '</tr></tbody></table>'
+                children = tmp.childNodes[0].childNodes[0].childNodes[0].childNodes
                 break
         }
     }
-    var frag = document.createDocumentFragment()
-    var tmp = document.createElement(tmpTag)
-    tmp.innerHTML = html
-    var children = tmp.childNodes
+    if (!children) {
+        tmp.innerHTML = html
+        children = tmp.childNodes
+    }
     while(children.length){
         frag.appendChild(children[0])
     }
