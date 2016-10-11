@@ -640,7 +640,7 @@ function _cloneAttributes(el, target) {
 }
 function _fragmentWrap (html) {
     var tmpTag = 'div'
-    var matches = /^\s*<(th|tr|td|thead|tbody)>/i.exec(html)
+    var matches = /^\s*<(th|tr|td|thead|tbody)\b/i.exec(html)
     if (matches) {
         switch (matches[1].toLowerCase()) {
             case 'th':
