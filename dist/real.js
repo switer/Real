@@ -1,5 +1,5 @@
 /**
-* Real v1.6.6
+* Real v1.6.7
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1534,6 +1534,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    }, this))
 	}
+	function preventDefault(e) {
+	    e = e || this
+	    e.preventDefault ? e.preventDefault() : (e.returnValue = false)
+	}
 	module.exports = {
 	    'attr': {
 	        multi: true,
@@ -1856,6 +1860,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var that = this
 	            this.fn = function (e) {
 	                e.$currentTarget = that.$el
+	                e.$preventDefault = preventDefault
 	                fn.call(that.$vm, e)
 	            }
 	            $(this.$el).on(this.type, this.fn, false)
