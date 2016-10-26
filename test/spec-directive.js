@@ -426,6 +426,16 @@ describe('# Build-in Directives', function () {
         })
         assert.equal(c.$el.innerHTML, '<span>real,author: switer</span>1')
     })
+    it('r-text:html-entities', function () {
+        var c = new Reve({
+            data: {
+                text: '&lt;Hello World&gt;',
+            },
+            template: '<span r-text>{"&lt;Hello World&gt;"}</span><span r-text>{text}</span>'
+        })
+        assert.equal(c.$el.childNodes[0].nodeValue.toString(), '<Hello World>')
+        assert.equal(c.$el.childNodes[1].nodeValue.toString(), '<Hello World>')
+    })
 
     function dispatchEvent(element, type) {
         if ("createEvent" in document) {

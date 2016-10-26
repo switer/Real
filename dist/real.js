@@ -1,5 +1,5 @@
 /**
-* Real v1.6.7
+* Real v1.6.8
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1028,6 +1028,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    return ks
 	}
+	var entCon = document.createElement('div')
+	var entities = {}
+	function _convertEntity(ent) {
+	    var r = entities[ent]
+	    if (r) return r
+	    entCon.innerHTML = ent
+	    var chNodes = entCon.childNodes
+	    r = chNodes && chNodes.length ? chNodes[0].nodeValue : ent
+	    entities[ent] = r
+	    return r
+	}
 	var undef = void(0)
 	var escapeRex = new RegExp(_keys(escapeCharMap).join('|'), 'g')
 	var DEFAULT_DIFF_LEVEL = 5
@@ -1239,6 +1250,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	        F.prototype = target.prototype
 	        clazz.prototype = new F()
 	        return clazz
+	    },
+	    /**
+	     * Covert HTML entities
+	     * @doc http://www.w3school.com.cn/tags/html_ref_entities.html
+	     */
+	    entity: function(text) {
+	        if (!text || !text.replace) return text
+	        return text.replace(/(&[#a-zA-Z0-9]+;)/g, function (m, s) {
+	            return _convertEntity(s)
+	        })
 	    }
 	}
 
@@ -1713,9 +1734,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	                var result = Expression.unveil(frags.join(''))
 	                if (isReplace) {
 	                    // TODO, Number Mobile bug, trying to using replaceChild
-	                    $textNode.nodeValue = result
+	                    $textNode.nodeValue = util.entity(result)
 	                } else {
-	                    this.$el['innerText' in $el ? 'innerText' : 'textContent'] = result
+	                    this.$el['innerText' in $el ? 'innerText' : 'textContent'] = util.entity(result)
 	                }
 	            }
 	            if (isReplace) {
