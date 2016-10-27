@@ -1,5 +1,5 @@
 /**
-* Real v1.6.8
+* Real v1.6.9
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1556,8 +1556,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }, this))
 	}
 	function preventDefault(e) {
-	    e = e || this
-	    e.preventDefault ? e.preventDefault() : (e.returnValue = false)
+	    e = e || window.event
+	    if (!e) return
+	    e.preventDefault 
+	        ? e.preventDefault() 
+	        : e.returnValue = false
+	}
+	function stopPropagation(e) {
+	    e = e || window.event
+	    if (!e) return
+	    if (e.stopPropagation) {
+	        e.stopPropagation() 
+	    } else {
+	        e.cancelBubble = true
+	        window.event && (window.event.cancelBubble = true)
+	    }
 	}
 	module.exports = {
 	    'attr': {
@@ -1697,7 +1710,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.sheet = sheet
 	        },
 	        update: function(next) {
-	            this.$el.style && (this.$el.style[this.sheet] = next)
+	            if(this.$el.style) this.$el.style[this.sheet] = next
 	        }
 	    },
 	    'text': {
@@ -1882,6 +1895,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.fn = function (e) {
 	                e.$currentTarget = that.$el
 	                e.$preventDefault = preventDefault
+	                e.$stopPropagation = stopPropagation
 	                fn.call(that.$vm, e)
 	            }
 	            $(this.$el).on(this.type, this.fn, false)
