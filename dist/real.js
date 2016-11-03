@@ -1,5 +1,5 @@
 /**
-* Real v1.6.9
+* Real v1.6.10
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1848,6 +1848,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	                $el.on(t, that._requestChange)
 	            })
 
+	            // Initial state 2 DOM update
+	            this._update()
 	        },
 	        update: function (prop) {
 	            if (!prop) consoler.error('Invalid property key "' + prop + '"')
