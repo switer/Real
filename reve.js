@@ -516,9 +516,13 @@ function Ctor (options) {
     var classid = _classid ++
     function Class (opts) {
         var baseData = _getData(options.data)
-        var instanOpts = util.extend({}, options, opts)
+        var instanOpts = util.extend({}, options, opts, {
+            data: opts ? _getData(opts.data) : null
+        })
+
         instanOpts.methods = util.extend({}, baseMethods, instanOpts.methods)
-        instanOpts.data = util.extend({}, baseData, _getData(instanOpts.data))
+        instanOpts.data = util.extend({}, baseData, instanOpts.data)
+
         this.$classid = classid
         Real.call(this, instanOpts)
     }

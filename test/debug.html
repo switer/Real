@@ -6,28 +6,26 @@
     <script src="../dist/real.js"></script>
 </head>
 <body>
-    <span>HA&nbsp;HA</span>
     <div id="app">
-        <span r-text>{"Hello&nbsp;World"}</span>
-        <br>
-        <span r-text>{text}</span>
-        <br>
-        <span r-text>Hello&lt;br&gt;World3</span>
-        <br>
-        <span>Hello&nbsp;World4</span>
+        <div r-component="c-demo"></div>
     </div>
-    <script src="./debug.js"></script>
     <script>
-        // document.querySelector('#app').innerHTML = '<span r-text>{"Hello&nbsp;World"}</span>'
+        var c = Reve.component('c-demo', {
+            template: '<div>123</div>',
+            data: function() {
+                console.trace('#Demo')
+                return {
+
+                }
+            }
+        })
+        new c()
         // var c = new Reve({
         //     el: '#app',
         //     data: function () {
-        //         return {
-        //             number: 10
-        //         }
+        //         console.log('#APP')
         //     }
         // })
-        // document.body.appendChild(c.$el)
     </script>
 </body>
 </html>
