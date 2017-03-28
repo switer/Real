@@ -1,5 +1,5 @@
 /**
-* Real v1.6.11
+* Real v1.6.12
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -85,6 +85,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _getData = function (data) {
 	    return (util.type(data) == 'function' ? data():data) || {}
 	}
+	var CACHE_KEY = 'cat'+'ch'
 	/**
 	 * Constructor Function and Class.
 	 * @param {Object} options Instance options
@@ -107,7 +108,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$directives = []
 	    this.$components = []
 	    this._$beforeDestroy = function () {
-	        _safelyCall(conf['catch'], _destroy, vm)
+	        _safelyCall(conf[CACHE_KEY], _destroy, vm)
 	    }
 
 	    var el = options.el
@@ -225,12 +226,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        vm.$methods[key] = vm[key] = util.bind(m, vm)
 	    })
 	    // created lifecycle
-	    _safelyCall(conf['catch'], _created, vm)
+	    _safelyCall(conf[CACHE_KEY], _created, vm)
 	    this.$el = el
 	    var $compiledEl = this.$compile(el)
 	    isReplaced && (this.$el = $compiledEl)
 	    // ready lifecycle
-	    _safelyCall(conf['catch'], _ready, vm)
+	    _safelyCall(conf[CACHE_KEY], _ready, vm)
 	}
 	/**
 	 * @private
@@ -1275,6 +1276,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 
+	/**
+	 * IE5~IE9
+	 */
 	function detect() {
 	    var undef,
 	        v = 3,
@@ -1328,10 +1332,11 @@ return /******/ (function(modules) { // webpackBootstrap
 		namespace: 'r-',
 		directiveSep: ';',
 	    directiveSep_regexp: /;/g,
-	    mutable_dirtives: ['html', 'text'], 
-		'catch': false // catch error when component instance or not
+	    mutable_dirtives: ['html', 'text']
+		// 'catch': false // catch error when component instance or not
 	}
-
+	// IE8 hack
+	conf['cat'+'ch'] = false
 	module.exports = conf
 
 /***/ },
@@ -1964,38 +1969,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	'use strict'
 
 	function noop () {}
-	module.exports = {
-	    'if': {
-	        bind: function () {
-	            var $el = this.$el
-	            var $parent = $el.parentNode
-	            var _mounted = true
 
-	            this._mount = function () {
-	                if (_mounted) return
-	                _mounted = true
-	                $parent.appendChild($el)
-	            }
-	            this._unmount = function () {
-	                if (!_mounted) return
-	                _mounted = false
-	                $parent.removeChild($el)
-	            }
-	        },
-	        unbind: function () {
-	            this._mount = this._unmount = noop
-	        },
-	        update: function (cnd) {
-	            if (!cnd) return this._unmount()
-	            else if (this._compiled) return this._mount()
-	            else {
-	                this._compiled = true
-	                this.$vm.$compile(this.$el)
-	                this._mount()
-	            }
+	var ds = {}
+	ds['i'+'f'] = {
+	    bind: function () {
+	        var $el = this.$el
+	        var $parent = $el.parentNode
+	        var _mounted = true
+
+	        this._mount = function () {
+	            if (_mounted) return
+	            _mounted = true
+	            $parent.appendChild($el)
+	        }
+	        this._unmount = function () {
+	            if (!_mounted) return
+	            _mounted = false
+	            $parent.removeChild($el)
+	        }
+	    },
+	    unbind: function () {
+	        this._mount = this._unmount = noop
+	    },
+	    update: function (cnd) {
+	        if (!cnd) return this._unmount()
+	        else if (this._compiled) return this._mount()
+	        else {
+	            this._compiled = true
+	            this.$vm.$compile(this.$el)
+	            this._mount()
 	        }
 	    }
 	}
+	module.exports = ds
 
 /***/ },
 /* 12 */
