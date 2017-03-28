@@ -1,5 +1,5 @@
 /**
-* Real v1.6.13
+* Real v1.6.14
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1553,7 +1553,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var detection = __webpack_require__(3)
 	var Expression = __webpack_require__(10)
 	var keypath = __webpack_require__(8)
-
+	var CLASS_KEY = 'CLASS'.toLowerCase()
 	function noop () {}
 	function _templateShouldUpdate() {
 	    return util.some(this._expressions, util.bind(function(exp, index) {
@@ -1581,7 +1581,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        window.event && (window.event.cancelBubble = true)
 	    }
 	}
-	module.exports = {
+	var ds = {
 	    'attr': {
 	        multi: true,
 	        bind: function(attname) {
@@ -1594,20 +1594,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            } else {
 	                this._$el.attr(this.attname, next)
 	            }
-	        },
-	        unbind: function () {
-	            this._$el = null
-	        }
-	    },
-	    'class': {
-	        multi: true,
-	        bind: function(className) {
-	            this.className = className
-	            this._$el = $(this.$el)
-	        },
-	        update: function(next) {
-	            if (next) this._$el.addClass(this.className)
-	            else this._$el.removeClass(this.className)
 	        },
 	        unbind: function () {
 	            this._$el = null
@@ -1920,6 +1906,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    }
 	}
+	// class directive
+	ds[CLASS_KEY] = {
+	    multi: true,
+	    bind: function(className) {
+	        this.className = className
+	        this._$el = $(this.$el)
+	    },
+	    update: function(next) {
+	        if (next) this._$el.addClass(this.className)
+	        else this._$el.removeClass(this.className)
+	    },
+	    unbind: function () {
+	        this._$el = null
+	    }
+	}
+	module.exports = ds
 
 /***/ },
 /* 10 */
