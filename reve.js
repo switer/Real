@@ -24,7 +24,7 @@ var _cid = 0
 var _getData = function (data) {
     return (util.type(data) == 'function' ? data():data) || {}
 }
-var CACHE_KEY = 'cat'+'ch'
+var CATCH_KEY = 'CATCH'.toLowerCase()
 /**
  * Constructor Function and Class.
  * @param {Object} options Instance options
@@ -47,7 +47,7 @@ function Real(options) {
     this.$directives = []
     this.$components = []
     this._$beforeDestroy = function () {
-        _safelyCall(conf[CACHE_KEY], _destroy, vm)
+        _safelyCall(conf[CATCH_KEY], _destroy, vm)
     }
 
     var el = options.el
@@ -165,12 +165,12 @@ function Real(options) {
         vm.$methods[key] = vm[key] = util.bind(m, vm)
     })
     // created lifecycle
-    _safelyCall(conf[CACHE_KEY], _created, vm)
+    _safelyCall(conf[CATCH_KEY], _created, vm)
     this.$el = el
     var $compiledEl = this.$compile(el)
     isReplaced && (this.$el = $compiledEl)
     // ready lifecycle
-    _safelyCall(conf[CACHE_KEY], _ready, vm)
+    _safelyCall(conf[CATCH_KEY], _ready, vm)
 }
 /**
  * @private

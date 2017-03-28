@@ -1,5 +1,5 @@
 /**
-* Real v1.6.12
+* Real v1.6.13
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -85,7 +85,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _getData = function (data) {
 	    return (util.type(data) == 'function' ? data():data) || {}
 	}
-	var CACHE_KEY = 'cat'+'ch'
+	var CATCH_KEY = 'CATCH'.toLowerCase()
 	/**
 	 * Constructor Function and Class.
 	 * @param {Object} options Instance options
@@ -108,7 +108,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$directives = []
 	    this.$components = []
 	    this._$beforeDestroy = function () {
-	        _safelyCall(conf[CACHE_KEY], _destroy, vm)
+	        _safelyCall(conf[CATCH_KEY], _destroy, vm)
 	    }
 
 	    var el = options.el
@@ -226,12 +226,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        vm.$methods[key] = vm[key] = util.bind(m, vm)
 	    })
 	    // created lifecycle
-	    _safelyCall(conf[CACHE_KEY], _created, vm)
+	    _safelyCall(conf[CATCH_KEY], _created, vm)
 	    this.$el = el
 	    var $compiledEl = this.$compile(el)
 	    isReplaced && (this.$el = $compiledEl)
 	    // ready lifecycle
-	    _safelyCall(conf[CACHE_KEY], _ready, vm)
+	    _safelyCall(conf[CATCH_KEY], _ready, vm)
 	}
 	/**
 	 * @private
@@ -1336,7 +1336,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		// 'catch': false // catch error when component instance or not
 	}
 	// IE8 hack
-	conf['cat'+'ch'] = false
+	conf['CATCH'.toLowerCase()] = false
 	module.exports = conf
 
 /***/ },
@@ -1971,7 +1971,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	function noop () {}
 
 	var ds = {}
-	ds['i'+'f'] = {
+	var IF_KEY = 'IF'.toLowerCase()
+	ds[IF_KEY] = {
 	    bind: function () {
 	        var $el = this.$el
 	        var $parent = $el.parentNode
