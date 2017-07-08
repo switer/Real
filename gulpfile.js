@@ -20,16 +20,16 @@ var bannerVars = {
     }
 
 gulp.task('watch', function () {
-    watch(['lib/**', 'reve.js'], function () {
+    watch(['lib/**', 'real.js'], function () {
         gulp.start('default')
     })
 });
 
 gulp.task('default', function() {
-    return gulp.src('reve.js')
+    return gulp.src('real.js')
         .pipe(webpack({
             output: {
-                library: 'Reve',
+                library: 'Real',
                 libraryTarget: 'umd',
                 filename: 'real.js'
             },
