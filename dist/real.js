@@ -1,5 +1,5 @@
 /**
-* Real v1.6.14
+* Real v1.7.0
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -7,7 +7,7 @@
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
 	else if(typeof define === 'function' && define.amd)
-		define(factory);
+		define([], factory);
 	else if(typeof exports === 'object')
 		exports["Reve"] = factory();
 	else
@@ -72,6 +72,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var buildInScopedDirectives = __webpack_require__(11)
 	var Expression = __webpack_require__(10)
 	var Directive = __webpack_require__(12)
+	var Message = __webpack_require__(15)
 	var detection = __webpack_require__(3)
 	var supportQuerySelector = detection.supportQuerySelector
 	var _execute = __webpack_require__(13)
@@ -100,6 +101,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var _created = options.created
 	    var _destroy = options.destroy
 	    var _binding = util.hasOwn(options, 'binding') ? options.binding : true
+	    var _message = new Message()
 	    this.$id = _cid ++
 	    this.$name = options.name || ''
 	    this.$parent = options.parent || null
@@ -109,6 +111,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$components = []
 	    this._$beforeDestroy = function () {
 	        _safelyCall(conf[CATCH_KEY], _destroy, vm)
+	    }
+	    /**
+	     * Assign Event-methods to component instance
+	     */
+	    this.$on = function() {
+	        return _message.on.apply(_message, arguments)
+	    }
+	    this.$off = function() {
+	        return _message.off.apply(_message, arguments)
+	    }
+	    this.$emit = function() {
+	        return _message.emit.apply(_message, arguments)
 	    }
 
 	    var el = options.el
@@ -139,7 +153,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * Container element must be a element or has template option
 	     */
 	    var isHTMLElement = is.Element(el)
-
+	    var children
 	    if (isHTMLElement && options.template) {
 	        /**
 	         * If el is passed and has template option
@@ -152,7 +166,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        } else if (hasReplaceOption) {
 	            var child = _fragmentWrap(options.template)
 	            // for get first Element of the template as root element of the component
-	            var children = _fragmentChildren(child)
+	            children = _fragmentChildren(child)
 	            if (!children.length) 
 	                throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
 	            var nextEl = children[0]
@@ -184,7 +198,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    } else if (isHTMLElement) {
 	        if (hasReplaceOption) {
-	            var children = is.Fragment(el) ? _fragmentChildren(el) : el.children
+	            children = is.Fragment(el) ? _fragmentChildren(el) : el.children
 	            var hasChildren = children && children.length
 	            !hasChildren && consoler.warn('Component\'s container element should has children when "replace" option given.')
 	            if (hasChildren) {
@@ -228,10 +242,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // created lifecycle
 	    _safelyCall(conf[CATCH_KEY], _created, vm)
 	    this.$el = el
-	    var $compiledEl = this.$compile(el)
-	    isReplaced && (this.$el = $compiledEl)
-	    // ready lifecycle
-	    _safelyCall(conf[CATCH_KEY], _ready, vm)
+	    try {
+	        var $compiledEl = this.$compile(el)
+	        isReplaced && (this.$el = $compiledEl)
+	    } finally {
+	        // ready lifecycle
+	        try {
+	            _safelyCall(conf[CATCH_KEY], _ready, vm)
+	        } finally {
+	            _message.emit('ready')
+	        }
+	    }
 	}
 	/**
 	 * @private
@@ -592,6 +613,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    util.inherit(Class, Real)
 	    return Class
 	}
+	Message.assign(Real, ['on', 'off', 'emit'])
 	Real.create = function (options) {
 	    return Ctor(options)
 	}
@@ -604,19 +626,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (def.scoped) _scopedDirectives.push(id) 
 	    _externalDirectives[id] = def
 	}
+	/**
+	 * Support config:
+	 *     - catch
+	 *     - namespace
+	 */
 	Real.set = function (k, v) {
 	    conf[k] = v
 	    return Real
 	}
-
-
-	function _isScopedElement(el) {
-	    if (!el) return false
-	    return util.some(util.keys(buildInScopedDirectives).concat(_scopedDirectives), function (k) {
-	        return util.hasAttribute(conf.namespace + k)
-	    })
-	}
-
+	/**
+	 * Call method and catch error then log by console.log
+	 */
 	function _safelyCall(isCatch, fn, ctx) {
 	    if (!fn) return
 
@@ -1683,9 +1704,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }
 	            }
 	        },
-	        shouldUpdate: function () {
-	            return _templateShouldUpdate.apply(this, arguments)
-	        },
+	        shouldUpdate: _templateShouldUpdate,
 	        update: function() {
 	            this._render()
 	        },
@@ -2073,6 +2092,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var shouldUpdate = def.shouldUpdate
 	    var afterUpdate = def.afterUpdate
 	    var isConst = def.constant
+	    var needReady = def.needReady
 	    var prev
 
 	    // set properties
@@ -2130,9 +2150,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * bind([propertyName, ]expression-value, expression)
 	     * propertyName will be passed if and only if "multi:true"
 	     */
-	    bind && bind.apply(d, bindParams)
-	    // error will stop update
-	    !hasError && upda && upda.call(d, prev)
+	    var unwatch
+	    function run () {
+	        unwatch && unwatch()
+	        bind && bind.apply(d, bindParams)
+	        // error will stop update
+	        !hasError && upda && upda.call(d, prev)
+	    }
+	    if (needReady) {
+	        unwatch = vm.$on('ready', run)
+	    } else {
+	        run()
+	    }
 	}
 	/**
 	 *  execute wrap with directive name and current ViewModel
@@ -2220,6 +2249,106 @@ return /******/ (function(modules) { // webpackBootstrap
 			return new Function('$scope', 'with($scope){return (' + __$expr__ + ')}')
 		}
 	}
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 *  Simple Pub/Sub module
+	 *  兼容IE
+	 **/
+
+	'use strict';
+
+	var fns = __webpack_require__(2)
+
+	function Message () {
+	    this._evtObjs = {};
+	    this._outdatedMsgs = {};
+	}
+	Message.prototype.on = function (evtType, handler, _once) {
+	    if (!this._evtObjs[evtType]) {
+	        this._evtObjs[evtType] = [];
+	    }
+	    this._evtObjs[evtType].push({
+	        handler: handler,
+	        once: _once
+	    })
+	    var that = this
+	    return function () {
+	        that.off(evtType, handler)
+	    }
+	}
+	Message.prototype.wait = function (evtType, handler) {
+	    if (this._outdatedMsgs[evtType]) {
+	        handler.apply(null, this._outdatedMsgs[evtType])
+	        return noop
+	    } else {
+	        // call once
+	        return this.on(evtType, handler, true)
+	    }
+	}
+	Message.prototype.off = function (evtType, handler) {
+	    var that = this
+	    var types;
+	    if (evtType) {
+	        types = [evtType];
+	    } else {
+	        types = fns.keys(this._evtObjs)
+	    }
+	    fns.forEach(types, function (type) {
+	        if (!handler) {
+	            // remove all
+	            that._evtObjs[type] = [];
+	        } else {
+	            var handlers = that._evtObjs[type] || [],
+	                nextHandlers = [];
+
+	            fns.forEach(handlers, function (evtObj) {
+	                if (evtObj.handler !== handler) {
+	                    nextHandlers.push(evtObj)
+	                }
+	            })
+	            that._evtObjs[type] = nextHandlers;
+	        }
+	    })
+
+	    return this;
+	}
+	Message.prototype.emit = function (evtType) {
+	    var args = Array.prototype.slice.call(arguments, 1)
+
+	    this._outdatedMsgs[evtType] = args
+	    var handlers = this._evtObjs[evtType] || [];
+	    fns.forEach(handlers, function (evtObj) {
+	        if (evtObj.once && evtObj.called) return
+	        evtObj.called = true
+	        evtObj.handler && evtObj.handler.apply(null, args);
+	    })
+	}
+	Message.prototype.emitAsync = function () {
+	    var args = arguments
+	    var ctx = this
+	    setTimeout(function () {
+	        ctx.emit.apply(ctx, args)
+	    }, 0)
+	}
+	Message.prototype.assign = function (target, keys) {
+	    var msg = this
+	    fns.forEach(keys || ['on', 'off', 'wait', 'emit', 'emitAsync', 'assign'], function (name) {
+	        var method = msg[name]
+	        target[name] = function () {
+	            return method.apply(msg, arguments)
+	        }
+	    })
+	}
+	function noop(){}
+	/**
+	 *  Global Message Central
+	 **/
+	;(new Message()).assign(Message)
+	module.exports = Message;
 
 /***/ }
 /******/ ])

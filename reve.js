@@ -11,6 +11,7 @@ var buildInDirectives = require('./lib/directives/build-in')
 var buildInScopedDirectives = require('./lib/directives/scoped-directives')
 var Expression = require('./lib/tools/expression')
 var Directive = require('./lib/directive')
+var Message = require('./lib/tools/message')
 var detection = require('./lib/tools/detection')
 var supportQuerySelector = detection.supportQuerySelector
 var _execute = require('./lib/tools/execute')
@@ -39,6 +40,7 @@ function Real(options) {
     var _created = options.created
     var _destroy = options.destroy
     var _binding = util.hasOwn(options, 'binding') ? options.binding : true
+    var _message = new Message()
     this.$id = _cid ++
     this.$name = options.name || ''
     this.$parent = options.parent || null
@@ -48,6 +50,18 @@ function Real(options) {
     this.$components = []
     this._$beforeDestroy = function () {
         _safelyCall(conf[CATCH_KEY], _destroy, vm)
+    }
+    /**
+     * Assign Event-methods to component instance
+     */
+    this.$on = function() {
+        return _message.on.apply(_message, arguments)
+    }
+    this.$off = function() {
+        return _message.off.apply(_message, arguments)
+    }
+    this.$emit = function() {
+        return _message.emit.apply(_message, arguments)
     }
 
     var el = options.el
@@ -78,7 +92,7 @@ function Real(options) {
      * Container element must be a element or has template option
      */
     var isHTMLElement = is.Element(el)
-
+    var children
     if (isHTMLElement && options.template) {
         /**
          * If el is passed and has template option
@@ -91,7 +105,7 @@ function Real(options) {
         } else if (hasReplaceOption) {
             var child = _fragmentWrap(options.template)
             // for get first Element of the template as root element of the component
-            var children = _fragmentChildren(child)
+            children = _fragmentChildren(child)
             if (!children.length) 
                 throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
             var nextEl = children[0]
@@ -123,7 +137,7 @@ function Real(options) {
         }
     } else if (isHTMLElement) {
         if (hasReplaceOption) {
-            var children = is.Fragment(el) ? _fragmentChildren(el) : el.children
+            children = is.Fragment(el) ? _fragmentChildren(el) : el.children
             var hasChildren = children && children.length
             !hasChildren && consoler.warn('Component\'s container element should has children when "replace" option given.')
             if (hasChildren) {
@@ -167,10 +181,17 @@ function Real(options) {
     // created lifecycle
     _safelyCall(conf[CATCH_KEY], _created, vm)
     this.$el = el
-    var $compiledEl = this.$compile(el)
-    isReplaced && (this.$el = $compiledEl)
-    // ready lifecycle
-    _safelyCall(conf[CATCH_KEY], _ready, vm)
+    try {
+        var $compiledEl = this.$compile(el)
+        isReplaced && (this.$el = $compiledEl)
+    } finally {
+        // ready lifecycle
+        try {
+            _safelyCall(conf[CATCH_KEY], _ready, vm)
+        } finally {
+            _message.emit('ready')
+        }
+    }
 }
 /**
  * @private
@@ -531,6 +552,7 @@ function Ctor (options) {
     util.inherit(Class, Real)
     return Class
 }
+Message.assign(Real, ['on', 'off', 'emit'])
 Real.create = function (options) {
     return Ctor(options)
 }
@@ -543,19 +565,18 @@ Real.directive = function (id, def) {
     if (def.scoped) _scopedDirectives.push(id) 
     _externalDirectives[id] = def
 }
+/**
+ * Support config:
+ *     - catch
+ *     - namespace
+ */
 Real.set = function (k, v) {
     conf[k] = v
     return Real
 }
-
-
-function _isScopedElement(el) {
-    if (!el) return false
-    return util.some(util.keys(buildInScopedDirectives).concat(_scopedDirectives), function (k) {
-        return util.hasAttribute(conf.namespace + k)
-    })
-}
-
+/**
+ * Call method and catch error then log by console.log
+ */
 function _safelyCall(isCatch, fn, ctx) {
     if (!fn) return
 
