@@ -68,6 +68,27 @@ describe('# Directive', function () {
         assert.equal(c.$el.querySelector('.follow').getAttribute('title'), 'From directive')
         assert.equal(c.$el.querySelector('.follow').innerText, 'From directive')
     })
+    it('directive(name, { needReady: true })', function () {
+        var ready = false
+        Reve.directive('d1', {
+            needReady: true,
+            bind: function () {
+                assert.equal(ready, true, 'directive should call after ready')
+            }
+        })
+        Reve.directive('d2', {
+            bind: function () {
+                assert.equal(ready, false, 'directive should call before ready')
+            }
+        })
+        new Reve({
+            data: {},
+            template: '<div r-d1="{0}" r-d2="{0}"></div>',
+            ready: function () {
+                ready = true
+            }
+        })
+    })
     it('directive-expression', function () {
         var inited = false
         Reve.directive('num', {

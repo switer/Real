@@ -80,4 +80,17 @@ describe('# Class Methods', function () {
             }
         })
     })
+    it('on/off/emit', function (done){
+        var times = 0
+        function handler() {
+            times++
+            assert(times <= 1, 'handler should be triggered only once.')
+            done()
+        }
+        Reve.on('event', handler)
+        Reve.emit('event')
+        Reve.off('event', handler)
+        Reve.emit('event')
+        
+    })
 })

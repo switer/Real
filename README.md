@@ -342,6 +342,9 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	Define a directive which effect on global.
 
+- **Reve.on**(type, handler)
+- **Reve.off**(type[, handler])
+- **Reve.emit**(type[, data])
 
 #### Instance Options
 
@@ -436,6 +439,11 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	Compile all directives of the HTMLElement or HTML template in current ViewModel. It's useful when load something async then append to current ViewModel's DOM Tree.
 
+- **$on**(type, handler)
+- **$off**(type[, handler])
+- **$emit**(type[, data])
+
+
 
 #### Custom Directive
 
@@ -444,6 +452,9 @@ Directive lifecycle methods:
 * `update` Call when expression's value has been changed and not 'shouldUpdate' or 'shouldUpdate' return true.
 * `unbind` Call only once before directive is destroyed.
 * `shouldUpdate` Call every time when expression's value has been changed, before 'update', return false will stop update.
+* `scoped` Scoped directy is used to compile sub-template in custom.
+* `multi` Expression of directive is in key-value format: r-xx="{key: value}".
+* `needReady` run directive bind/update after parent's vm is ready.
 
 Directive instance properties:
 * `$vm` Mounted VM of the directive

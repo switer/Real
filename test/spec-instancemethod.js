@@ -50,4 +50,19 @@ describe('# Instance Methods', function () {
         ccc.$appendTo(cc)
         assert.equal(ccc.$root(), c)
     })
+    it('$on/$off/$emit', function (done) {
+        var times = 0
+        function handler() {
+            times++
+            assert(times <= 1, 'handler should be triggered only once.')
+            done()
+        }
+        var c = new Reve({
+            template: '<div></div>'
+        })
+        c.$on('event', handler)
+        c.$emit('event')
+        c.$off('event', handler)
+        c.$emit('event')
+    })
 })
