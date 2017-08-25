@@ -436,14 +436,29 @@ Real.prototype.$compile = function (el, scope) {
             var d
             if (def.multi && expr.match(sep)) {
                 // multiple defines expression parse
+                var dExprs = []
                 util.forEach(
                     _strip(expr).split(sep), 
-                    function(item) {
+                    function(item, i) {
                         // discard empty expression 
                         if (!util.trim(item)) return
-                        d = new Directive(vm, tar, def, dname, '{' + item + '}', scope)
-                        $directives.push(d)
+                        // bad case, such as => key: 'javascript:;';
+                        if (conf.directiveKey_regexp.test(item)) {
+                            dExprs.push(item)
+                        } else {
+                            if (i > 0) {
+                                // concat to last item
+                                dExprs[i - 1] += conf.directiveSep + item
+                            } else {
+                                return consoler.error('Invalid expression of "{' + expr + '}", it should be in this format: ' + name + '="{ key: expression }".')
+                            }
+                        }
                     })
+                dExprs.forEach(function (item) {
+                    d = new Directive(vm, tar, def, dname, '{' + item + '}', scope)
+                    $directives.push(d)
+                })
+
             } else {
                 d = new Directive(vm, tar, def, dname, expr, scope)
                 $directives.push(d)
