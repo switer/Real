@@ -17,6 +17,7 @@
     <div id="app"></div>
     <script src="../dist/real.js"></script>
     <script>
+        window.Reve = window.Real
         if(navigator.userAgent.match('PhantomJS')) {
             Reve.consoler.error = function() {}
             Reve.consoler.errorTrace = function() {}

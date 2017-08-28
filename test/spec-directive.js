@@ -264,11 +264,12 @@ describe('# Build-in Directives', function () {
             data: {
                 attr: ''
             },
-            template: '<div r-attr="{data-attr: attr}"></div>'
+            template: '<div r-attr="{data-attr: attr; href: \'javascript:;\'}"></div>'
         })
         var tar = c.$el.querySelector('div')
         assert(tar.hasAttribute('data-attr'))
         assert.equal(tar.getAttribute('data-attr'), '')
+        assert.equal(tar.getAttribute('href'), 'javascript:;')
         c.$data.attr = undefined
         c.$update()
         assert(!tar.hasAttribute('data-attr'), '"undefined" value will remove the attribute.')

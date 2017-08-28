@@ -7,25 +7,31 @@
 </head>
 <body>
     <div id="app">
-        <div r-component="c-demo"></div>
+        <div r-for="{items}" r-key="name">
+            <span r-text>{$value.name}</span>
+        </div>
     </div>
     <script>
-        var c = Reve.component('c-demo', {
-            template: '<div>123</div>',
-            data: function() {
-                console.trace('#Demo')
-                return {
+        // var c = Reve.component('c-demo', {
+        //     template: '<div>123</div>',
+        //     data: function() {
+        //         console.trace('#Demo')
+        //         return {
 
+        //         }
+        //     }
+        // })
+        // new c()
+        var c = new Real({
+            el: '#app',
+            data: function () {
+                return {
+                    items: [{
+                        name: 'abc'
+                    }]
                 }
             }
         })
-        new c()
-        // var c = new Reve({
-        //     el: '#app',
-        //     data: function () {
-        //         console.log('#APP')
-        //     }
-        // })
     </script>
 </body>
 </html>

@@ -9,9 +9,9 @@
 	else if(typeof define === 'function' && define.amd)
 		define([], factory);
 	else if(typeof exports === 'object')
-		exports["Reve"] = factory();
+		exports["Real"] = factory();
 	else
-		root["Reve"] = factory();
+		root["Real"] = factory();
 })(this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -69,13 +69,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	var consoler = __webpack_require__(7)
 	var KP = __webpack_require__(8)
 	var buildInDirectives = __webpack_require__(9)
-	var buildInScopedDirectives = __webpack_require__(11)
+	var buildInScopedDirectives = __webpack_require__(11)(Real)
 	var Expression = __webpack_require__(10)
-	var Directive = __webpack_require__(12)
-	var Message = __webpack_require__(15)
+	var Directive = __webpack_require__(13)
+	var Message = __webpack_require__(16)
 	var detection = __webpack_require__(3)
 	var supportQuerySelector = detection.supportQuerySelector
-	var _execute = __webpack_require__(13)
+	var _execute = __webpack_require__(14)
 	var _components = {}
 	var _externalDirectives = {}
 	var _scopedDirectives = []
@@ -497,14 +497,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var d
 	            if (def.multi && expr.match(sep)) {
 	                // multiple defines expression parse
+	                var dExprs = []
 	                util.forEach(
 	                    _strip(expr).split(sep), 
-	                    function(item) {
+	                    function(item, i) {
 	                        // discard empty expression 
 	                        if (!util.trim(item)) return
-	                        d = new Directive(vm, tar, def, dname, '{' + item + '}', scope)
-	                        $directives.push(d)
+	                        // bad case, such as => key: 'javascript:;';
+	                        if (conf.directiveKey_regexp.test(item)) {
+	                            dExprs.push(item)
+	                        } else {
+	                            if (i > 0) {
+	                                // concat to last item
+	                                dExprs[i - 1] += conf.directiveSep + item
+	                            } else {
+	                                return consoler.error('Invalid expression of "{' + expr + '}", it should be in this format: ' + name + '="{ key: expression }".')
+	                            }
+	                        }
 	                    })
+	                dExprs.forEach(function (item) {
+	                    d = new Directive(vm, tar, def, dname, '{' + item + '}', scope)
+	                    $directives.push(d)
+	                })
+
 	            } else {
 	                d = new Directive(vm, tar, def, dname, expr, scope)
 	                $directives.push(d)
@@ -1286,6 +1301,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return text.replace(/(&[#a-zA-Z0-9]+;)/g, function (m, s) {
 	            return _convertEntity(s)
 	        })
+	    },
+	    isObj: function (obj) {
+	        return Object.prototype.toString.call(obj) == '[object Object]'
 	    }
 	}
 
@@ -1353,6 +1371,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		namespace: 'r-',
 		directiveSep: ';',
 	    directiveSep_regexp: /;/g,
+	    directiveKey_regexp: /^\s*['"]?[\w\-\$]+['"]?\s*:/m,
 	    mutable_dirtives: ['html', 'text']
 		// 'catch': false // catch error when component instance or not
 	}
@@ -1923,6 +1942,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	                this.fn = null
 	            }
 	        }
+	    },
+	    'click': {
+
+	    },
+	    'dataset': {
+	        multi: true,
+	        bind: function(attname) {
+	            this.attname = 'data-' + attname
+	            this._$el = $(this.$el)
+	        },
+	        update: function(next) {
+	            if (util.isUndef(next)) {
+	                this._$el.removeAttr(this.attname)
+	            } else {
+	                this._$el.attr(this.attname, next)
+	            }
+	        },
+	        unbind: function () {
+	            this.attname = ''
+	            this._$el = null
+	        }
+	    },
+	    'src': {
+	        bind: function(src) {
+	            this.src = src || ''
+	            this._$el = $(this.$el)
+	        },
+	        update: function() {
+	            this._$el.attr('src', this.src)
+	        },
+	        unbind: function () {
+	            this._$el = null
+	        }
 	    }
 	}
 	// class directive
@@ -1985,43 +2037,218 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 11 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict'
 
-	function noop () {}
+	var $ = __webpack_require__(1)
+	var util = __webpack_require__(2)
+	var keypath = __webpack_require__(8)
+	var consoler = __webpack_require__(7)
+	var nextTick = __webpack_require__(12)
+	var conf = __webpack_require__(5)
+	var ds = function(Real) {
+	    return {
+	        'for': {
+	            bind: function(v) {
+	                var $el = $(this.$el)
+	                var keyName = conf.namespace + 'key'
+	                this._key = $el.attr(keyName)
+	                $el.removeAttr(keyName)
+	                this.$before = document.createComment('<repeat ' + conf.namespace + 'for="' + this.$rawExpr 
+	                    + '" ' + keyName + '="' + this._key  + '">')
+	                this.$after = document.createComment('</repeat>')
+	                if (this.$el.parentNode) {
+	                    var frag = document.createDocumentFragment()
+	                    frag.appendChild(this.$before)
+	                    frag.appendChild(this.$after)
+	                    $el.replace(frag)
+	                } else {
+	                    consoler.error('ElementNode of directive "' + conf.namespace + 'for" must not the root node', this.$el)
+	                }
+	                if (!this._key) {
+	                    consoler.error('Missing attribute, Directive "' +
+	                        conf.namespace + 'for" need specify "key" by "' +
+	                        conf.namespace + 'key".', this.$el)
+	                }
+	                // first update
+	                this.diff(v)
+	            },
+	            /**
+	             * Custom diff method, using as update
+	             */
+	            diff: function(v) {
+	                if (!this._key) return
+	                if (util.type(v) == 'array') {
+	                    var that = this
+	                    if (!this._pending) {
+	                        this._pending = true
+	                        nextTick(function() {
+	                            try {
+	                                var vmMap = that._vmMap = {}
+	                                var lastVms = that._vms || []
+	                                var lastVmMap = that._vmMap || {}
+	                                var parentVm = that.$vm
+	                                var removedVms = []
+	                                var changedVms = []
+	                                var insertedVms = []
+	                                var vms = that._vms = []
+	                                util.forEach(v, function(data, index) {
+	                                    var isObj = util.isObj(data)
+	                                    var key = isObj ? keypath.get(data, that._key) : data + ''
+	                                    var vm = lastVmMap[key]
+	                                    var p = {
+	                                        key: key,
+	                                        vm: vm
+	                                    }
+	                                    if (vm) {
+	                                        p._i = vm.$data.$index
+	                                        if (vmMap[key]) {
+	                                            // duplicative
+	                                            consoler.warn('Key for directive"' + conf.namespace + 'for" is not unique:', key + ':', data, that.$el)
+	                                            return vms
+	                                        } else {
+	                                            if (vm.$data.$index !== index) {
+	                                                // TODO update POS
+	                                                changedVms.push(p)
+	                                            }
+	                                            util.extend(vm.$data, parentVm.$data, isObj ? data : null, {
+	                                                $index: index,
+	                                                $value: data,
+	                                                $parent: parentVm.$data
+	                                            })
+	                                            vm.$update()
+	                                            vms.push(p)
+	                                        }
+	                                    } else {
+	                                        vmMap[key] = vm
+	                                        // create new VM
+	                                        vm = new Real({
+	                                            parent: parentVm,
+	                                            el: that.$el.cloneNode(true),
+	                                            methods: util.extend({}, parentVm.$methods),
+	                                            data: util.extend({}, parentVm.$data, isObj ? data : null, {
+	                                                $index: index,
+	                                                $value: data,
+	                                                $parent: parentVm.$data
+	                                            })
+	                                        })
+	                                        p.vm = vm
+	                                        vms.push(p)
+	                                        insertedVms.push(p)
+	                                    }
+	                                    vmMap[key] = vm
+	                                    return vms
+	                                })
+	                                /**
+	                                 * remove
+	                                 */
+	                                lastVms.forEach(function(item) {
+	                                    if (!vmMap[item.key]) {
+	                                        removedVms.push(item)
+	                                    }
+	                                })
+	                                var changeCount = changedVms.length
+	                                var insertedCount = insertedVms.length
+	                                var patch = function() {
+	                                    if (!changeCount && !insertedCount) {
+	                                        return removedVms.forEach(function(item) {
+	                                            // has remove only
+	                                            detroyVM(item.vm)
+	                                        })
+	                                    } else {
+	                                        if (!removedVms.length) {
+	                                            if (insertedCount && !changeCount && vms.length > insertedCount) {
+	                                                var lastIndex = -1
+	                                                // detect if continued indexes
+	                                                if (!util.some(insertedVms, function(item) {
+	                                                        var index = item.vm.$data.$index
+	                                                        if (lastIndex < 0) return
+	                                                        // is no continues
+	                                                        if (lastIndex + 1 != index) {
+	                                                            return true
+	                                                        }
+	                                                        lastIndex = index
+	                                                    })) {
 
-	var ds = {}
-	var IF_KEY = 'IF'.toLowerCase()
-	ds[IF_KEY] = {
-	    bind: function () {
-	        var $el = this.$el
-	        var $parent = $el.parentNode
-	        var _mounted = true
+	                                                    mountVMs(
+	                                                        insertedVms, 
+	                                                        lastIndex + 1 < vms.length ?
+	                                                            vms[lastIndex + 1] :
+	                                                            that.$after)
+	                                                    // break
+	                                                    return
+	                                                }
+	                                            } else if (!insertedCount && changeCount) {
+	                                                // swap
+	                                            }
+	                                        }
+	                                    }
+	                                    // update pos at all items
+	                                    mountVMs(vms, that.$after)
+	                                }
+	                                patch()
+	                            } finally {
+	                                that._pending = false
+	                            }
+	                        })
+	                    }
+	                } else {
+	                    consoler.warn('Directive "' + conf.namespace + 'for" need Array value.', this.$el)
+	                }
+	            },
+	            unbind: function() {
 
-	        this._mount = function () {
-	            if (_mounted) return
-	            _mounted = true
-	            $parent.appendChild($el)
-	        }
-	        this._unmount = function () {
-	            if (!_mounted) return
-	            _mounted = false
-	            $parent.removeChild($el)
-	        }
-	    },
-	    unbind: function () {
-	        this._mount = this._unmount = noop
-	    },
-	    update: function (cnd) {
-	        if (!cnd) return this._unmount()
-	        else if (this._compiled) return this._mount()
-	        else {
-	            this._compiled = true
-	            this.$vm.$compile(this.$el)
-	            this._mount()
+	            }
 	        }
 	    }
+	    var IF_KEY = 'IF'.toLowerCase()
+	    ds[IF_KEY] = {
+	        bind: function() {
+	            var $el = this.$el
+	            var $parent = $el.parentNode
+	            var _mounted = true
+
+	            this._mount = function() {
+	                if (_mounted) return
+	                _mounted = true
+	                $parent.appendChild($el)
+	            }
+	            this._unmount = function() {
+	                if (!_mounted) return
+	                _mounted = false
+	                $parent.removeChild($el)
+	            }
+	        },
+	        unbind: function() {
+	            this._mount = this._unmount = noop
+	        },
+	        update: function(cnd) {
+	            if (!cnd) return this._unmount()
+	            else if (this._compiled) return this._mount()
+	            else {
+	                this._compiled = true
+	                this.$vm.$compile(this.$el)
+	                this._mount()
+	            }
+	        }
+	    }
+	}
+
+	function noop() {}
+
+	function detroyVM(vm) {
+	    if (vm.$el.parentNode) {
+	        vm.$el.parentNode.removeChild(vm.$el)
+	    }
+	    vm.$destroy()
+	}
+	function mountVMs(vms, target) {
+	    var frag = document.createDocumentFragment()
+	    vms.forEach(function(item) {
+	        frag.appendChild(item.vm.$el)
+	    })
+	    target.parentNode.insertBefore(frag, target)
 	}
 	module.exports = ds
 
@@ -2029,12 +2256,39 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var tasks = []
+	var pending
+	var util = __webpack_require__(2)
+	module.exports = function (fn) {
+		if (pending) {
+			tasks.push(fn)
+			return
+		}
+		pending = true
+		setTimeout(function () {
+			var flushTask = tasks
+			tasks = []
+			try {
+				fn && fn()
+				util.forEach(flushTask, function (t) {
+					t && t()				
+				})
+			} finally {
+				pending = false
+			}
+		}, 0)
+	}
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
 	'use strict'
 	var conf = __webpack_require__(5)
 	var Expression = __webpack_require__(10)
 	var consoler = __webpack_require__(7)
 	var util = __webpack_require__(2)
-	var _execute = __webpack_require__(13)
+	var _execute = __webpack_require__(14)
 	var _isExpr = Expression.isExpr
 	var _strip = Expression.strip
 	var _did = 0
@@ -2061,11 +2315,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (def.multi) {
 	        // extract key and expr from "key: expression" format
 	        var key
-	        var keyRE = /^[^:]+:/
-	        if (!keyRE.test(expr)) {
-	            return consoler.error('Invalid expression of "{' + expr + '}", it should be in this format: ' + name + '="{ key: expression }".')
-	        }
-	        expr = expr.replace(keyRE, function(m) {
+	        expr = expr.replace(/^[^:]+:/, function(m) {
 	            key = util.trim(m.replace(/:$/, ''))
 	            return ''
 	        })
@@ -2099,8 +2349,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    util.objEach(def, function(k, v) {
 	        d[k] = v
 	    })
-
-	    this.$diff = _diff
+	    // support custom diff method
+	    var diffMethod = this.$diff = _diff
+	    if (def.diff) {
+	        diffMethod = def.diff
+	    }
 	    /**
 	     *  update handler
 	     */
@@ -2117,7 +2370,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var nexv = d.$exec(expr) // [error, result]
 	            var r = nexv[1]
 
-	            if (!nexv[0] && util.diff(r, prev)) {
+	            if (!nexv[0] && diffMethod.call(d, r, prev)) {
 	                hasDiff = true
 
 	                // shouldUpdate(nextValue, preValue)
@@ -2181,7 +2434,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Directive
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -2189,7 +2442,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 	var __$util__ = __webpack_require__(2)
-	var __$compile__ = __webpack_require__(14)
+	var __$compile__ = __webpack_require__(15)
 	var __$compiledExprs___ = {}
 	/**
 	 *  Calc expression value
@@ -2236,7 +2489,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = _execute
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	module.exports = function (__$expr__) {
@@ -2251,7 +2504,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
