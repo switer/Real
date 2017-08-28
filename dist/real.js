@@ -2085,7 +2085,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                        this._pending = true
 	                        nextTick(function() {
 	                            try {
-	                                var vmMap = that._vmMap = {}
 	                                var lastVms = that._vms || []
 	                                var lastVmMap = that._vmMap || {}
 	                                var parentVm = that.$vm
@@ -2093,6 +2092,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                var changedVms = []
 	                                var insertedVms = []
 	                                var vms = that._vms = []
+	                                var vmMap = that._vmMap = {}
 	                                util.forEach(v, function(data, index) {
 	                                    var isObj = util.isObj(data)
 	                                    var key = isObj ? keypath.get(data, that._key) : data + ''
@@ -2184,6 +2184,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                            }
 	                                        }
 	                                    }
+	                                    // remove
+	                                    removedVms.forEach(function(item) {
+	                                        // has remove only
+	                                        detroyVM(item.vm)
+	                                    })
 	                                    // update pos at all items
 	                                    mountVMs(vms, that.$after)
 	                                }

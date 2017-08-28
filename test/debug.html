@@ -28,8 +28,16 @@
                 return {
                     items: [{
                         name: 'abc'
+                    }, {
+                        name: 'efg'
                     }]
                 }
+            },
+            ready: function () {
+                setTimeout(function () {
+                    this.$data.items.shift()
+                    this.$update()
+                }.bind(this))
             }
         })
     </script>
