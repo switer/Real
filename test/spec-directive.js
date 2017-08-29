@@ -346,6 +346,10 @@ describe('# Build-in Directives', function () {
         c.$set('classes', 'green')
         assert(!Reve.$(tar).hasClass('red'))
         assert(Reve.$(tar).hasClass('green'))
+        c.$set('classes', 'green  black yellow')
+        assert(Reve.$(tar).hasClass('green'))
+        assert(Reve.$(tar).hasClass('black'))
+        assert(Reve.$(tar).hasClass('yellow'))
     })
     it('r-html', function () {
         var c = new Reve({
