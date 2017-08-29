@@ -16,13 +16,13 @@ It's Reve, but support IE6......[About Reve](https://github.com/scrat-team/reve)
 
 ## API Reference
 
-- [Direcitves](https://github.com/switer/real#directives)
-- [Iterator/If](https://github.com/switer/real#list-if)
-- [Class Methods](https://github.com/switer/real#class-methods)
-- [Instance Options](https://github.com/switer/real#instance-options)
-- [Instance Methods](https://github.com/switer/real#instance-methods)
-- [Instance Properties](https://github.com/switer/real#instance-properties)
-- [Custom Directive](https://github.com/switer/real#custom-directive)
+- [Direcitves](#directives)
+- [Iterator/If](#iteratorif)
+- [Class Methods](#class-methods)
+- [Instance Options](#instance-options)
+- [Instance Methods](#instance-methods)
+- [Instance Properties](#instance-properties)
+- [Custom Directive](#custom-directive)
 
 ## Guide
 
