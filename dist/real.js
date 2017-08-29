@@ -68,9 +68,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Query = __webpack_require__(6)
 	var consoler = __webpack_require__(7)
 	var KP = __webpack_require__(8)
-	var buildInDirectives = __webpack_require__(9)
-	var buildInScopedDirectives = __webpack_require__(11)(Real)
-	var Expression = __webpack_require__(10)
+	var nextTick = __webpack_require__(9)
+	var buildInDirectives = __webpack_require__(10)
+	var buildInScopedDirectives = __webpack_require__(12)(Real)
+	var Expression = __webpack_require__(11)
 	var Directive = __webpack_require__(13)
 	var Message = __webpack_require__(16)
 	var detection = __webpack_require__(3)
@@ -817,6 +818,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	Real.$ = $
 	Real.util = util
 	Real.consoler = consoler
+	Real.nextTick = nextTick
 	module.exports = Real
 
 /***/ },
@@ -1580,6 +1582,33 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var tasks = []
+	var pending
+	var util = __webpack_require__(2)
+	module.exports = function (fn) {
+		if (pending) {
+			tasks.push(fn)
+			return
+		}
+		pending = true
+		setTimeout(function () {
+			pending = false
+			var flushTask = tasks
+			tasks = []
+			try {
+				fn && fn()
+			} finally {
+				util.forEach(flushTask, function (t) {
+					t && t()				
+				})
+			}
+		}, 0)
+	}
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
 	/**
 	 *  Global Build-in Directives
 	 */
@@ -1591,7 +1620,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var util = __webpack_require__(2)
 	var consoler = __webpack_require__(7)
 	var detection = __webpack_require__(3)
-	var Expression = __webpack_require__(10)
+	var Expression = __webpack_require__(11)
 	var keypath = __webpack_require__(8)
 	var CLASS_KEY = 'CLASS'.toLowerCase()
 	function noop () {}
@@ -1995,7 +2024,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = ds
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -2036,7 +2065,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict'
@@ -2045,7 +2074,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var util = __webpack_require__(2)
 	var keypath = __webpack_require__(8)
 	var consoler = __webpack_require__(7)
-	var nextTick = __webpack_require__(12)
+	var nextTick = __webpack_require__(9)
 	var conf = __webpack_require__(5)
 	var ds = function(Real) {
 	    return {
@@ -2054,23 +2083,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	                var $el = $(this.$el)
 	                var keyName = conf.namespace + 'key'
 	                this._key = $el.attr(keyName)
-	                $el.removeAttr(keyName)
-	                this.$before = document.createComment('<repeat ' + conf.namespace + 'for="' + this.$rawExpr 
-	                    + '" ' + keyName + '="' + this._key  + '">')
-	                this.$after = document.createComment('</repeat>')
+	                if (!this._key) {
+	                    consoler.error('Missing attribute, Directive "' +
+	                        conf.namespace + 'for" need specify "key" by "' +
+	                        conf.namespace + 'key".')
+	                }
+	                this._isSelfStrKey = this._key === '*this'
+	                var tagExpr = this._tagExpr = '<'+ conf.namespace + 'for="' + this.$rawExpr+'" '+ keyName + '="' + this._key+'"/>'
+	                this.$before = document.createComment('<for ' + tagExpr  + '">')
+	                this.$after = document.createComment('</for>')
 	                if (this.$el.parentNode) {
 	                    var frag = document.createDocumentFragment()
 	                    frag.appendChild(this.$before)
 	                    frag.appendChild(this.$after)
 	                    $el.replace(frag)
 	                } else {
-	                    consoler.error('ElementNode of directive "' + conf.namespace + 'for" must not the root node', this.$el)
+	                    consoler.error('ElementNode of the directive must not the root node. ', tagExpr)
 	                }
-	                if (!this._key) {
-	                    consoler.error('Missing attribute, Directive "' +
-	                        conf.namespace + 'for" need specify "key" by "' +
-	                        conf.namespace + 'key".', this.$el)
-	                }
+	                $el.removeAttr(keyName)
 	                // first update
 	                this.diff(v)
 	            },
@@ -2081,9 +2111,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	                if (!this._key) return
 	                if (util.type(v) == 'array') {
 	                    var that = this
+	                    this._v = v
 	                    if (!this._pending) {
 	                        this._pending = true
 	                        nextTick(function() {
+	                            console.time('r-for:render')
 	                            try {
 	                                var lastVms = that._vms || []
 	                                var lastVmMap = that._vmMap || {}
@@ -2093,51 +2125,87 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                var insertedVms = []
 	                                var vms = that._vms = []
 	                                var vmMap = that._vmMap = {}
-	                                util.forEach(v, function(data, index) {
+	                                var firstInsertIndex = -1
+	                                var lastInsertIndex = -1
+	                                var continuedChangeOffset = 0
+	                                var firstChangeIndex = -1
+	                                var lastChangeIndex = -1
+	                                var isContinuedInsert = true
+	                                var isContinuedChange = true
+	                                var cursor = 0
+	                                util.forEach(that._v, function(data, index) {
 	                                    var isObj = util.isObj(data)
-	                                    var key = isObj ? keypath.get(data, that._key) : data + ''
+	                                    var key = isObj && !that._isSelfStrKey ? keypath.get(data, that._key) : data + ''
 	                                    var vm = lastVmMap[key]
 	                                    var p = {
 	                                        key: key,
 	                                        vm: vm
 	                                    }
+	                                    if (vmMap[key]) {
+	                                        // duplicative
+	                                        consoler.warn('Key for the directive is not unique { "'+ key + '" :', data, '}. ', that._tagExpr)
+	                                        return vms
+	                                    }
 	                                    if (vm) {
 	                                        p._i = vm.$data.$index
-	                                        if (vmMap[key]) {
-	                                            // duplicative
-	                                            consoler.warn('Key for directive"' + conf.namespace + 'for" is not unique:', key + ':', data, that.$el)
-	                                            return vms
-	                                        } else {
-	                                            if (vm.$data.$index !== index) {
-	                                                // TODO update POS
-	                                                changedVms.push(p)
+	                                        index = cursor
+	                                        // detect is continue changed VMS by increasing index and fixed offset
+	                                        if (vm.$data.$index !== index) {
+	                                            // TODO update POS
+	                                            changedVms.push(p)
+	                                            if (isContinuedChange) {
+	                                                if (lastChangeIndex <= 0) {
+	                                                    continuedChangeOffset = index - p._i
+	                                                    firstChangeIndex = lastChangeIndex = index
+	                                                } else {
+	                                                    if (lastChangeIndex + 1 != index || continuedChangeOffset != index - p._i) {
+	                                                        // break
+	                                                        isContinuedChange = false
+	                                                    } else {
+	                                                        lastChangeIndex = index
+	                                                    }
+	                                                }
 	                                            }
-	                                            util.extend(vm.$data, parentVm.$data, isObj ? data : null, {
-	                                                $index: index,
-	                                                $value: data,
-	                                                $parent: parentVm.$data
-	                                            })
-	                                            vm.$update()
-	                                            vms.push(p)
 	                                        }
+	                                        util.extend(vm.$data, parentVm.$data, isObj ? data : null, {
+	                                            $index: index,
+	                                            $value: data,
+	                                            $parent: parentVm.$data
+	                                        })
+	                                        vm.$update()
+	                                        vms.push(p)
+	                                        cursor ++
 	                                    } else {
-	                                        vmMap[key] = vm
+	                                        index = cursor
 	                                        // create new VM
 	                                        vm = new Real({
 	                                            parent: parentVm,
 	                                            el: that.$el.cloneNode(true),
-	                                            methods: util.extend({}, parentVm.$methods),
+	                                            methods: parentVm.$methods,
 	                                            data: util.extend({}, parentVm.$data, isObj ? data : null, {
 	                                                $index: index,
 	                                                $value: data,
 	                                                $parent: parentVm.$data
 	                                            })
 	                                        })
+	                                        if (isContinuedInsert) {
+	                                            if (lastInsertIndex <= 0) {
+	                                                firstInsertIndex = lastInsertIndex = index
+	                                            } else {
+	                                                if (lastInsertIndex + 1 != index) {
+	                                                    // break
+	                                                    isContinuedInsert = false
+	                                                } else {
+	                                                    lastInsertIndex = index
+	                                                }
+	                                            }
+	                                        }
 	                                        p.vm = vm
 	                                        vms.push(p)
 	                                        insertedVms.push(p)
+	                                        cursor ++
 	                                    }
-	                                    vmMap[key] = vm
+	                                    vmMap[key] = p
 	                                    return vms
 	                                })
 	                                /**
@@ -2148,58 +2216,60 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                        removedVms.push(item)
 	                                    }
 	                                })
-	                                var changeCount = changedVms.length
+	                                var changedCount = changedVms.length
 	                                var insertedCount = insertedVms.length
+	                                var removedCount = removedVms.length
+	                                // debug
+	                                consoler.log(
+	                                    '+', insertedCount, isContinuedInsert, continuedChangeOffset, ' / ', 
+	                                    '-', removedCount, ' / ', 
+	                                    '$', changedCount, isContinuedChange)
 	                                var patch = function() {
-	                                    if (!changeCount && !insertedCount) {
-	                                        return removedVms.forEach(function(item) {
-	                                            // has remove only
-	                                            detroyVM(item.vm)
-	                                        })
+	                                    var onlyRemoved
+	                                    if (!insertedCount) {
+	                                        if (!changedCount && !removedCount) {
+	                                            // debug
+	                                            consoler.log('#1')
+	                                            // no change
+	                                            return
+	                                        } else if (removedCount && (!changedCount || (-1*continuedChangeOffset == removedCount && isContinuedChange))) {
+	                                            // debug
+	                                            consoler.log('#2')
+	                                            // only removedVMs
+	                                            onlyRemoved = true
+	                                        }
 	                                    } else {
-	                                        if (!removedVms.length) {
-	                                            if (insertedCount && !changeCount && vms.length > insertedCount) {
-	                                                var lastIndex = -1
-	                                                // detect if continued indexes
-	                                                if (!util.some(insertedVms, function(item) {
-	                                                        var index = item.vm.$data.$index
-	                                                        if (lastIndex < 0) return
-	                                                        // is no continues
-	                                                        if (lastIndex + 1 != index) {
-	                                                            return true
-	                                                        }
-	                                                        lastIndex = index
-	                                                    })) {
-
-	                                                    mountVMs(
-	                                                        insertedVms, 
-	                                                        lastIndex + 1 < vms.length ?
-	                                                            vms[lastIndex + 1] :
-	                                                            that.$after)
-	                                                    // break
-	                                                    return
-	                                                }
-	                                            } else if (!insertedCount && changeCount) {
-	                                                // swap
-	                                            }
+	                                        if (isContinuedInsert && (!changedCount || isContinuedChange)) {
+	                                            // debug
+	                                            consoler.log('#3')
+	                                            onlyRemoved = true
+	                                            // insert only and effect on changedVMs
+	                                            mountVMs(
+	                                                insertedVms, 
+	                                                lastInsertIndex + 1 < vms.length 
+	                                                    ? vms[lastInsertIndex + 1].vm.$el
+	                                                    : that.$after
+	                                            )
 	                                        }
 	                                    }
-	                                    // remove
+	                                    // remove in batch
 	                                    removedVms.forEach(function(item) {
-	                                        // has remove only
 	                                        detroyVM(item.vm)
 	                                    })
-	                                    // update pos at all items
-	                                    mountVMs(vms, that.$after)
+	                                    if (onlyRemoved) {
+	                                        // update pos at all items
+	                                        mountVMs(vms, that.$after)
+	                                    }
 	                                }
 	                                patch()
 	                            } finally {
 	                                that._pending = false
 	                            }
+	                            console.timeEnd('r-for:render')
 	                        })
 	                    }
 	                } else {
-	                    consoler.warn('Directive "' + conf.namespace + 'for" need Array value.', this.$el)
+	                    consoler.warn('The directive only support Array value. ', this._tagExpr)
 	                }
 	            },
 	            unbind: function() {
@@ -2258,39 +2328,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = ds
 
 /***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var tasks = []
-	var pending
-	var util = __webpack_require__(2)
-	module.exports = function (fn) {
-		if (pending) {
-			tasks.push(fn)
-			return
-		}
-		pending = true
-		setTimeout(function () {
-			var flushTask = tasks
-			tasks = []
-			try {
-				fn && fn()
-				util.forEach(flushTask, function (t) {
-					t && t()				
-				})
-			} finally {
-				pending = false
-			}
-		}, 0)
-	}
-
-/***/ },
 /* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict'
 	var conf = __webpack_require__(5)
-	var Expression = __webpack_require__(10)
+	var Expression = __webpack_require__(11)
 	var consoler = __webpack_require__(7)
 	var util = __webpack_require__(2)
 	var _execute = __webpack_require__(14)

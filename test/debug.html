@@ -7,37 +7,24 @@
 </head>
 <body>
     <div id="app">
-        <div r-for="{items}" r-key="name">
-            <span r-text>{$value.name}</span>
+        <div r-for="{items}" r-key="*this">
+            <span r-text>{$index}: {$value}</span>
         </div>
     </div>
     <script>
-        // var c = Reve.component('c-demo', {
-        //     template: '<div>123</div>',
-        //     data: function() {
-        //         console.trace('#Demo')
-        //         return {
-
-        //         }
-        //     }
-        // })
-        // new c()
         var c = new Real({
             el: '#app',
             data: function () {
                 return {
-                    items: [{
-                        name: 'abc'
-                    }, {
-                        name: 'efg'
-                    }]
+                    items: 'abca'.split('')
                 }
             },
             ready: function () {
-                setTimeout(function () {
-                    this.$data.items.shift()
-                    this.$update()
-                }.bind(this))
+                var that = this
+                // Real.nextTick(function () {
+                //     that.$data.items.shift()
+                //     that.$update()
+                // })
             }
         })
     </script>

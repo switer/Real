@@ -7,6 +7,7 @@ var is = require('./lib/tools/is')
 var Query = require('./lib/tools/query')
 var consoler = require('./lib/tools/consoler')
 var KP = require('./lib/tools/keypath')
+var nextTick = require('./lib/tools/nexttick')
 var buildInDirectives = require('./lib/directives/build-in')
 var buildInScopedDirectives = require('./lib/directives/scoped-directives')(Real)
 var Expression = require('./lib/tools/expression')
@@ -756,4 +757,5 @@ function noop() {}
 Real.$ = $
 Real.util = util
 Real.consoler = consoler
+Real.nextTick = nextTick
 module.exports = Real
