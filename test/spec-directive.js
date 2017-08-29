@@ -337,7 +337,6 @@ describe('# Build-in Directives', function () {
             template: '<div r-classes="{classes}"></div>'
         })
         var tar = c.$el.querySelector('div')
-        console.log(tar.className)
         assert(Reve.$(tar).hasClass('red'))
         assert(Reve.$(tar).hasClass('blue'))
         c.$set('classes', ['red'])
