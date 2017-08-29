@@ -262,19 +262,19 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	```
 
 	It will be instanced when instance parent VM:	
-```js
+	```js
 	var app = new Reve({
 		el: '#app'
 	})
-```
+	```
 	Render result:
-```html
+	```html
 	<div id="app">
 		<div>
 			<span>Hi, reve</span>
 		</div>
 	</div>
-```
+	```
 
 - **r-model**
 	
