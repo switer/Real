@@ -123,9 +123,9 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	Add/remove class text to element.
 	such as: 
 	```html
-	<span r-class="{(isBlue ? 'blue':'green') + ' ' + (isInline ? 'inline-block' : 'block')}"></span>
+	<span r-classes="{(isBlue ? 'blue':'green') + ' ' + (isInline ? 'inline-block' : 'block')}"></span>
 	<!-- also support array -->
-	<span r-class="{['red', 'blue']}"></span>
+	<span r-classes="{['red', 'blue']}"></span>
 	```
 
 - **r-style**
