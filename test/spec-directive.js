@@ -329,6 +329,24 @@ describe('# Build-in Directives', function () {
         c.$set('clazz', true)
         assert(Reve.$(tar).hasClass('clazz'))
     })
+    it('r-classes', function (){
+        var c = new Reve({
+            data: {
+                classes: ['red', 'blue']
+            },
+            template: '<div r-classes="{classes}"></div>'
+        })
+        var tar = c.$el.querySelector('div')
+        console.log(tar.className)
+        assert(Reve.$(tar).hasClass('red'))
+        assert(Reve.$(tar).hasClass('blue'))
+        c.$set('classes', ['red'])
+        assert(!Reve.$(tar).hasClass('blue'))
+        assert(Reve.$(tar).hasClass('red'))
+        c.$set('classes', 'green')
+        assert(!Reve.$(tar).hasClass('red'))
+        assert(Reve.$(tar).hasClass('green'))
+    })
     it('r-html', function () {
         var c = new Reve({
             data: {
@@ -625,4 +643,5 @@ describe('# Build-in Directives', function () {
         })
         assert(!!c.$el.querySelector('.parent-inner'))
     })
+    
 })

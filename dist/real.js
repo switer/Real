@@ -1,5 +1,5 @@
 /**
-* Real v2.0.0-beta.2
+* Real v2.0.0-beta.3
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -927,9 +927,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // IE9 below not support classList
 	        // el.classList.add(clazz)
 
-	        var classList = el.className.split(/\s+/)
-	        if (!~util.indexOf(classList, clazz)) classList.push(clazz)
-	        el.className = classList.join(' ')
+	        var classes = clazz
+	        if (util.type(clazz) == 'string') {
+	            classes = [clazz]
+	        }
+	        if (el.classList && el.classList.add) {
+	            util.forEach(classes, function (c) {
+	                el.classList.add(c)
+	            })
+	        } else {
+	            var classList = el.className.split(/\s+/)
+	            util.forEach(classes, function (c) {
+	                if (!~util.indexOf(classList, c)) classList.push(c)
+	            })
+	            el.className = classList.join(' ')
+	        }
 	    })
 	    return this
 	}
@@ -939,10 +951,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // IE9 below not support classList
 	        // el.classList.remove(clazz)
 
-	        var classList = el.className.split(' ')
-	        var index = util.indexOf(classList, clazz)
-	        if (~index) classList.splice(index, 1)
-	        el.className = classList.join(' ')
+	        var classes = clazz
+	        if (util.type(clazz) == 'string') {
+	            classes = [clazz]
+	        }
+	        if (el.classList && el.classList.remove) {
+	            util.forEach(classes, function (c) {
+	                el.classList.remove(c)
+	            })
+	        } else {
+	            var classList = el.className.split(' ')
+	            util.forEach(classes, function (c) {
+	                var index = util.indexOf(classList, c)
+	                if (~index) classList.splice(index, 1)
+	            })
+	            el.className = classList.join(' ')
+	        }
+
 	    })
 	    return this
 	}
@@ -2052,6 +2077,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	        },
 	        unbind: function () {
 	            this._$el = null
+	        }
+	    },
+	    classes: {
+	        bind: function() {
+	            this._$el = $(this.$el)
+	        },
+	        update: function (classes) {
+	            var that = this
+	            if (this._classes) {
+	                that._$el.removeClass(this._classes)
+	            }
+	            var type = util.type(classes)
+	            if (type == 'array') {
+	                classes = util.map(classes, function (clazz) {
+	                    return util.trim(clazz)
+	                })
+	            } else if (type == 'string') {
+	                classes = util.trim(classes).split(/\s+/m)
+	            }
+	            this._classes = classes
+	            that._$el.addClass(classes)
+	        },
+	        unbind: function () {
+	            this._$el = this._classes = null
 	        }
 	    }
 	}
