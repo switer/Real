@@ -1,5 +1,5 @@
 /**
-* Real v2.0.0-beta.1
+* Real v2.0.0-beta.2
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -2163,7 +2163,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    if (!this._pending) {
 	                        this._pending = true
 	                        nextTick(function() {
-	                            console.time('r-for:render')
+	                            // console.time('r-for:render')
 	                            try {
 	                                var lastVms = that._vms || []
 	                                var lastVmMap = that._vmMap || {}
@@ -2317,7 +2317,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                            } finally {
 	                                that._pending = false
 	                            }
-	                            console.timeEnd('r-for:render')
+	                            // console.timeEnd('r-for:render')
 	                        })
 	                    }
 	                } else {
