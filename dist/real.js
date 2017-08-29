@@ -1,5 +1,5 @@
 /**
-* Real v2.0.0
+* Real v2.0.0-beta
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -2242,28 +2242,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                var insertedCount = insertedVms.length
 	                                var removedCount = removedVms.length
 	                                // debug
-	                                consoler.log(
-	                                    '+', insertedCount, isContinuedInsert, ' / ', 
-	                                    '-', removedCount, ' / ', 
-	                                    '$', changedCount, isContinuedChange, continuedChangeOffset)
+	                                // consoler.log(
+	                                //     '+', insertedCount, isContinuedInsert, ' / ', 
+	                                //     '-', removedCount, ' / ', 
+	                                //     '$', changedCount, isContinuedChange, continuedChangeOffset)
 	                                var patch = function() {
 	                                    var onlyRemoved
 	                                    if (!insertedCount) {
 	                                        if (!changedCount && !removedCount) {
 	                                            // debug
-	                                            consoler.log('#1')
+	                                            // consoler.log('#1')
 	                                            // no change
 	                                            return
 	                                        } else if (removedCount && (!changedCount || (-1*continuedChangeOffset == removedCount && isContinuedChange))) {
 	                                            // debug
-	                                            consoler.log('#2')
+	                                            // consoler.log('#2')
 	                                            // only removedVMs
 	                                            onlyRemoved = true
 	                                        }
 	                                    } else {
 	                                        if (isContinuedInsert && (!changedCount || isContinuedChange)) {
 	                                            // debug
-	                                            consoler.log('#3')
+	                                            // consoler.log('#3')
 	                                            onlyRemoved = true
 	                                            // insert only and effect on changedVMs
 	                                            mountVMs(

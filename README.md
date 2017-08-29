@@ -17,6 +17,7 @@ It's Reve, but support IE6......[About Reve](https://github.com/scrat-team/reve)
 ## API Reference
 
 - [Direcitves](https://github.com/switer/real#directives)
+- [Iterator/If](https://github.com/switer/real#list-if)
 - [Class Methods](https://github.com/switer/real#class-methods)
 - [Instance Options](https://github.com/switer/real#instance-options)
 - [Instance Methods](https://github.com/switer/real#instance-methods)
@@ -227,20 +228,21 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 		</div>
 	</div>
 	```
-	It will be instanced when instance parent VM:
-	```js
+
+	It will be instanced when instance parent VM:	
+```js
 	var app = new Reve({
 		el: '#app'
 	})
-	```
+```
 	Render result:
-	```html
+```html
 	<div id="app">
 		<div>
 			<span>Hi, reve</span>
 		</div>
 	</div>
-	```
+```
 
 - **r-model**
 	
@@ -248,20 +250,20 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	it could be a keypath, such as: **r-model="person[i].name"**. Example:
 
 	```js
-		var c = new Reve({
-            data: {
-                val: ''
-            },
-            template: '<input type="text" r-model="val"/>'
-        })
+	var c = new Reve({
+        data: {
+            val: ''
+        },
+        template: '<input type="text" r-model="val"/>'
+    })
 
-        // input element will update data with specified property name
-        dispatchEvent(inp, 'input', 'real')
-        assert.equal(c.$data.val, 'real')
+    // input element will update data with specified property name
+    dispatchEvent(inp, 'input', 'real')
+    assert.equal(c.$data.val, 'real')
 
-        // data changed will update DOM value
-        c.$set('val', 'real2')
-        assert.equal(inp.value, 'real2')
+    // data changed will update DOM value
+    c.$set('val', 'real2')
+    assert.equal(inp.value, 'real2')
 	```
 
 - **r-ref**
@@ -318,10 +320,31 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **r-notemplate**
 
-	If 'r-updateid' is presented, will not render component's template option, and render innerHTML only.
+	If 'r-notemplate' is presented, will not render component's template option, and render innerHTML only.
 	> Notice: work with "r-component".Using in server-side render case.
 
 
+#### Iterator/If
+
+- **r-for**
+	
+	`r-key` is necessary, it's value could be `key-path` or "`*this`", but must be unique. `**$value**` is current value of list item. `**$index**` is current item's index.
+	```html
+	<!-- items => {name: 'xxx', id: 'xxx'} -->
+	<div r-component="c-item" 
+		r-for="{items}"
+		r-key="name"
+	><span r-text>{$index}: {id}</span></div>
+	```
+
+- **r-if**
+	
+	Render sub-template by condition.
+	```html
+	<div r-if="{cnd}">
+		<div>Hellow world</div>
+	</div>
+	```
 
 
 #### Class Methods
