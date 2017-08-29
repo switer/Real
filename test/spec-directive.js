@@ -277,6 +277,46 @@ describe('# Build-in Directives', function () {
         c.$update()
         assert.equal(tar.getAttribute('data-attr'), 'real')
     })
+    it('r-src', function () {
+        var c = new Reve({
+            data: {
+                src: '/'
+            },
+            template: '<img r-src="{src}" />'
+        })
+        var tar = c.$el.querySelector('img')
+        assert.equal(tar.getAttribute('src'), '/')
+        c.$data.src = ''
+        c.$update()
+        assert.equal(tar.getAttribute('src'), '')
+    })
+    it('r-href', function () {
+        var c = new Reve({
+            data: {
+                href: 'javascript:;'
+            },
+            template: '<a r-href="{href}" />'
+        })
+        var tar = c.$el.querySelector('a')
+        assert.equal(tar.getAttribute('href'), 'javascript:;')
+        c.$data.href = '#'
+        c.$update()
+        assert.equal(tar.getAttribute('href'), '#')
+    })
+    it('r-dataset', function () {
+        var c = new Reve({
+            data: {
+                src: '/'
+            },
+            template: '<a r-dataset="{src: src; href: \'javascript:;\'}" />'
+        })
+        var tar = c.$el.querySelector('a')
+        assert.equal(tar.dataset.src, '/')
+        assert.equal(tar.dataset.href, 'javascript:;')
+        c.$data.src = ''
+        c.$update()
+        assert.equal(tar.dataset.src, '')
+    })
     it('r-class', function () {
         var c = new Reve({
             data: {
@@ -373,6 +413,21 @@ describe('# Build-in Directives', function () {
         })
         var inp = c.$el.querySelector('input')
         dispatchEvent(inp, 'change')
+    })
+    it('r-click', function (done) {
+        var c = new Reve({
+            data: {},
+            template: '<div r-click="{onClick}"></div>',
+            methods: {
+                onClick: function () {
+                    done()
+                }
+            }
+        })
+        var tar = c.$el.querySelector('div')
+        var event = document.createEvent('Event')
+        event.initEvent('click', true, true);
+        tar.dispatchEvent(event)
     })
     it('r-show', function () {
         var c = new Reve({

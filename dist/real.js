@@ -1,5 +1,5 @@
 /**
-* Real v2.0.0-beta
+* Real v2.0.0-beta.1
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1643,14 +1643,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	var keypath = __webpack_require__(8)
 	var CLASS_KEY = 'CLASS'.toLowerCase()
 	function noop () {}
-	function _templateShouldUpdate() {
-	    return util.some(this._expressions, util.bind(function(exp, index) {
-	        var pv = this._caches[index]
-	        var nv = this.$exec(exp)
+	function _templateShouldUpdate(vm) {
+	    return util.some(vm._expressions, function(exp, index) {
+	        var pv = vm._caches[index]
+	        var nv = vm.$exec(exp)
 	        if (!nv[0]) {
-	            return !!this.$diff(pv, nv[1])
+	            return !!vm.$diff(pv, nv[1])
 	        }
-	    }, this))
+	    })
+	}
+	function _eventUpdate(vm, handler) {
+	    vm.unbind()
+	    var fn = handler
+	    if (util.type(fn) !== 'function')
+	        return consoler.warn('"' + conf.namespace + 'on" only accept function. {' + vm._expr + '}')
+
+	    var that = vm
+	    vm.fn = function (e) {
+	        e.$currentTarget = that.$el
+	        e.$preventDefault = preventDefault
+	        e.$stopPropagation = stopPropagation
+	        fn.call(that.$vm, e)
+	    }
+	    $(vm.$el).on(vm.type, vm.fn, false)
 	}
 	function preventDefault(e) {
 	    e = e || window.event
@@ -1669,6 +1684,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        window.event && (window.event.cancelBubble = true)
 	    }
 	}
+
 	var ds = {
 	    'attr': {
 	        multi: true,
@@ -1771,7 +1787,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }
 	            }
 	        },
-	        shouldUpdate: _templateShouldUpdate,
+	        shouldUpdate: function () {
+	            return _templateShouldUpdate(this)
+	        },
 	        update: function() {
 	            this._render()
 	        },
@@ -1844,7 +1862,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	            this.render()
 	        },
-	        shouldUpdate: _templateShouldUpdate,
+	        shouldUpdate: function () {
+	            return _templateShouldUpdate(this)
+	        },
 	        update: function () {
 	            this.render()
 	        },
@@ -1967,22 +1987,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	            this.type = evtType
 	        },
-	        update: function(handler) {
-	            this.unbind()
-
-	            var fn = handler
-	            if (util.type(fn) !== 'function')
-	                return consoler.warn('"' + conf.namespace + 'on" only accept function. {' + this._expr + '}')
-
-	            var that = this
-	            this.fn = function (e) {
-	                e.$currentTarget = that.$el
-	                e.$preventDefault = preventDefault
-	                e.$stopPropagation = stopPropagation
-	                fn.call(that.$vm, e)
-	            }
-	            $(this.$el).on(this.type, this.fn, false)
-
+	        update: function (handler) {
+	            return _eventUpdate(this, handler)
 	        },
 	        unbind: function() {
 	            if (this.fn) {
@@ -1992,7 +1998,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    },
 	    'click': {
-
+	        bind: function(handler, expression) {
+	            this._expr = expression
+	            this.type = 'click'
+	        },
+	        update: function (handler) {
+	            return _eventUpdate(this, handler)
+	        },
+	        unbind: function() {
+	            if (this.fn) {
+	                $(this.$el).off(this.type, this.fn)
+	                this.fn = null
+	            }
+	        }
 	    },
 	    'dataset': {
 	        multi: true,
@@ -2017,8 +2035,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.src = src || ''
 	            this._$el = $(this.$el)
 	        },
-	        update: function() {
-	            this._$el.attr('src', this.src)
+	        update: function(src) {
+	            this._$el.attr('src', src || '')
+	        },
+	        unbind: function () {
+	            this._$el = null
+	        }
+	    },
+	    'href': {
+	        bind: function(href) {
+	            this.href = href || ''
+	            this._$el = $(this.$el)
+	        },
+	        update: function(href) {
+	            this._$el.attr('href', href || '')
 	        },
 	        unbind: function () {
 	            this._$el = null

@@ -133,6 +133,26 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	```html
 	<img r-attr="{src: imgUrl || './default.png'}" alt="">
 	```
+- **r-src**
+
+	Update element's "`src`" attribute by binding data.
+	```html
+	<img r-src="{imgUrl || './default.png'}" alt="">
+	```
+
+- **r-href**
+
+	Update element's "`href`" attribute by binding data.
+	```html
+	<a r-href="{url || 'javascript:;'}" >click me</a>
+	```
+
+- **r-dataset**
+
+	Update element's "`dataset`" by binding data.
+	```html
+	<div r-dataset="{index: index; src: src || './default.png'}" ></div>
+	```
 
 - **r-on**
 
@@ -145,6 +165,18 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 		}"
 	></button>
 	```
+
+- **r-click**
+
+	Add click event listener to the element:
+	```html
+	<button 
+		r-click="{
+			onClick;
+		}"
+	></button>
+	```
+
 
 - **r-html**
 
