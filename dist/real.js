@@ -2263,7 +2263,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                /**
 	                                 * remove
 	                                 */
-	                                lastVms.forEach(function(item) {
+	                                util.forEach(lastVms, function(item) {
 	                                    if (!vmMap[item.key]) {
 	                                        removedVms.push(item)
 	                                    }
@@ -2305,7 +2305,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                        }
 	                                    }
 	                                    // remove in batch
-	                                    removedVms.forEach(function(item) {
+	                                    util.forEach(removedVms, function(item) {
 	                                        detroyVM(item.vm)
 	                                    })
 	                                    if (!onlyRemoved) {
@@ -2375,7 +2375,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	function mountVMs(vms, target) {
 	    var frag = document.createDocumentFragment()
-	    vms.forEach(function(item) {
+	    util.forEach(vms, function(item) {
 	        frag.appendChild(item.vm.$el)
 	    })
 	    target.parentNode.insertBefore(frag, target)
