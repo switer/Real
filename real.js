@@ -153,16 +153,30 @@ function Real(options) {
     }
     var componentDec = NS + 'component'
     var isReplaced
+    var hasChildCompoent
     if (hasReplaceOption 
         && util.hasAttribute(el, componentDec) 
         && _getAttribute(el, componentDec) !== options.name) {
         // not same name policy, and make parentVM anonymous
         isReplaced = true
     } else {
-        // prevent instance circularly
-        _removeAttribute(el, componentDec)
+        var cname = _getAttribute(el, componentDec)
+        if (cname && cname === this.$name) {
+            // prevent instance circularly
+            _removeAttribute(el, componentDec)
+        } else if (cname) {
+            hasChildCompoent = true
+        }
+        // support multiple cid
+        var cidKey = '_' + NS + 'cid'
+        var cidValue = _getAttribute(el, cidKey) || ''
+        if (cidValue) {
+            cidValue += ','+this.$id
+        } else {
+            cidValue = this.$id
+        }
         // expose cid to DOM for debug
-        _setAttribute(el, '_' + NS + 'cid', this.$id)
+        _setAttribute(el, cidKey, cidValue)
     }
 
     this.$methods = {}
@@ -171,7 +185,7 @@ function Real(options) {
     // from options.data
     var data = _getData(options.data)
     // prop NS-props
-    var props = this._$parseProps(el)
+    var props = hasChildCompoent ? null : this._$parseProps(el)
     // from DOM interface
     var _data = _getData(options._data)
     this.$data = util.extend(data, props, _data) 
@@ -242,7 +256,8 @@ Real.prototype.$compile = function (el, scope) {
     // compile directives of the VM
     var _diretives = util.extend({}, buildInDirectives, buildInScopedDirectives, _externalDirectives)
     var attSels = util.keys(_diretives)
-    var scopedDec = util.keys(buildInScopedDirectives).concat(_scopedDirectives)
+    var scopedDecKeys = util.keys(buildInScopedDirectives)
+    var scopedDec = scopedDecKeys.concat(_scopedDirectives)
     var allScopedDec = [componentDec].concat(util.map(scopedDec, function (name) {
         return conf.namespace + name
     }))
@@ -275,9 +290,13 @@ Real.prototype.$compile = function (el, scope) {
     var compileComponent = function (tar) {
         // prevent cross DOM level parsing or repeat parse
         if (tar._component) return
-            
+        // build in scoped directive is first
+        if (util.some(scopedDecKeys, function (k) {
+            return !!_getAttribute(tar, NS + k)
+        })) {
+            return
+        }
         if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
-
         var cname = _getAttribute(tar, componentDec)
         if (!cname) {
             return consoler.error(componentDec + ' missing component id.', tar)

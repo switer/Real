@@ -7,24 +7,46 @@
 </head>
 <body>
     <div id="app">
-        <div r-for="{items}" r-key="*this">
-            <span r-text>{$index}: {$value}</span>
-        </div>
+        <div r-component="c-comp" 
+            r-for="{names}" 
+            r-key="name" 
+            r-data="{
+                index: $index, 
+                name: name
+            }"
+        ></div>
+        <!-- <div r-if="true">
+            <div r-for="{items}" r-key="*this">
+                <div r-if="{$value}">
+                    <span r-text>{$index}: {$value}</span>
+                </div>
+            </div>
+        </div> -->
     </div>
     <script>
-        var c = new Real({
+        var c = Real.component('c-comp', {
+            template: '<div r-text>{index}: {name}</div>'
+        })
+        new Real({
             el: '#app',
             data: function () {
                 return {
-                    items: 'abca'.split('')
+                    // items: 'abc'.split(''),
+                    names: [{name: 'real'}, {name: 'real2'}]
                 }
             },
             ready: function () {
                 var that = this
-                // Real.nextTick(function () {
-                //     that.$data.items.shift()
-                //     that.$update()
-                // })
+                Real.nextTick(function () {
+                    that.$data.names.push({
+                        name: 'vfe'
+                    })
+                    that.$update()
+                    Real.nextTick(function () {
+                        that.$data.names.reverse()
+                        that.$update()
+                    })
+                })
             }
         })
     </script>

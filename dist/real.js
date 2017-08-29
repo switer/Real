@@ -1,5 +1,5 @@
 /**
-* Real v1.7.0
+* Real v2.0.0
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -214,16 +214,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    var componentDec = NS + 'component'
 	    var isReplaced
+	    var hasChildCompoent
 	    if (hasReplaceOption 
 	        && util.hasAttribute(el, componentDec) 
 	        && _getAttribute(el, componentDec) !== options.name) {
 	        // not same name policy, and make parentVM anonymous
 	        isReplaced = true
 	    } else {
-	        // prevent instance circularly
-	        _removeAttribute(el, componentDec)
+	        var cname = _getAttribute(el, componentDec)
+	        if (cname && cname === this.$name) {
+	            // prevent instance circularly
+	            _removeAttribute(el, componentDec)
+	        } else if (cname) {
+	            hasChildCompoent = true
+	        }
+	        // support multiple cid
+	        var cidKey = '_' + NS + 'cid'
+	        var cidValue = _getAttribute(el, cidKey) || ''
+	        if (cidValue) {
+	            cidValue += ','+this.$id
+	        } else {
+	            cidValue = this.$id
+	        }
 	        // expose cid to DOM for debug
-	        _setAttribute(el, '_' + NS + 'cid', this.$id)
+	        _setAttribute(el, cidKey, cidValue)
 	    }
 
 	    this.$methods = {}
@@ -232,7 +246,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // from options.data
 	    var data = _getData(options.data)
 	    // prop NS-props
-	    var props = this._$parseProps(el)
+	    var props = hasChildCompoent ? null : this._$parseProps(el)
 	    // from DOM interface
 	    var _data = _getData(options._data)
 	    this.$data = util.extend(data, props, _data) 
@@ -303,7 +317,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // compile directives of the VM
 	    var _diretives = util.extend({}, buildInDirectives, buildInScopedDirectives, _externalDirectives)
 	    var attSels = util.keys(_diretives)
-	    var scopedDec = util.keys(buildInScopedDirectives).concat(_scopedDirectives)
+	    var scopedDecKeys = util.keys(buildInScopedDirectives)
+	    var scopedDec = scopedDecKeys.concat(_scopedDirectives)
 	    var allScopedDec = [componentDec].concat(util.map(scopedDec, function (name) {
 	        return conf.namespace + name
 	    }))
@@ -336,9 +351,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var compileComponent = function (tar) {
 	        // prevent cross DOM level parsing or repeat parse
 	        if (tar._component) return
-	            
+	        // build in scoped directive is first
+	        if (util.some(scopedDecKeys, function (k) {
+	            return !!_getAttribute(tar, NS + k)
+	        })) {
+	            return
+	        }
 	        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
-
 	        var cname = _getAttribute(tar, componentDec)
 	        if (!cname) {
 	            return consoler.error(componentDec + ' missing component id.', tar)
@@ -2076,20 +2095,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	var consoler = __webpack_require__(7)
 	var nextTick = __webpack_require__(9)
 	var conf = __webpack_require__(5)
-	var ds = function(Real) {
-	    return {
+	module.exports = function(Real) {
+	    var ds = {
 	        'for': {
 	            bind: function(v) {
 	                var $el = $(this.$el)
 	                var keyName = conf.namespace + 'key'
 	                this._key = $el.attr(keyName)
+	                var tagExpr = this._tagExpr = '<'+ conf.namespace + 'for="' + this.$rawExpr+'" '+ keyName + '="' + this._key+'"/>'
 	                if (!this._key) {
-	                    consoler.error('Missing attribute, Directive "' +
-	                        conf.namespace + 'for" need specify "key" by "' +
-	                        conf.namespace + 'key".')
+	                    consoler.error('Missing attribute, the directive need specify "' +
+	                        conf.namespace + 'key".', tagExpr)
 	                }
 	                this._isSelfStrKey = this._key === '*this'
-	                var tagExpr = this._tagExpr = '<'+ conf.namespace + 'for="' + this.$rawExpr+'" '+ keyName + '="' + this._key+'"/>'
 	                this.$before = document.createComment('<for ' + tagExpr  + '">')
 	                this.$after = document.createComment('</for>')
 	                if (this.$el.parentNode) {
@@ -2133,10 +2151,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                var isContinuedInsert = true
 	                                var isContinuedChange = true
 	                                var cursor = 0
+
 	                                util.forEach(that._v, function(data, index) {
 	                                    var isObj = util.isObj(data)
 	                                    var key = isObj && !that._isSelfStrKey ? keypath.get(data, that._key) : data + ''
 	                                    var vm = lastVmMap[key]
+	                                    if (vm) {
+	                                        vm = vm.vm
+	                                    }
 	                                    var p = {
 	                                        key: key,
 	                                        vm: vm
@@ -2147,18 +2169,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                        return vms
 	                                    }
 	                                    if (vm) {
-	                                        p._i = vm.$data.$index
+	                                        var _i = vm.$data.$index
 	                                        index = cursor
 	                                        // detect is continue changed VMS by increasing index and fixed offset
 	                                        if (vm.$data.$index !== index) {
 	                                            // TODO update POS
 	                                            changedVms.push(p)
 	                                            if (isContinuedChange) {
-	                                                if (lastChangeIndex <= 0) {
-	                                                    continuedChangeOffset = index - p._i
+	                                                if (lastChangeIndex < 0) {
+	                                                    continuedChangeOffset = index - _i
 	                                                    firstChangeIndex = lastChangeIndex = index
 	                                                } else {
-	                                                    if (lastChangeIndex + 1 != index || continuedChangeOffset != index - p._i) {
+	                                                    if (lastChangeIndex + 1 != index || continuedChangeOffset != index - _i) {
 	                                                        // break
 	                                                        isContinuedChange = false
 	                                                    } else {
@@ -2189,7 +2211,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                            })
 	                                        })
 	                                        if (isContinuedInsert) {
-	                                            if (lastInsertIndex <= 0) {
+	                                            if (lastInsertIndex < 0) {
 	                                                firstInsertIndex = lastInsertIndex = index
 	                                            } else {
 	                                                if (lastInsertIndex + 1 != index) {
@@ -2221,9 +2243,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                var removedCount = removedVms.length
 	                                // debug
 	                                consoler.log(
-	                                    '+', insertedCount, isContinuedInsert, continuedChangeOffset, ' / ', 
+	                                    '+', insertedCount, isContinuedInsert, ' / ', 
 	                                    '-', removedCount, ' / ', 
-	                                    '$', changedCount, isContinuedChange)
+	                                    '$', changedCount, isContinuedChange, continuedChangeOffset)
 	                                var patch = function() {
 	                                    var onlyRemoved
 	                                    if (!insertedCount) {
@@ -2256,7 +2278,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                    removedVms.forEach(function(item) {
 	                                        detroyVM(item.vm)
 	                                    })
-	                                    if (onlyRemoved) {
+	                                    if (!onlyRemoved) {
 	                                        // update pos at all items
 	                                        mountVMs(vms, that.$after)
 	                                    }
@@ -2284,6 +2306,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var $parent = $el.parentNode
 	            var _mounted = true
 
+	            $($el).attr('_'+conf.namespace + 'if', this.$rawExpr)
+
 	            this._mount = function() {
 	                if (_mounted) return
 	                _mounted = true
@@ -2308,6 +2332,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        }
 	    }
+	    return ds
 	}
 
 	function noop() {}
@@ -2325,7 +2350,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    })
 	    target.parentNode.insertBefore(frag, target)
 	}
-	module.exports = ds
+
 
 /***/ },
 /* 13 */
