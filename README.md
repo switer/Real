@@ -190,7 +190,7 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 		<div class="item" data-index="2"></div>
 	</div>
 	```
-	> If IE8 below, only support selectors: `#id`, `.class`, `tagName`, `[attribute]` or `[attribute="value"]`.
+	> Noti: IE8 below, only support selectors: `#id`, `.class`, `tagName`, `[attribute]` or `[attribute="value"]`.
 
 
 - **r-click** `(since v2.0.0)`
