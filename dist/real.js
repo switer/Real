@@ -1,5 +1,5 @@
 /**
-* Real v2.0.0-beta.3
+* Real v2.0.0-beta.4
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -70,13 +70,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	var KP = __webpack_require__(8)
 	var nextTick = __webpack_require__(9)
 	var buildInDirectives = __webpack_require__(10)
-	var buildInScopedDirectives = __webpack_require__(12)(Real)
+	var buildInScopedDirectives = __webpack_require__(13)(Real)
 	var Expression = __webpack_require__(11)
-	var Directive = __webpack_require__(13)
-	var Message = __webpack_require__(16)
+	var Directive = __webpack_require__(14)
+	var Message = __webpack_require__(17)
 	var detection = __webpack_require__(3)
 	var supportQuerySelector = detection.supportQuerySelector
-	var _execute = __webpack_require__(14)
+	var _execute = __webpack_require__(15)
 	var _components = {}
 	var _externalDirectives = {}
 	var _scopedDirectives = []
@@ -1417,7 +1417,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		namespace: 'r-',
 		directiveSep: ';',
 	    directiveSep_regexp: /;/g,
-	    directiveKey_regexp: /^\s*['"]?[\w\-\$]+['"]?\s*:/m,
+	    directiveKey_regexp: /^\s*['"]?[^:]+['"]?\s*:/m,
 	    mutable_dirtives: ['html', 'text']
 		// 'catch': false // catch error when component instance or not
 	}
@@ -1666,6 +1666,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var detection = __webpack_require__(3)
 	var Expression = __webpack_require__(11)
 	var keypath = __webpack_require__(8)
+	var delegate = __webpack_require__(12)
 	var CLASS_KEY = 'CLASS'.toLowerCase()
 	function noop () {}
 	function _templateShouldUpdate(vm) {
@@ -1677,7 +1678,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    })
 	}
-	function _eventUpdate(vm, handler) {
+	function _eventUpdate(vm, handler, capture) {
 	    vm.unbind()
 	    var fn = handler
 	    if (util.type(fn) !== 'function')
@@ -1690,7 +1691,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        e.$stopPropagation = stopPropagation
 	        fn.call(that.$vm, e)
 	    }
-	    $(vm.$el).on(vm.type, vm.fn, false)
+	    $(vm.$el).on(vm.type, vm.fn, !!capture)
 	}
 	function preventDefault(e) {
 	    e = e || window.event
@@ -1709,7 +1710,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	        window.event && (window.event.cancelBubble = true)
 	    }
 	}
-
+	function _onConf (capture) {
+	    return {
+	        multi: true,
+	        bind: function(evtType, handler, expression) {
+	            this._expr = expression
+	            var tagName = this.$el.tagName
+	            // IE8 below do not support onchange event
+	            if (evtType == 'vchange') {
+	                if ((tagName == 'INPUT' || tagName == 'TEXTAREA') && !('onchange' in this.$el)) {
+	                    if ('onkeyup' in this.$el) {evtType = 'keyup'}
+	                    else evtType = 'input'
+	                } else {
+	                    evtType = 'change'
+	                }
+	            }
+	            this.type = evtType
+	        },
+	        update: function (handler) {
+	            return _eventUpdate(this, handler, capture)
+	        },
+	        unbind: function() {
+	            if (this.fn) {
+	                $(this.$el).off(this.type, this.fn, !!capture)
+	                this.fn = null
+	            }
+	        }
+	    }
+	}
 	var ds = {
 	    'attr': {
 	        multi: true,
@@ -1996,32 +2024,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this._requestChange = this._update = noop
 	        }
 	    },
-	    'on': {
-	        multi: true,
-	        bind: function(evtType, handler, expression) {
-	            this._expr = expression
-	            var tagName = this.$el.tagName
-	            // IE8 below do not support onchange event
-	            if (evtType == 'vchange') {
-	                if ((tagName == 'INPUT' || tagName == 'TEXTAREA') && !('onchange' in this.$el)) {
-	                    if ('onkeyup' in this.$el) {evtType = 'keyup'}
-	                    else evtType = 'input'
-	                } else {
-	                    evtType = 'change'
-	                }
-	            }
-	            this.type = evtType
-	        },
-	        update: function (handler) {
-	            return _eventUpdate(this, handler)
-	        },
-	        unbind: function() {
-	            if (this.fn) {
-	                $(this.$el).off(this.type, this.fn)
-	                this.fn = null
-	            }
-	        }
-	    },
+	    'capture': _onConf(true),
+	    'on': _onConf(false),
 	    'click': {
 	        bind: function(handler, expression) {
 	            this._expr = expression
@@ -2079,7 +2083,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this._$el = null
 	        }
 	    },
-	    classes: {
+	    'classes': {
 	        bind: function() {
 	            this._$el = $(this.$el)
 	        },
@@ -2101,6 +2105,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	        },
 	        unbind: function () {
 	            this._$el = this._classes = null
+	        }
+	    },
+	    'delegate': {
+	        multi: true,
+	        bind: function (typeSel, handler) {
+	            var type
+	            var selector = typeSel.replace(/^\s*(\w+)\s+/, function (m, t) {
+	                type = t
+	                return ''
+	            })
+	            if (!type) {
+	                return consoler.error('"' + conf.namespace + 'delegate" need specify event type. ' + this.$rawExpr)
+	            }
+	            selector = util.trim(selector)
+	            if (!selector) {
+	                return consoler.error('"' + conf.namespace + 'delegate" need specify selector for element. ' + this.$rawExpr)
+	            }
+	            var that = this
+	            this._handler = handler
+	            this._unbind = delegate(this.$el, type, selector, function (e) {
+	                that._handler && that._handler(e)
+	            })
+	        },
+	        update: function (handler) {
+	            this._handler = handler
+	        },
+	        unbind: function () {
+	            this._unbind()
+	            this._handler = this._unbind = null
 	        }
 	    }
 	}
@@ -2164,6 +2197,123 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict'
+
+	var $ = __webpack_require__(1)
+	function getMatchMethod() {
+	    var body = document.body
+	    // if script run in head
+	    if (!body) return null
+	    var matchesSelector = body.matches || body.webkitMatchesSelector ||
+	        body.mozMatchesSelector || body.oMatchesSelector ||
+	        body.matchesSelector
+	    var supportQS = body.querySelectorAll
+	    /**
+	     * IE8 Support
+	     */
+	    var wrap = document.createElement('div')
+	    if (!matchesSelector && supportQS) {
+	        matchesSelector = function(el, selector) {    
+	            // http://tanalin.com/en/blog/2012/12/matches-selector-ie8/
+	            if (!el || !selector) return false
+	            var elems
+	            if (el.parentNode) {
+	                elems = el.parentNode.querySelectorAll(selector)
+	            } else {
+	                wrap.appendChild(el)
+	                elems = el.parentNode.querySelectorAll(selector)
+	                wrap.removeChild(el)
+	            }
+	            var count = elems.length
+	            for (var i = 0; i < count; i++) {
+	                if (elems[i] === el) { return true }
+	            }
+	            return false
+	        }
+	    } else if (!matchesSelector) {
+	        matchesSelector = function (selector) {
+	            var el = this
+	            var v
+	            if (v = isIdSel(selector)) {
+	                return el.id === v
+	            } else if (v = isClassSel(selector)) {
+	                return el.className.split(/\s+/).indexOf(v) === -1 ? false : true
+	            } else if (v = isNameSel(selector)) {
+	                return el.tagName.toLowerCase() === v.toLowerCase()
+	            } else if (v = isAttrSel(selector)) {
+	                if (v.length > 1) {
+	                    var av = el.getAttribute(v[0])
+	                    return av + '' === v[1]
+	                } else {
+	                    return el.hasAttribute(v[0])
+	                }
+	            } else {
+	                // not support selector
+	                return false
+	            }
+	        }
+	    }
+	    return matchesSelector
+	}
+
+	var matchesSelector = getMatchMethod()
+	module.exports = function delegate(con, type, selector, handler) {
+	    var fn = function(e) {
+	        var currentTarget = findMatch(e.target, selector, con)
+	        if (!currentTarget) return
+	        e.$currentTarget = currentTarget
+	        handler.call(currentTarget, e)
+	    }
+	    var $con = $(con)
+	    $con.on(type, fn)
+	    if (!matchesSelector) {
+	        matchesSelector = getMatchMethod()
+	    }
+	    return function() {
+	        $con.off(type, fn)
+	    }
+	}
+
+	function findMatch(el, selector, con) {
+	    if (!el || el === con.parentNode || el === document.body.parentNode) return null
+	    matchesSelector = matchesSelector || getMatchMethod()
+	    if (!matchesSelector) return null
+	    return matchesSelector.call(el, selector, con) ? el : findMatch(el.parentNode, selector, con)
+
+	}
+	function isIdSel(sel) {
+	    var m = sel.match(/^\#([\w\-]+)$/)
+	    if (!m) return false
+	    return m[1]
+	}
+	function isAttrSel(sel) {
+	    var m = sel.match(/^\[(.+)\]$/)
+	    if (!m) return false
+	    //[r-attr]
+	    var m1 = m[1].match(/^[\w\-]+$/)
+	    if (m1) {
+	        return [m1[0]]
+	    }
+	    //[r-attr="value"]
+	    var m2 = m[1].match(/^([\w\-]+)\="([^\"]*)"$/)
+	    if (!m2) return false
+	    return [m2[1],m2[2]]
+	}
+	function isNameSel(sel) {
+	    var m = sel.match(/^[\w\-]+$/)
+	    if (!m) return false
+	    return m[0]
+	}
+	function isClassSel(sel) {
+	    var m = sel.match(/^\.([\w\-]+)$/)
+	    if (!m) return false
+	    return m[1]
+	}
+
+/***/ },
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict'
@@ -2432,7 +2582,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict'
@@ -2440,7 +2590,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Expression = __webpack_require__(11)
 	var consoler = __webpack_require__(7)
 	var util = __webpack_require__(2)
-	var _execute = __webpack_require__(14)
+	var _execute = __webpack_require__(15)
 	var _isExpr = Expression.isExpr
 	var _strip = Expression.strip
 	var _did = 0
@@ -2586,7 +2736,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Directive
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -2594,7 +2744,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 	var __$util__ = __webpack_require__(2)
-	var __$compile__ = __webpack_require__(15)
+	var __$compile__ = __webpack_require__(16)
 	var __$compiledExprs___ = {}
 	/**
 	 *  Calc expression value
@@ -2641,7 +2791,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = _execute
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports) {
 
 	module.exports = function (__$expr__) {
@@ -2656,7 +2806,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**

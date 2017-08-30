@@ -151,7 +151,7 @@ describe('# Directive', function () {
         var updateTimes = 0
         var img = 'https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png'
         Reve.directive('lazy', {
-            bind: function (src, expr) {
+            bind: function (src) {
                 inited = true
                 assert.equal(src, img)
             },
@@ -195,7 +195,7 @@ describe('# Directive', function () {
                 shouldUpdated = true
                 return false
             },
-            update: function (v) {
+            update: function () {
                 index++ && assert(false, 'should not update.')
             }
         })
@@ -418,6 +418,42 @@ describe('# Build-in Directives', function () {
             }
         })
         var tar = c.$el.querySelector('div')
+        var event = document.createEvent('Event')
+        event.initEvent('click', true, true);
+        tar.dispatchEvent(event)
+    })
+    it('r-capture', function (done) {
+        var isCapture = false
+        var c = new Reve({
+            data: {},
+            template: '<div r-capture="{click: onCapture}"><div class="target" r-on="{click: onClick}"></div></div>',
+            methods: {
+                onCapture: function () {
+                    isCapture = true
+                },
+                onClick: function () {
+                    assert(isCapture, 'Capture event should be trigger first')
+                    done()
+                }
+            }
+        })
+        var tar = c.$el.querySelector('.target')
+        var event = document.createEvent('Event')
+        event.initEvent('click', true, true)
+        tar.dispatchEvent(event)
+    })
+    it('r-delegate', function (done) {
+        var c = new Reve({
+            data: {},
+            template: '<div r-delegate="{click .item: onClick}" class="con"><div class="item"><button></button></div></div>',
+            methods: {
+                onClick: function (e) {
+                    assert.equal(e.$currentTarget, this.$el.querySelector('.item'))
+                    done()
+                }
+            }
+        })
+        var tar = c.$el.querySelector('.item button')
         var event = document.createEvent('Event')
         event.initEvent('click', true, true);
         tar.dispatchEvent(event)

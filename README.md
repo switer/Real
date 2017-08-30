@@ -177,6 +177,21 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	></button>
 	```
 
+- **r-delegate** `(since v2.0.0)`
+	
+	Event delegate. Expression format { "`click` **selector**": *handler* }
+	```html
+	<div class="list" 
+		r-on="{
+			'click .item': onDelegateClick;
+		}"
+	>
+		<div class="item" data-index="1"></div>
+		<div class="item" data-index="2"></div>
+	</div>
+	```
+
+
 - **r-click** `(since v2.0.0)`
 
 	Add click event listener to the element:

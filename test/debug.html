@@ -6,49 +6,30 @@
     <script src="../dist/real.js"></script>
 </head>
 <body>
-    <div id="app">
-        <div r-component="c-comp" 
-            r-for="{names}" 
-            r-key="name" 
-            r-data="{
-                index: $index, 
-                name: name
-            }"
-        ></div>
-        <!-- <div r-if="true">
-            <div r-for="{items}" r-key="*this">
-                <div r-if="{$value}">
-                    <span r-text>{$index}: {$value}</span>
-                </div>
-            </div>
-        </div> -->
+<!--     <div id="app">
+        <div
+            r-capture="{click: onCapture}" 
+        >
+            <div 
+                r-on="{click: onClick}"
+            >Click Me</div>
+        </div>
     </div>
+    <button id="btn">Event Capture</button> -->
     <script>
-        var c = Real.component('c-comp', {
-            template: '<div r-text>{index}: {name}</div>'
-        })
-        new Real({
-            el: '#app',
-            data: function () {
-                return {
-                    // items: 'abc'.split(''),
-                    names: [{name: 'real'}, {name: 'real2'}]
+        var c = new Real({
+            data: {},
+            template: '<div r-delegate="{click .item: onClick;}" class="con"><div class="item"></div></div>',
+            methods: {
+                onClick: function (e) {
+                    console.log(e)
                 }
-            },
-            ready: function () {
-                var that = this
-                Real.nextTick(function () {
-                    that.$data.names.push({
-                        name: 'vfe'
-                    })
-                    that.$update()
-                    Real.nextTick(function () {
-                        that.$data.names.reverse()
-                        that.$update()
-                    })
-                })
             }
         })
+        var tar = c.$el.querySelector('.item')
+        var event = document.createEvent('Event')
+        event.initEvent('click', true, true);
+        tar.dispatchEvent(event)
     </script>
 </body>
 </html>
