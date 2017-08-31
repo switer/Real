@@ -505,13 +505,13 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	this.$set({ state: true })
 	/** equal to 
 	    this.$data.state = true
-	    this.$update
+	    this.$update()
 	*/
 
 	this.$set('person[0].name', '')
 	/** equal to 
 	    this.$data.person[0].name = ''
-	    this.$update
+	    this.$update()
 	*/
 	```
 
