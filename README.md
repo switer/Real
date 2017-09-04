@@ -10,10 +10,6 @@ Declarative DOM manipulations. Play happy with server-side render architecture.
 - [real.js](https://raw.githubusercontent.com/switer/real/master/dist/real.js)
 - [real.min.js](https://raw.githubusercontent.com/switer/real/master/dist/real.min.js)
 
-## Examples
-
-- [HackerNews WebApp](https://github.com/switer/scrat-seo-reve-hackernews)
-
 ## API Reference
 
 - [Direcitves](#directives)
