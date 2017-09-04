@@ -325,6 +325,10 @@ Real.prototype.$compile = function (el, scope) {
         var data = {}
         var methods = {}
         var preData = {}
+        // using binding option to top updating
+        var isBinding = (bindingOpt === 'false' || bindingOpt === '0') 
+            ? false 
+            : true
 
         replaceOpt = util.hasAttribute(tar, NS + 'replace')
             ? replaceOpt == 'true' || replaceOpt == '1'
@@ -358,7 +362,7 @@ Real.prototype.$compile = function (el, scope) {
             methods: methods,
             // if binding is disable, parent component will not trigger child's updating
             // unbinding if data is empty
-            binding: (bindingOpt === 'false' || bindingOpt === '0') ? false : true,
+            binding: isBinding,
             replace: !!replaceOpt
         })
         // for component inspecting
@@ -375,10 +379,13 @@ Real.prototype.$compile = function (el, scope) {
          */
         var _$update = c.$update
         c.$componentShouldUpdate = function () {
+            // no binding
+            if (!cdata || !isBinding) return
+
             var shouldUpdate = this.$shouldUpdate
             var nextData = _execLiteral(cdata, vm)
             // no cdata binding will not trigger update
-            if (cdata && util.diff(preData, nextData)) {
+            if (util.diff(preData, nextData)) {
                 // should update return false will stop continue UI update
                 if (shouldUpdate && !shouldUpdate.call(c, nextData, preData)) return
                 preData = util.immutable(nextData)
