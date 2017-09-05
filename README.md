@@ -383,7 +383,9 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **r-for** `(since v2.0.0)`
 	
-	`r-key` is necessary, it's value could be `key-path` or "`*this`", but must be unique. `$value` is current value of list item. `$index` is current item's index.
+	`r-key` is necessary, it's value could be `key-path` or "`*this`" or "`*index`", but must be unique. 
+	"`*index`" mean using index of the arry as key. Build-in values:
+		`$value` is current value of list item. `$index` is current item's index.
 	```html
 	<!-- items => {name: 'xxx', id: 'xxx'} -->
 	<div r-component="c-item" 

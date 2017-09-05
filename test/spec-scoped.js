@@ -73,6 +73,22 @@ describe('# Scoped Directive', function() {
             done()
         })
     })
+    it('r-for:Initial render: *index as key', function(done) {
+        var c = new Reve({
+            data: {
+                items: [{ name: 123 }, { name: 456 }, { name: 789 }]
+            },
+            template: '<div r-for="{items}" r-key="*index"><span r-text>{$index}:{name} </span></div>'
+        })
+        Reve.nextTick(function() {
+            assert.equal('0:123 1:456 2:789 ', c.$el.innerText)
+            c.$set('items', [{ name: 'abc' }, { name: 456 }, { name: 'efg' }])
+            Reve.nextTick(function() {
+                assert.equal('0:abc 1:456 2:efg ', c.$el.innerText)
+                done()
+            })
+        })
+    })
     it('r-for:Insert: before', function(done) {
         var c = new Reve({
             data: {

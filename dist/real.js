@@ -1,5 +1,5 @@
 /**
-* Real v2.0.0-beta.5
+* Real v2.0.0-beta.6
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -2344,6 +2344,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                        conf.namespace + 'key".', tagExpr)
 	                }
 	                this._isSelfStrKey = this._key === '*this'
+	                this._isIndexKey = this._key === '*index'
 	                this.$before = document.createComment('<for ' + tagExpr  + '">')
 	                this.$after = document.createComment('</for>')
 	                if (this.$el.parentNode) {
@@ -2390,7 +2391,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	                                util.forEach(that._v, function(data, index) {
 	                                    var isObj = util.isObj(data)
-	                                    var key = isObj && !that._isSelfStrKey ? keypath.get(data, that._key) : data + ''
+	                                    var key
+	                                    if (that._isIndexKey) {
+	                                        key = index
+	                                    } else if (!isObj || that._isSelfStrKey) {
+	                                        key = data + ''
+	                                    } else {
+	                                        key = keypath.get(data, that._key)
+	                                    }
 	                                    var vm = lastVmMap[key]
 	                                    if (vm) {
 	                                        vm = vm.vm
