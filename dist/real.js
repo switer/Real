@@ -1,5 +1,5 @@
 /**
-* Real v2.0.0-beta.7
+* Real v2.0.0-beta.8
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1945,6 +1945,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                case 'tel':
 	                case 'url':
 	                case 'text':
+	                case 'email':
 	                case 'search':
 	                case 'password':
 	                case 'textarea':
