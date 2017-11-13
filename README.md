@@ -461,6 +461,10 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	**Lifecycle Method** It will be called after all directives of the ViewModel are compiled.
 
+- **destroy** `<Function>`
+
+	**Lifecycle Method** It will be called before ViewModel destroyed.
+
 - **shouldUpdate** `<Function>`
 
 	**Lifecycle Method** It will be called when parent ViewModel call `$update` method and the result of `r-data` has been changed, 
