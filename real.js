@@ -481,7 +481,7 @@ Real.prototype.$compile = function (el, scope) {
                             }
                         }
                     })
-                dExprs.forEach(function (item) {
+                util.forEach(dExprs, function (item) {
                     d = new Directive(vm, tar, def, dname, '{' + item + '}', scope)
                     $directives.push(d)
                 })
