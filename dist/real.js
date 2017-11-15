@@ -1,5 +1,5 @@
 /**
-* Real v2.0.0-beta.8
+* Real v2.0.0-beta.9
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -542,7 +542,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                            }
 	                        }
 	                    })
-	                dExprs.forEach(function (item) {
+	                util.forEach(dExprs, function (item) {
 	                    d = new Directive(vm, tar, def, dname, '{' + item + '}', scope)
 	                    $directives.push(d)
 	                })
