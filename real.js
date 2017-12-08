@@ -576,6 +576,7 @@ Real.prototype.$destroy = function () {
  */
 var _classid = 0
 function Ctor (options) {
+    options = options || {}
     var baseMethods = options.methods
     var classid = _classid ++
     function Class (opts) {

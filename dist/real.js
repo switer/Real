@@ -1,5 +1,5 @@
 /**
-* Real v2.0.0-beta.9
+* Real v2.0.0-beta.10
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -637,6 +637,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 	var _classid = 0
 	function Ctor (options) {
+	    options = options || {}
 	    var baseMethods = options.methods
 	    var classid = _classid ++
 	    function Class (opts) {
