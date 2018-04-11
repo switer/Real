@@ -1,5 +1,5 @@
 /**
-* Real v2.0.0-beta.10
+* Real v2.0.1
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -94,6 +94,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @return {Object} Real component instance
 	 */
 	function Real(options) {
+	    var d = new Date
 	    options = options || {}
 
 	    var vm = this
@@ -257,10 +258,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // created lifecycle
 	    _safelyCall(conf[CATCH_KEY], _created, vm)
 	    this.$el = el
+
 	    try {
 	        var $compiledEl = this.$compile(el)
 	        isReplaced && (this.$el = $compiledEl)
 	    } finally {
+
 	        // ready lifecycle
 	        try {
 	            _safelyCall(conf[CATCH_KEY], _ready, vm)
@@ -347,6 +350,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var scopedElements = querySelectorAll(util.map(scopedDec, function (name) {
 	        return '[' + conf.namespace + name + ']'
 	    }))
+
 	    var componentElements = querySelectorAll(['[' + componentDec + ']'])
 	    var compileComponent = function (tar) {
 	        // prevent cross DOM level parsing or repeat parse
@@ -2331,7 +2335,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var util = __webpack_require__(2)
 	var keypath = __webpack_require__(8)
 	var consoler = __webpack_require__(7)
-	var nextTick = __webpack_require__(9)
 	var conf = __webpack_require__(5)
 	module.exports = function(Real) {
 	    var ds = {}
@@ -2372,8 +2375,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                this._v = v
 	                if (!this._pending) {
 	                    this._pending = true
-	                    nextTick(function() {
-	                        // console.time('r-for:render')
+	                    ;(function() {
 	                        try {
 	                            var lastVms = that._vms || []
 	                            var lastVmMap = that._vmMap || {}
@@ -2383,10 +2385,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	                            var insertedVms = []
 	                            var vms = that._vms = []
 	                            var vmMap = that._vmMap = {}
-	                            var firstInsertIndex = -1
 	                            var lastInsertIndex = -1
 	                            var continuedChangeOffset = 0
-	                            var firstChangeIndex = -1
 	                            var lastChangeIndex = -1
 	                            var isContinuedInsert = true
 	                            var isContinuedChange = true
@@ -2425,7 +2425,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                        if (isContinuedChange) {
 	                                            if (lastChangeIndex < 0) {
 	                                                continuedChangeOffset = index - _i
-	                                                firstChangeIndex = lastChangeIndex = index
+	                                                lastChangeIndex = index
 	                                            } else {
 	                                                if (lastChangeIndex + 1 != index || continuedChangeOffset != index - _i) {
 	                                                    // break
@@ -2446,20 +2446,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                    cursor ++
 	                                } else {
 	                                    index = cursor
+	                                    var el = that.$el.cloneNode(true)
+	                                    var data = util.extend({}, parentVm.$data, isObj ? data : null, {
+	                                        $index: index,
+	                                        $value: data,
+	                                        $parent: parentVm.$data
+	                                    })
 	                                    // create new VM
 	                                    vm = new Real({
 	                                        parent: parentVm,
-	                                        el: that.$el.cloneNode(true),
+	                                        el: el,
 	                                        methods: parentVm.$methods,
-	                                        data: util.extend({}, parentVm.$data, isObj ? data : null, {
-	                                            $index: index,
-	                                            $value: data,
-	                                            $parent: parentVm.$data
-	                                        })
+	                                        data: data
 	                                    })
 	                                    if (isContinuedInsert) {
 	                                        if (lastInsertIndex < 0) {
-	                                            firstInsertIndex = lastInsertIndex = index
+	                                            lastInsertIndex = index
 	                                        } else {
 	                                            if (lastInsertIndex + 1 != index) {
 	                                                // break
@@ -2534,8 +2536,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	                        } finally {
 	                            that._pending = false
 	                        }
-	                        // console.timeEnd('r-for:render')
-	                    })
+	                        // console.timeEnd('r-for:render' + _c)
+	                    })()
 	                }
 	            } else {
 	                consoler.warn('The directive only support Array value. ', this._tagExpr)
@@ -2551,18 +2553,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var $el = this.$el
 	            var $parent = $el.parentNode
 	            var _mounted = true
+	            var holder = document.createComment('<if ' + this.$rawExpr + '/>')
 
 	            $($el).attr('_'+conf.namespace + 'if', this.$rawExpr)
 
 	            this._mount = function() {
 	                if (_mounted) return
 	                _mounted = true
-	                $parent.appendChild($el)
+	                if (!$el.parentNode && holder.parentNode) {
+	                    $parent.replaceChild($el, holder)
+	                }
+	                    
 	            }
 	            this._unmount = function() {
 	                if (!_mounted) return
 	                _mounted = false
-	                $parent.removeChild($el)
+	                if ($el.parentNode) {
+	                    $parent.replaceChild(holder, $el)
+	                }
 	            }
 	        },
 	        unbind: function() {

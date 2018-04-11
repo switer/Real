@@ -33,6 +33,7 @@ var CATCH_KEY = 'CATCH'.toLowerCase()
  * @return {Object} Real component instance
  */
 function Real(options) {
+    var d = new Date
     options = options || {}
 
     var vm = this
@@ -196,10 +197,12 @@ function Real(options) {
     // created lifecycle
     _safelyCall(conf[CATCH_KEY], _created, vm)
     this.$el = el
+
     try {
         var $compiledEl = this.$compile(el)
         isReplaced && (this.$el = $compiledEl)
     } finally {
+
         // ready lifecycle
         try {
             _safelyCall(conf[CATCH_KEY], _ready, vm)
@@ -286,6 +289,7 @@ Real.prototype.$compile = function (el, scope) {
     var scopedElements = querySelectorAll(util.map(scopedDec, function (name) {
         return '[' + conf.namespace + name + ']'
     }))
+
     var componentElements = querySelectorAll(['[' + componentDec + ']'])
     var compileComponent = function (tar) {
         // prevent cross DOM level parsing or repeat parse

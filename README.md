@@ -173,6 +173,19 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	></button>
 	```
 
+
+- **r-capture**
+	Bind event on event capturing.
+	```html
+	<button 
+		r-capture="{
+			click: onClick;
+			touchstart: onTouchStart;
+		}"
+	></button>
+	```
+
+
 - **r-delegate** `(since v2.0.0)`
 	
 	Event delegate. Expression format { "`click` **selector**": *handler* }

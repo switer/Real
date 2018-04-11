@@ -1,44 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>debug</title>
     <script src="../dist/real.js"></script>
     <script>
-        window.Reve = window.Real
-        window.assert = {
-            equal: function() {
-                console.log.apply(console, arguments)
-            }
+    window.Reve = window.Real
+    window.assert = {
+        equal: function() {
+            console.log.apply(console, arguments)
         }
+    }
     </script>
 </head>
+
 <body>
-<!--     <div id="app">
-        <div
-            r-capture="{click: onCapture}" 
-        >
-            <div 
-                r-on="{click: onClick}"
-            >Click Me</div>
-        </div>
+    <div id="app">
+        <div r-component="receive-gift" r-ref="_receiveGift" r-replace="true"></div>
     </div>
-    <button id="btn">Event Capture</button> -->
     <script>
-        var c = new Reve({
-            data: {
-                items: [{ name: 123 }, { name: 456 }, { name: 789 }]
-            },
-            template: '<div r-for="{items}" r-key="*index"><span r-text>{$index}:{name} </span></div>'
-        })
-        var that = this
-        Reve.nextTick(function() {
-            assert.equal('0:123 1:456 2:789 ', c.$el.innerText)
-            c.$set('items', [{ name: 'abc' }, { name: 456 }, { name: 'efg' }])
-            Reve.nextTick(function() {
-                assert.equal('0:abc 1:456 2:efg ', c.$el.innerText)
-            })
-        })
+    Real.component('receive-gift', {
+        template: `
+            <div>
+                <div r-if="{showNoRole}" class="info-msg">请先创建游戏角色，才能领取哦!</div>
+                <div class="action">
+                    <button type="button" class="btn btn-primary-bordered btn-lg">切换账号</button>
+                    <button type="button" class="btn btn-primary btn-lg">确定</button>
+                </div>
+            </div>
+        `,
+        data: function () {
+            return {
+                showNoRole: false,
+                serverSelect: []
+            }
+        },
+        ready: function () {
+            setTimeout(() =>{
+                this.$set('showNoRole', true)
+            }, 3000)
+        }
+    })
+    new Real({
+        el: '#app'
+    })
+    // var c = new Reve({
+    //     data: {
+    //         items: [{ name: 123 }, { name: 456 }, { name: 789 }]
+    //     },
+    //     template: '<div r-for="{items}" r-key="*index"><span r-text>{$index}:{name} </span></div>'
+    // })
+    // var that = this
+    // Reve.nextTick(function() {
+    //     assert.equal('0:123 1:456 2:789 ', c.$el.innerText)
+    //     c.$set('items', [{ name: 'abc' }, { name: 456 }, { name: 'efg' }])
+    //     Reve.nextTick(function() {
+    //         assert.equal('0:abc 1:456 2:efg ', c.$el.innerText)
+    //     })
+    // })
     </script>
 </body>
+
 </html>
