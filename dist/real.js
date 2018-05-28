@@ -1,5 +1,5 @@
 /**
-* Real v2.0.1
+* Real v2.0.2
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1938,105 +1938,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this._expressions = this._caches = this.textNode = null
 	        }
 	    },
-	    'model': {
-	        bind: function (prop) {
-	            var tagName = this.$el.tagName
-	            var type = tagName.toLowerCase()
-	            var $el = this._$el = $(this.$el)
-	            
-	            type = type == 'input' ? $el.attr('type') || 'text' : type
-
-	            switch (type) {
-	                case 'tel':
-	                case 'url':
-	                case 'text':
-	                case 'email':
-	                case 'search':
-	                case 'password':
-	                case 'textarea':
-	                    // todo: support composite events
-	                    if (detection.supportChangeEvent) {
-	                        // sometime, input doesn't fire change event
-	                        this.evtType = 'change,input'
-	                    } else if (detection.supportKeyupEvent) {
-	                        // IE9 doesn't fire input event on backspace/del/cut , inspired by vue
-	                        this.evtType = 'keyup,input'
-	                    } else {
-	                        this.evtType = 'input'
-	                    }
-	                    break
-	                
-	                case 'date':
-	                case 'week':
-	                case 'time':
-	                case 'month':
-	                case 'datetime':
-	                case 'datetime-local':
-	                case 'color':
-	                case 'range':
-	                case 'number':
-	                case 'select':
-	                case 'checkbox':
-	                    this.evtType = 'change'
-	                    break
-	                default:
-	                    consoler.warn('"' + conf.namespace + 'model" only support input,textarea,select')
-	                    return
-	            }
-	            var that = this
-	            var vm = this.$vm
-	            var vType = this.vType = type == 'checkbox' ? 'checked':'value'
-	            this._prop = prop
-	            /**
-	             *  DOM input 2 state
-	             */
-	            this._requestChange = function () {
-	                if (!that._prop) return
-	                var value = that.$el[vType]
-	                var state = vm.$data[that._prop]
-
-	                if (util.diff(value, state)) {
-	                    vm.$set(that._prop, value)
-	                }
-	            }
-	            /**
-	             *  State 2 DOM input
-	             */
-	            this._update = function () {
-	                if (!that._prop) return
-
-	                var pv = that.$el[vType]
-	                var nv = keypath.get(vm.$data, that._prop)
-	                if (pv !== nv) {
-	                    that.$el[vType] = nv
-	                }
-	            }
-	            util.forEach(this.evtType.split(','), function (t) {
-	                $el.on(t, that._requestChange)
-	            })
-
-	            // Initial state 2 DOM update
-	            this._update()
-	        },
-	        update: function (prop) {
-	            if (!prop) consoler.error('Invalid property key "' + prop + '"')
-	            else {
-	                this._prop = prop
-	            }
-	        },
-	        afterUpdate: function () {
-	            // to compare state value and DOM value, update DOM value if not equal 
-	            this._update()
-	        },
-	        unbind: function () {
-	            var that = this
-	            var $el = $(this.$el)
-	            util.forEach(this.evtType.split(','), function (t) {
-	                $el.off(t, that._requestChange)
-	            })
-	            this._requestChange = this._update = noop
-	        }
-	    },
+	    'model': bindModel(),
+	    'xmodel': bindModel(true),
 	    'capture': _onConf(true),
 	    'on': _onConf(false),
 	    'click': {
@@ -2150,6 +2053,121 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    }
 	}
+
+	function bindModel(isMulti) {
+	    return {
+	        multi: !!isMulti,
+	        bind: function (prop, request) {
+	            var tagName = this.$el.tagName
+	            var type = tagName.toLowerCase()
+	            var $el = this._$el = $(this.$el)
+	            this._request = request
+	            
+	            type = type == 'input' ? $el.attr('type') || 'text' : type
+
+	            switch (type) {
+	                case 'tel':
+	                case 'url':
+	                case 'text':
+	                case 'email':
+	                case 'search':
+	                case 'password':
+	                case 'textarea':
+	                    // todo: support composite events
+	                    if (detection.supportChangeEvent) {
+	                        // sometime, input doesn't fire change event
+	                        this.evtType = 'change,input'
+	                    } else if (detection.supportKeyupEvent) {
+	                        // IE9 doesn't fire input event on backspace/del/cut , inspired by vue
+	                        this.evtType = 'keyup,input'
+	                    } else {
+	                        this.evtType = 'input'
+	                    }
+	                    break
+	                
+	                case 'date':
+	                case 'week':
+	                case 'time':
+	                case 'month':
+	                case 'datetime':
+	                case 'datetime-local':
+	                case 'color':
+	                case 'range':
+	                case 'number':
+	                case 'select':
+	                case 'checkbox':
+	                    this.evtType = 'change'
+	                    break
+	                default:
+	                    consoler.warn('"' + conf.namespace + 'model" only support input,textarea,select')
+	                    return
+	            }
+	            var that = this
+	            var vm = this.$vm
+	            var vType = this.vType = type == 'checkbox' ? 'checked':'value'
+	            this._prop = prop
+	            /**
+	             *  DOM input 2 state
+	             */
+	            this._requestChange = function () {
+	                if (!that._prop) return
+	                var value = that.$el[vType]
+	                var state = vm.$data[that._prop]
+
+	                if (util.diff(value, state)) {
+	                    if (that._request) {
+	                        value = that._request(value, false)
+	                    }
+	                    vm.$set(that._prop, value)
+	                }
+	            }
+	            /**
+	             *  State 2 DOM input
+	             */
+	            this._update = function () {
+	                if (!that._prop) return
+
+	                var pv = that.$el[vType]
+	                var nv = keypath.get(vm.$data, that._prop)
+	                if (pv !== nv) {
+	                    if (that._request) {
+	                        nv = that._request(nv, true)
+	                    }
+	                    that.$el[vType] = nv
+	                }
+	            }
+	            util.forEach(this.evtType.split(','), function (t) {
+	                $el.on(t, that._requestChange)
+	            })
+
+	            // Initial state 2 DOM update
+	            this._update()
+	        },
+	        update: function (prop) {
+	            if (isMulti) {
+	                this._request = prop
+	            } else {
+	                if (!prop) consoler.error('Invalid property key "' + prop + '"')
+	                else {
+	                    this._prop = prop
+	                }
+	            }
+	        },
+	        afterUpdate: function () {
+	            // to compare state value and DOM value, update DOM value if not equal 
+	            this._update()
+	        },
+	        unbind: function () {
+	            var that = this
+	            var $el = $(this.$el)
+	            util.forEach(this.evtType.split(','), function (t) {
+	                $el.off(t, that._requestChange)
+	            })
+	            this._requestChange = this._update = noop
+	        }
+	    }
+	}
+
 	// class directive
 	ds[CLASS_KEY] = {
 	    multi: true,

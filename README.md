@@ -334,6 +334,29 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
     assert.equal(inp.value, 'real2')
 	```
 
+- **r-xmodel**
+	
+	支持拦截方法的双向绑定
+
+	```js
+	var c = new Real({
+        data: {
+            val: ''
+        },
+        template: '<input type="text" r-xmodel="{val: request}"/>',
+        methods: {
+        	request: function (willChangeValue, updated/*<Boolean>*/) {
+        		/**
+        		 * updated: 如果为 true 则为 state => DOM，否则 DOM => state
+        		 * 例子：实现输入限制长度为10
+        		 */
+				return willChangeValue.slice(0, 10)
+        	}
+        }
+    })
+
+	```
+
 - **r-ref**
 
 	Add a reference of the component instance to parent component instance.

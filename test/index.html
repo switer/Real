@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="format-detection" content="telphone=no, email=no" />
-	<title>REVE</title>
+	<title>Real</title>
 	<script src="../dist/real.js"></script>
 	<style>
 		body {padding: 0px;margin: 0;}
@@ -53,7 +53,7 @@
 				click: onChangeHeader
 			}">change child component's title</button>
 		</div>
-		<p><center><input type="text" r-model="header"/></center></p>
+		<p><center><input type="text" r-xmodel="{header: requestChange}"/></center></p>
 		<!-- <p><center><textarea r-model="header"></textarea></center></p> -->
 		<div 
 			class="footer" 
@@ -68,7 +68,8 @@
 		<img r-lazy="https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png" />
 	</div>
 	<script>
-		Reve.directive('autorefresh', {
+		console.log('===========')
+		Real.directive('autorefresh', {
 			bind: function (fn) {
 				var that = this
 				setInterval(function () {
@@ -79,12 +80,12 @@
 				}, 2000)
 			}
 		})
-		Reve.directive('lazy', {
+		Real.directive('lazy', {
 			bind: function (src) {
 				console.log(src)
 			}
 		})
-		Reve.component('c-header' ,{
+		Real.component('c-header' ,{
 			data: function () {
 				return {
 					title: ''
@@ -98,23 +99,23 @@
 				this.title = this.$data.title
 			}
 		})
-		Reve.component('c-button' ,{
+		Real.component('c-button' ,{
 			ready: function () {},
 		})
-		Reve.component('c-footer' ,{
+		Real.component('c-footer' ,{
 			template: '<div><h6 r-html>"{\'Footer Match:\' + header}"</h6></div>'
 		})
-		var $child = new Reve({
+		var $child = new Real({
 			template: '<div>I am a child ViewModel</div>'
 		})
 
-		var $app = new Reve({
+		var $app = new Real({
 			el: '#app',
 			data: function () {
 				return {
 					show: true,
 					hl: true,
-					header: 'Hi, Reve',
+					header: 'Hi, Real',
 					updateid: ''
 				}
 			},
@@ -122,6 +123,9 @@
 				// console.log(this.$refs)
 			},
 			methods: {
+				requestChange(v, updated) {
+					return v.slice(0, 2)
+				},
 				onDisableHightlight: function () {
 					this.$set({
 						hl: false
