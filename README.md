@@ -406,7 +406,7 @@ this.$update('show', false)
              * updated: 如果为 true 则为 state => DOM，否则 DOM => state
              * 例子：实现输入限制长度为10
              */
-        return willChangeValue.slice(0, 10)
+        	return willChangeValue.slice(0, 10)
           }
         }
     })
