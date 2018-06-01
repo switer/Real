@@ -75,10 +75,12 @@ ready: function () {
 <div id="app" class="">Hi, Real</div>
 ```
 
-如果我们想做把隐藏 `#app` 隐藏的逻辑，可以这样做：
+如果我们想做把 `#app` 隐藏的逻辑，可以这样：
 ```js
 this.$data.show = false
 this.$update()
+// 或者
+this.$update('show', false)
 ```
 
 更新完成后，`#app` 的 display 样式被修改为 none :
@@ -88,17 +90,20 @@ this.$update()
 
 ## API文档
 
-#### Directives
-Directive is declarative DOM manipulation, such as "r-class" is the DOM manipulation of add/remove class to the element.
+#### 指令集合
+
+指令是声明式的 DOM 操作，例如: "r-class" 是给 DOM 动态 `添加`/`移除` class。
 
 - **r-show**
 
-	set element's style of display to none, when value is false.  
+	控制元素显示或隐藏，如果表达式的值为 `false` 则隐藏，反之显示。
+	```html
+	<div r-show="{isShow}"></div>
+	```
 
 - **r-class**
-
-	Add className to the element when value is true, Otherwise remove that class.
-	such as: 
+	
+	动态添加类名。
 	```html
 	<span r-class="{
 	  red    : hasError;
@@ -109,8 +114,7 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **r-classes** `(since v2.0.0)`
 	
-	Add/remove class text to element.
-	such as: 
+	动态添加多个类名。
 	```html
 	<span r-classes="{(isBlue ? 'blue':'green') + ' ' + (isInline ? 'inline-block' : 'block')}"></span>
 	<!-- also support array -->
@@ -119,7 +123,7 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **r-style**
 
-	Set inline style to element.
+	修改元素的样式。
 	```html
 	<span r-style="{
 	  display    : show ? '':'none'
@@ -128,35 +132,38 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **r-attr**
 
-	Update element's attribute by binding data.
+	修改元素的属性值。
 	```html
-	<img r-attr="{src: imgUrl || './default.png'}" alt="">
+	<img r-attr="{src: imgUrl || './default.png'}" />
 	```
 
 - **r-src** `(since v2.0.0)`
 
-	Update element's "`src`" attribute by binding data.
+	修改图片的 `src` 值。
 	```html
 	<img r-src="{imgUrl || './default.png'}" alt="">
 	```
 
 - **r-href** `(since v2.0.0)`
 
-	Update element's "`href`" attribute by binding data.
+	修改 A 链接的 `href` 值。
 	```html
 	<a r-href="{url || 'javascript:;'}" >click me</a>
 	```
 
 - **r-dataset** `(since v2.0.0)`
 
-	Update element's "`dataset`" by binding data.
+	修改元素的 `dateset`。
 	```html
-	<div r-dataset="{index: index; src: src || './default.png'}" ></div>
+	<div r-dataset="{
+		index: index;
+		src: src || './default.png';
+	}"></div>
 	```
 
 - **r-on**
 
-	Add event listener to the element, such as add a "click" and "toucstart" events to the button element:
+	绑定事件（冒泡阶段），例如绑定 "`click`"、"`toucstart`" 事件：
 	```html
 	<button 
 		r-on="{
@@ -168,7 +175,8 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 
 - **r-capture**
-	Bind event on event capturing.
+
+	绑定事件（捕获阶段），例如绑定 "`click`"、"`toucstart`" 事件：
 	```html
 	<button 
 		r-capture="{
@@ -181,7 +189,8 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **r-delegate** `(since v2.0.0)`
 	
-	Event delegate. Expression format { "`click` **selector**": *handler* }
+
+	事件代理（冒泡阶段），表达式格式 => { "`click` **selector**": *handler* }:
 	```html
 	<div class="list" 
 		r-on="{
@@ -192,33 +201,31 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 		<div class="item" data-index="2"></div>
 	</div>
 	```
-	> Noti: IE8 below, only support selectors: `#id`, `.class`, `tagName`, `[attribute]` or `[attribute="value"]`.
+	> 注意: IE8 以下, 仅支持的选择器: `#id`, `.class`, `tagName`, `[attribute]` or `[attribute="value"]`.
 
 
 - **r-click** `(since v2.0.0)`
 
-	Add click event listener to the element:
+	绑定点击事件：
 	```html
 	<button 
-		r-click="{
-			onClick;
-		}"
+		r-click="{ onClick }"
 	></button>
 	```
 
 
 - **r-html**
 
-	HTML rendering directive. Using to render template with VM's data. If attribute value is `inner`, it will render template to target element's innerHTML.
 
+	元素渲染成内容的HTML，如果 `r-html` 的值为 `inner`，则只渲染 innerHTML。
 	```html
 	// $data => {title: 'real'}
 	<div r-html>Framework is {title}</div>
-	// render to, notice: without wrapping div.
+	// DOM被直接替换为模板内容
 	Framework is real
 	```
 
-	Render to target element's innerHTML:
+	// 只渲染 innerHTML
 	```html
 	// $data => {title: 'real'}
 	<div r-html="inner">Framework is <span>{title}</span></div>
@@ -228,8 +235,8 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 - **r-text**
 
-	 Directive for render template to text. If attribute value is `inner`, it will render template to target element's innerText.
 	
+	元素渲染成内容模板的文本格式，如果 `r-text` 的值为 `inner`，则只渲染 innerText。
 	```html
 	Framework: <span r-text>{name}</span> !
 	```
@@ -254,16 +261,14 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	```
 
 
-- **r-props** `(since v1.5.10)`
-	
-	Using with root element of the component. For inject data from DOM to $data.
+
 
 - **r-component**
 
-	Declare the element is a component root element, and Real will instance it with specified component id.
-	Assume we have defined a component with state "title" and method "capitalize", as below:
+	自定义子组件 => Real.component(组件名<`String`>，组件定义<`Object`>)：
 	```js
 	Real.component('header', {
+		template: '<span r-html="{capitalize(title)}"></span>',
 		data: function () {
 			return {
 				title: ''
@@ -277,20 +282,19 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 		}
 	})
 	```
-	And component's template as below:
+
+	在模板中使用
 	```html
 	<div id="app">
-		<div r-component="header" 
-			r-data="{
-				title: "hi, real"
-			}""
+		<div 
+			r-component="header" 
+			r-data="{ title: 'hi, real' }"
 		>
-			<span r-html="{capitalize(title)}"></span>
 		</div>
 	</div>
 	```
 
-	It will be instanced when instance parent VM:	
+	被父组件实例化
 	```js
 	var app = new Real({
 		el: '#app'
@@ -305,11 +309,70 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 	</div>
 	```
 
+- **r-notemplate**
+
+	如果指定了 'r-notemplate' , 将不会渲染组件声明的 `template`, 而是取当前元素下的 innerHTML，用于已生成内容的绑定.
+	> 注意: 仅限于同 "r-component" 一起使用。
+
+
+- **r-props** `(since v1.5.10)`
+	
+	向子组件传递数据，不绑定，父组件的数据更新`不会同步`到子组件
+	> 注意: 仅限于同 "r-component" 一起使用。
+
+- **r-data**
+
+	向子组件传递数据，建立数据绑定，父组件的数据更新`会同步`到子组件
+	> 注意: 仅限于同 "r-component" 一起使用。
+
+- **r-methods**
+
+	向子组件传递方法。
+	> 注意: 仅限于同 "r-component" 一起使用。
+
+- **r-binding**
+
+	如果 'r-binding' 的值为 false("false" or "0"), 父组件不会触发子组件的任何更新，用于性能优化。
+	> 注意: 仅限于同 "r-component" 一起使用。
+
+	```html
+	<div class="parent">
+	    <div 
+	        r-component="c-child" 
+	        r-data="{prop: parentState}" 
+	        r-binding="false"
+	        r-ref="child"
+	    ></div>
+	</div>
+	```
+
+	如果 "r-binding" 值为关闭，父组件更新的时候 "c-child" 将不会触发更新，如果需要手动触发子组件更新，可以通过实例引用：
+	```js
+	    var $child = this.$refs.child	    
+	    $child.$data.prop = this.$data.parentState
+	    this.$refs.child.$update()
+	```
+	> 注意: 仅限于同 "r-component" 一起使用。
+
+
+- **r-ref**
+
+	提供一个实例引用的名字。
+	> 注意: 仅限于同 "r-component" 一起使用。
+
+	```html
+	<div r-component="header" r-ref="header"></div>
+	```
+
+	父组件获取子组件实例
+	```js
+	app.$refs.header.$data.title // 'hi, real'
+	```
+
+
 - **r-model**
 	
-	Two way binding directive for select/input/textarea element. Value of directive expression is the binding property name in $data,
-	it could be a keypath, such as: **r-model="person[i].name"**. Example:
-
+	select/input/textarea 元素的双向绑定. 绑定的值取自$data, 支持 keypath, 例如: **r-model="person[i].name"**。
 	```js
 	var c = new Real({
         data: {
@@ -350,65 +413,28 @@ Directive is declarative DOM manipulation, such as "r-class" is the DOM manipula
 
 	```
 
-- **r-ref**
-
-	Add a reference of the component instance to parent component instance.
-	> Notice: work with "r-component" only.
-
-	```html
-	<div r-component="header" r-ref="header"></div>
-	```
-	We can access the header component instance refernce by parent VM's **$refs** property:
-	```js
-	app.$refs.header.$data.title // 'hi, real'
-	```
 
 
-- **r-data**
-
-	Passing and binding data from parent VM to child component.
-	> Notice: work with "r-component" only.
-	
-
-- **r-methods**
-
-	Passing methods from parent VM to child component.
-	> Notice: work with "r-component" only.
-
-- **r-binding**
-
-	If 'r-binding' is false("false" or "0"), parent component will not update the child component when parent's data has been changed.
-	> Notice: work with "r-component" only.
-
-	```html
-	<div class="parent">
-	    <div 
-	        r-component="c-child" 
-	        r-data="{prop: parentState}" 
-	        r-binding="false"
-	        r-ref="child"
-	    ></div>
-	</div>
-	```
-	"r-binding" is disable, " c-child" will not update if parent ViewModel's parentState has been changed. If need to update child component manually, do as below:
-	```js
-	    var $child = this.$refs.child	    
-	    $child.$data.prop = this.$data.parentState
-	    this.$refs.child.$update()
-	```
 
 - **r-updateid**
 
-	If 'r-updateid' is presented, call `$update(id)` will update those matching directives or components.
-	> Notice: work with "r-component" or directives.
+	如果指定了 'r-updateid'，可以通过 `$update(id)` 指定局部更新，用于性能优化
 
-- **r-notemplate**
+	```html
+	<div 
+		r-show="{isShow}"
+		r-updateid="showMe"
+	></div>
+	```
 
-	If 'r-notemplate' is presented, will not render component's template option, and render innerHTML only.
-	> Notice: work with "r-component".Using in server-side render case.
+	```js
+	this.$data.isShow = true
+	this.$update('showMe')
+	```
 
 
-#### Iterator/If
+
+#### For/If
 
 - **r-for** `(since v2.0.0)`
 	
