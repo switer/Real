@@ -1,5 +1,5 @@
 /**
-* Real v2.0.2
+* Real v2.0.3
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1180,6 +1180,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return str.replace(/^\s+|\s+$/gm, '')
 	        }
 	    },
+	    strip: function (str) {
+	        return str.replace(/^['"]|['"]$/gm, '')
+	    },
 	    indexOf: function (arr, tar) {
 	        if (arr.indexOf) return arr.indexOf(tar)
 	        else {
@@ -2061,7 +2064,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var tagName = this.$el.tagName
 	            var type = tagName.toLowerCase()
 	            var $el = this._$el = $(this.$el)
-	            this._request = request
+	            this._request = isMulti ? request : null
 	            
 	            type = type == 'input' ? $el.attr('type') || 'text' : type
 
@@ -2662,6 +2665,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var key
 	        expr = expr.replace(/^[^:]+:/, function(m) {
 	            key = util.trim(m.replace(/:$/, ''))
+	            // key = util.strip(key)
 	            return ''
 	        })
 	        expr = util.trim(expr)

@@ -24,7 +24,7 @@
         template: `
             <div>
                 <div r-if="{showNoRole}" class="info-msg">请先创建游戏角色，才能领取哦!</div>
-                <div class="action">
+                <div class="action" r-delegate="{'click .btn': onClick}">
                     <button type="button" class="btn btn-primary-bordered btn-lg">切换账号</button>
                     <button type="button" class="btn btn-primary btn-lg">确定</button>
                 </div>
@@ -40,6 +40,11 @@
             setTimeout(() =>{
                 this.$set('showNoRole', true)
             }, 3000)
+        },
+        methods: {
+            onClick() {
+                alert('click')
+            }
         }
     })
     new Real({
