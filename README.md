@@ -610,7 +610,7 @@ this.$update('show', false)
 - **$off**(type[, handler])
 - **$emit**(type[, data])
 
-- **$watch**(expresion, handler) `(since v2.0.5)`
+- **$watch**(expression, handler) `(since v2.0.5)`
   
   观察表达式的值变更
   ```html
