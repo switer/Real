@@ -23,9 +23,21 @@ describe('# Directive', function () {
         var inited = false
         Real.directive('d', {
             multi: true,
-            bind: function (p, v, expr) {
+            bind: function (key, v, expr) {
                 inited = true
-                assert.equal(p, 'user')
+                assert.equal(key, 'user')
+                assert.equal(v, 'switer')
+                assert.equal(expr, 'name')
+            },
+            update: function (v) {
+                assert.equal(v, 'switer')
+            }
+        })
+        Real.directive('e', {
+            multi: true,
+            bind: function (key, v, expr) {
+                inited = true
+                assert.equal(key, 'xlink:href')
                 assert.equal(v, 'switer')
                 assert.equal(expr, 'name')
             },
@@ -37,10 +49,11 @@ describe('# Directive', function () {
             data: {
                 name: 'switer'
             },
-            template: '<div r-d="{user: name}"></div>'
+            template: '<div r-d="{user: name}" r-e="{\'xlink:href\': name}"></div>'
         })
         assert(inited)
     })
+
     it('directive(name, { scoped: true })', function () {
         var Follow = Real.component('c-follow', {
             data: function () {

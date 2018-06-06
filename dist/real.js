@@ -1,5 +1,5 @@
 /**
-* Real v2.0.5
+* Real v2.0.6
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -2694,6 +2694,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param {String}  name    Attribute name of the directive
 	 * @param {String}  expr    Attribute value of the directive
 	 */
+	var keyParseCaches = {}
 	function Directive(vm, tar, def, name, expr, scope) {
 	    var d = this
 	    var bindParams = []
@@ -2705,12 +2706,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (def.multi) {
 	        // extract key and expr from "key: expression" format
 	        var key
-	        expr = expr.replace(/^[^:]+:/, function(m) {
-	            key = util.trim(m.replace(/:$/, ''))
-	            // key = util.strip(key)
-	            return ''
-	        })
-	        expr = util.trim(expr)
+	        var cached = keyParseCaches[expr]
+	        if (cached) {
+	            key = cached.key
+	            expr = cached.expr
+	        } else {
+	            var keyMatched
+	            expr = expr.replace(/^\s*['"](.+?)['"]\s*:/m, function(m, k) {
+	                keyMatched = true
+	                key = k
+	                return ''
+	            })
+	            if (!keyMatched) {
+	                expr = expr.replace(/^([^:]+):/m, function(m, k) {
+	                    key = util.trim(k)
+	                    return ''
+	                })
+	            }
+	            expr = util.trim(expr)
+	            keyParseCaches[expr] = {
+	                key: key,
+	                expr: expr
+	            }
+	        }
+
+
 
 	        bindParams.push(key)
 	    }
