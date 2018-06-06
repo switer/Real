@@ -614,9 +614,11 @@ this.$update('show', false)
   
   观察表达式的值变更
   ```html
-  this.$watch('a + b -c', function(value, oldValue) {
+  var unwatch = this.$watch('a + b -c', function(value, oldValue) {
      // 初始绑定时不存在 oldValue, arguments 长度为1
   })
+  // 解绑
+  unwatch()
   ```
 
 #### Custom Directive
