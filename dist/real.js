@@ -1,5 +1,5 @@
 /**
-* Real v2.0.4
+* Real v2.0.5
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -73,7 +73,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var buildInScopedDirectives = __webpack_require__(13)(Real)
 	var Expression = __webpack_require__(11)
 	var Directive = __webpack_require__(14)
-	var Message = __webpack_require__(17)
+	var Watcher = __webpack_require__(17)
+	var Message = __webpack_require__(18)
 	var detection = __webpack_require__(3)
 	var supportQuerySelector = detection.supportQuerySelector
 	var _execute = __webpack_require__(15)
@@ -94,7 +95,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @return {Object} Real component instance
 	 */
 	function Real(options) {
-	    var d = new Date
 	    options = options || {}
 
 	    var vm = this
@@ -104,6 +104,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var _destroy = options.destroy
 	    var _binding = util.hasOwn(options, 'binding') ? options.binding : true
 	    var _message = new Message()
+
 	    this.$id = _cid ++
 	    this.$name = options.name || ''
 	    this.$parent = options.parent || null
@@ -111,6 +112,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$shouldUpdate = options.shouldUpdate
 	    this.$directives = []
 	    this.$components = []
+	    this.$watchers = []
 	    this._$beforeDestroy = function () {
 	        _safelyCall(conf[CATCH_KEY], _destroy, vm)
 	    }
@@ -258,7 +260,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // created lifecycle
 	    _safelyCall(conf[CATCH_KEY], _created, vm)
 	    this.$el = el
-
+	    // binding watcher
+	    try {
+	        util.objEach(options.watch || [], function (expr, handler) {
+	            vm.$watchers.push(new Watcher(vm, expr, handler))
+	        })
+	    } catch(e) {
+	        consoler.error('Watch catch error:', e)
+	    }
 	    try {
 	        var $compiledEl = this.$compile(el)
 	        isReplaced && (this.$el = $compiledEl)
@@ -317,6 +326,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var $components = scope ? scope.$components : this.$components
 	    var componentDec = NS + 'component'
 	    var vm = this
+
 	    // compile directives of the VM
 	    var _diretives = util.extend({}, buildInDirectives, buildInScopedDirectives, _externalDirectives)
 	    var attSels = util.keys(_diretives)
@@ -581,6 +591,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	Real.prototype.$update = function (updId/*updIds*/, handler) {
 	    var $components = this.$components
 	    var $directives = this.$directives
+	    var $watchers = this.$watchers
 
 	    if (updId && updId.length) {
 	        var multi = util.type(updId) == 'array' ?  true:false
@@ -599,6 +610,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        util.forEach($components, updateHandler('component'))
 	        return util.forEach($directives, updateHandler('directive'))
 	    }
+
+	    // update watchers of the VM
+	    util.forEach($watchers, function (w) {
+	        w.$update()
+	    })
 	    /**
 	     * Update child components of the ViewModel
 	     * "$componentShouldUpdate()" is a private method of child-component for updating check.
@@ -622,17 +638,43 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (this.$destroyed) return
 	    // call destroy method before destroy
 	    this._$beforeDestroy && this._$beforeDestroy()
-	    // update child components
+	     // destroy directive of the VM
+	    util.forEach(this.$watchers, function (w) {
+	        w.$destroy()
+	    })
+	    // destroy child components
 	    util.forEach(this.$components, function (c) {
 	        c.$destroy()
 	    })
-	    // update directive of the VM
+	    // destroy directive of the VM
 	    util.forEach(this.$directives, function (d) {
 	        d.$destroy()
 	    })
-	    this.$el = this.$components = this.$directives = this.$data = this.$methods = this.$refs = null
+	    this.$el = this.$components = this.$directives = this.$watchers = this.$data = this.$methods = this.$refs = null
 	    this.$set = this.$update = this.$compile = this.$root = this.$appendTo = noop
 	    this.$destroyed = true
+	}
+	Real.prototype.$watch = function (expr, handler) {
+	    var vm = this
+	    var w = new Watcher(this, expr, handler)
+	    var wid = w.$id
+	    this.$watchers.push(w)
+	    /**
+	     * unbind watcher
+	     */
+	    return function () {
+	        var watchers = vm.$watchers
+	        if (!watchers || !watchers.length) return
+	        var nextWatchers = []
+	        util.forEach(watchers, function (item) {
+	            if (item.$id === wid) {
+	                item.$destroy()
+	            } else {
+	                nextWatchers.push(item)
+	            }
+	        })
+	        vm.$watchers = nextWatchers
+	    }
 	}
 	/**
 	 * Create Real subc-lass that inherit Real
@@ -2675,7 +2717,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    d.$el = tar
 	    d.$vm = vm
-	    d.$id = _did++
+	    d.$id = ++_did
 	    d.$expr = expr
 	    d.$rawExpr = rawExpr
 	    d.$name = name
@@ -2854,6 +2896,46 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var util = __webpack_require__(2)
+	var _execute = __webpack_require__(15)
+	function noop () {}
+	var wid = 0
+	function Watcher(vm, expr, handler) {
+		var w = this
+		w.$id = ++wid
+		w.$vm = vm
+		w.$expr = expr
+		w.$destroyed = false
+
+		var prev = w.$exec(expr)[1]
+		w.$update = function () {
+			var r = w.$exec(expr)
+			if (!r[0] && util.diff(prev, r[1])) {
+				var last = prev
+				prev = r[1]
+				handler.call(w, prev, last)
+
+			}
+		}
+		handler.call(w, prev)
+
+	}
+	Watcher.prototype.$exec = function (expr) {
+	    return _execute(this.$vm, expr)
+	}
+	Watcher.prototype.$destroy = function () {
+	    if (this.$destroyed) return
+	    this.$update = this.$destroy = this.$exec = noop
+	    this.$expr = ''
+	    this.$destroyed = true
+	}
+
+	module.exports = Watcher
+
+/***/ },
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**

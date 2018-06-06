@@ -12,6 +12,7 @@ var buildInDirectives = require('./lib/directives/build-in')
 var buildInScopedDirectives = require('./lib/directives/scoped-directives')(Real)
 var Expression = require('./lib/tools/expression')
 var Directive = require('./lib/directive')
+var Watcher = require('./lib/watcher')
 var Message = require('./lib/tools/message')
 var detection = require('./lib/tools/detection')
 var supportQuerySelector = detection.supportQuerySelector
@@ -33,7 +34,6 @@ var CATCH_KEY = 'CATCH'.toLowerCase()
  * @return {Object} Real component instance
  */
 function Real(options) {
-    var d = new Date
     options = options || {}
 
     var vm = this
@@ -43,6 +43,7 @@ function Real(options) {
     var _destroy = options.destroy
     var _binding = util.hasOwn(options, 'binding') ? options.binding : true
     var _message = new Message()
+
     this.$id = _cid ++
     this.$name = options.name || ''
     this.$parent = options.parent || null
@@ -50,6 +51,7 @@ function Real(options) {
     this.$shouldUpdate = options.shouldUpdate
     this.$directives = []
     this.$components = []
+    this.$watchers = []
     this._$beforeDestroy = function () {
         _safelyCall(conf[CATCH_KEY], _destroy, vm)
     }
@@ -197,7 +199,14 @@ function Real(options) {
     // created lifecycle
     _safelyCall(conf[CATCH_KEY], _created, vm)
     this.$el = el
-
+    // binding watcher
+    try {
+        util.objEach(options.watch || [], function (expr, handler) {
+            vm.$watchers.push(new Watcher(vm, expr, handler))
+        })
+    } catch(e) {
+        consoler.error('Watch catch error:', e)
+    }
     try {
         var $compiledEl = this.$compile(el)
         isReplaced && (this.$el = $compiledEl)
@@ -256,6 +265,7 @@ Real.prototype.$compile = function (el, scope) {
     var $components = scope ? scope.$components : this.$components
     var componentDec = NS + 'component'
     var vm = this
+
     // compile directives of the VM
     var _diretives = util.extend({}, buildInDirectives, buildInScopedDirectives, _externalDirectives)
     var attSels = util.keys(_diretives)
@@ -520,6 +530,7 @@ Real.prototype.$appendTo = function (parent, appendHandler) {
 Real.prototype.$update = function (updId/*updIds*/, handler) {
     var $components = this.$components
     var $directives = this.$directives
+    var $watchers = this.$watchers
 
     if (updId && updId.length) {
         var multi = util.type(updId) == 'array' ?  true:false
@@ -538,6 +549,11 @@ Real.prototype.$update = function (updId/*updIds*/, handler) {
         util.forEach($components, updateHandler('component'))
         return util.forEach($directives, updateHandler('directive'))
     }
+
+    // update watchers of the VM
+    util.forEach($watchers, function (w) {
+        w.$update()
+    })
     /**
      * Update child components of the ViewModel
      * "$componentShouldUpdate()" is a private method of child-component for updating check.
@@ -561,17 +577,43 @@ Real.prototype.$destroy = function () {
     if (this.$destroyed) return
     // call destroy method before destroy
     this._$beforeDestroy && this._$beforeDestroy()
-    // update child components
+     // destroy directive of the VM
+    util.forEach(this.$watchers, function (w) {
+        w.$destroy()
+    })
+    // destroy child components
     util.forEach(this.$components, function (c) {
         c.$destroy()
     })
-    // update directive of the VM
+    // destroy directive of the VM
     util.forEach(this.$directives, function (d) {
         d.$destroy()
     })
-    this.$el = this.$components = this.$directives = this.$data = this.$methods = this.$refs = null
+    this.$el = this.$components = this.$directives = this.$watchers = this.$data = this.$methods = this.$refs = null
     this.$set = this.$update = this.$compile = this.$root = this.$appendTo = noop
     this.$destroyed = true
+}
+Real.prototype.$watch = function (expr, handler) {
+    var vm = this
+    var w = new Watcher(this, expr, handler)
+    var wid = w.$id
+    this.$watchers.push(w)
+    /**
+     * unbind watcher
+     */
+    return function () {
+        var watchers = vm.$watchers
+        if (!watchers || !watchers.length) return
+        var nextWatchers = []
+        util.forEach(watchers, function (item) {
+            if (item.$id === wid) {
+                item.$destroy()
+            } else {
+                nextWatchers.push(item)
+            }
+        })
+        vm.$watchers = nextWatchers
+    }
 }
 /**
  * Create Real subc-lass that inherit Real

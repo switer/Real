@@ -503,6 +503,27 @@ this.$update('show', false)
 
   用于产生组件数据挂载对象的方法。
 
+- **watch** `<Object>`  `(since v2.0.5)`
+  
+  观察指定表达式的值，产生变更时回调。初始绑定时会马上执行，参数上只有一个当前值，没有旧值。
+  ```js
+  Real({
+    data: function () {
+      return {
+        a: 1,
+        b: 2
+      }
+    },
+    watch: {
+      'a + b': function (value, oldValue) {
+        // 3
+      }
+    }
+  })
+  ```
+> 手动调用 vm.$watch，详情见[实例方法](#instance-methods)
+
+
 - **methods** `<Object>`
 
   用于组件JS/指令表达式中的方法。
@@ -589,7 +610,14 @@ this.$update('show', false)
 - **$off**(type[, handler])
 - **$emit**(type[, data])
 
-
+- **$watch**(expresion, handler) `(since v2.0.5)`
+  
+  观察表达式的值变更
+  ```html
+  this.$watch('a + b -c', function(value, oldValue) {
+     // 初始绑定时不存在 oldValue, arguments 长度为1
+  })
+  ```
 
 #### Custom Directive
 
