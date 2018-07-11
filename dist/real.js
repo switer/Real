@@ -1,5 +1,5 @@
 /**
-* Real v2.0.8
+* Real v2.0.9
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -1138,6 +1138,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _appendChild (p, c) {
 	    return p.appendChild(c)
 	}
+	Selector.DOM = Shell
 	module.exports = Selector
 
 
