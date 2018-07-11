@@ -111,7 +111,7 @@ function Real(options) {
             // for get first Element of the template as root element of the component
             children = _fragmentChildren(child)
             if (!children.length) 
-                throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
+                throw new Error('Component with \'replace\' must has a child element of template.', options.template)
             var nextEl = children[0]
             var parent = el.parentNode
             if (parent) {
@@ -335,7 +335,7 @@ Real.prototype.$compile = function (el, scope) {
         var cmethods = _getAttribute(tar, NS + 'methods')
         var bindingOpt = _getAttribute(tar, NS + 'binding')
         var updId = _getAttribute(tar, NS + 'updateid') || ''
-        var replaceOpt = _getAttribute(tar, NS + 'replace')
+        var replaceOpt = _getAttribute(tar, NS + 'replace') || _getAttribute(tar, 'replace')
         var data = {}
         var methods = {}
         var preData = {}
@@ -344,9 +344,7 @@ Real.prototype.$compile = function (el, scope) {
             ? false 
             : true
 
-        replaceOpt = util.hasAttribute(tar, NS + 'replace')
-            ? replaceOpt == 'true' || replaceOpt == '1'
-            : false
+        replaceOpt = replaceOpt == 'true' || replaceOpt == '1'
         // remove 'NS-component' attribute
         _removeAttribute(tar, componentDec)
 
