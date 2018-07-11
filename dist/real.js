@@ -1,5 +1,5 @@
 /**
-* Real v2.0.6
+* Real v2.0.7
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -172,7 +172,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            // for get first Element of the template as root element of the component
 	            children = _fragmentChildren(child)
 	            if (!children.length) 
-	                throw new Error('Component with \'' + NS + 'replace\' must has a child element of template.', options.template)
+	                throw new Error('Component with \'replace\' must has a child element of template.', options.template)
 	            var nextEl = children[0]
 	            var parent = el.parentNode
 	            if (parent) {
