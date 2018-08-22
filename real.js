@@ -41,15 +41,28 @@ setAllDirective()
  */
 function Real(options) {
     options = options || {}
+    var optimiseOpt = options.optimise || {}
+    var precompile = optimiseOpt.precompile
+    var compileCache = optimiseOpt.compileCache
 
     var vm = this
     var NS = conf.namespace
     var _ready = options.ready
     var _created = options.created
     var _destroy = options.destroy
-    var _binding = util.hasOwn(options, 'binding') ? options.binding : true
-    var _message = this._message = new Message()
-    var optimiseOpt = options.optimise || {}
+    var _binding
+    if (compileCache) {
+        _binding = compileCache.hasBinding
+    } else {
+        _binding = util.hasOwn(options, 'binding') ? options.binding : true
+        if (precompile) {
+            precompile.hasBinding = _binding
+        }
+    }
+    var _message
+    if (!optimiseOpt.noMessage) {
+        _message = this._message = new Message()
+    }
 
     this.$id = _cid ++
     this.$name = options.name || ''
@@ -201,14 +214,14 @@ function Real(options) {
     this.$el = el
     // binding watcher
     try {
-        util.objEach(options.watch || [], function (expr, handler) {
+        util.objEach(options.watch || {}, function (expr, handler) {
             vm.$watchers.push(new Watcher(vm, expr, handler))
         })
     } catch(e) {
         consoler.error('Watch catch error:', e)
     }
     try {
-        var $compiledEl = this.$compile(el, null, optimiseOpt.precompile, optimiseOpt.compileCache)
+        var $compiledEl = this.$compile(el, null, precompile, compileCache)
         isReplaced && (this.$el = $compiledEl)
     } finally {
 
@@ -216,7 +229,7 @@ function Real(options) {
         try {
             _safelyCall(conf[CATCH_KEY], _ready, vm)
         } finally {
-            _message.emit('ready')
+            _message && _message.emit('ready')
         }
     }
 }
@@ -224,13 +237,17 @@ function Real(options) {
 * Event message
 */
 Real.prototype.$on = function() {
-    return this._message.on.apply(this._message, arguments)
+    if (this._message) {
+        return this._message.on.apply(this._message, arguments)
+    } else {
+        return noop
+    }
 }
 Real.prototype.$off = function() {
-    return this._message.off.apply(this._message, arguments)
+    return this._message && this._message.off.apply(this._message, arguments)
 }
 Real.prototype.$emit = function() {
-    return this._message.emit.apply(this._message, arguments)
+    return this._message && this._message.emit.apply(this._message, arguments)
 }
 /**
  * @private

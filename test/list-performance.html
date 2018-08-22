@@ -16,6 +16,10 @@
 				<span r-show="{id < 100}">Hello world</span>
 				<span r-show="{id < 100}">Hello world</span>
 				<span r-show="{id < 100}">Hello world</span>
+				<span r-show="{id < 100}">Hello world</span>
+				<span r-show="{id < 100}">Hello world</span>
+				<span r-show="{id < 100}">Hello world</span>
+				<span r-show="{id < 100}">Hello world</span>
 			</div>
 		</div>
 	</div>
@@ -29,7 +33,7 @@
 				}
 			},
 			ready: function () {
-				var count = 5000
+				var count = 1000
 				var list = []
 				while(count --) {
 					list.push({
@@ -59,6 +63,9 @@
 				<span v-show="item.id < 100">Hello world</span>
 				<span v-show="item.id < 100">Hello world</span>
 				<span v-show="item.id < 100">Hello world</span>
+				<span v-show="item.id < 100">Hello world</span>
+				<span v-show="item.id < 100">Hello world</span>
+				<span v-show="item.id < 100">Hello world</span>
 			</div>
 		</div>
 	</div>
@@ -73,7 +80,7 @@
 				}
 			},
 			mounted: function () {
-				var count = 5000
+				var count = 1000
 				var list = []
 				while(count --) {
 					list.push({
