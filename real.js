@@ -356,7 +356,10 @@ Real.prototype.$compile = function (el, scope, precompile, compileCache) {
         })) {
             return
         }
-        if (scopedChilds && scopedChilds.length && ~util.indexOf(scopedChilds, tar)) return
+        if (scopedChilds && scopedChilds.length && util.some(scopedChilds, function (item) {
+            return tar == item
+        })) return
+
         var cname = _getAttribute(tar, componentDec)
         if (!cname) {
             return consoler.error(componentDec + ' missing component id.', tar)
@@ -470,7 +473,9 @@ Real.prototype.$compile = function (el, scope, precompile, compileCache) {
      */
     function instanceScopedDirective(tar, dec, dname) {
         // don't compile child scope
-        if (scopedChilds && scopedChilds.length && ~util.indexOf(scopedChilds, tar)) return
+        if (scopedChilds && scopedChilds.length && util.some(scopedChilds, function (item) {
+            return tar == item
+        })) return
 
         var drefs = tar._diretives || []
         // prevent repetitive binding
