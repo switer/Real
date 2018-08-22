@@ -20,6 +20,11 @@ var _execute = require('./lib/tools/execute')
 var _components = {}
 var _externalDirectives = {}
 var _scopedDirectives = []
+var _allDiretives = {}
+var _allDiretiveKeys = []
+var _allBuildInScopedDecKeys = []
+var _allScopedDecKeys = []
+var _allScopedDecWithCompoentKeys = []
 var _isExpr = Expression.isExpr
 var _strip = Expression.strip
 var _getAttribute = util.getAttribute
@@ -28,6 +33,7 @@ var _getData = function (data) {
     return (util.type(data) == 'function' ? data():data) || {}
 }
 var CATCH_KEY = 'CATCH'.toLowerCase()
+setAllDirective()
 /**
  * Constructor Function and Class.
  * @param {Object} options Instance options
@@ -35,14 +41,28 @@ var CATCH_KEY = 'CATCH'.toLowerCase()
  */
 function Real(options) {
     options = options || {}
+    var optimiseOpt = options.optimise || {}
+    var precompile = optimiseOpt.precompile
+    var compileCache = optimiseOpt.compileCache
 
     var vm = this
     var NS = conf.namespace
     var _ready = options.ready
     var _created = options.created
     var _destroy = options.destroy
-    var _binding = util.hasOwn(options, 'binding') ? options.binding : true
-    var _message = new Message()
+    var _binding
+    if (compileCache) {
+        _binding = compileCache.hasBinding
+    } else {
+        _binding = util.hasOwn(options, 'binding') ? options.binding : true
+        if (precompile) {
+            precompile.hasBinding = _binding
+        }
+    }
+    var _message
+    if (!optimiseOpt.noMessage) {
+        _message = this._message = new Message()
+    }
 
     this.$id = _cid ++
     this.$name = options.name || ''
@@ -55,18 +75,7 @@ function Real(options) {
     this._$beforeDestroy = function () {
         _safelyCall(conf[CATCH_KEY], _destroy, vm)
     }
-    /**
-     * Assign Event-methods to component instance
-     */
-    this.$on = function() {
-        return _message.on.apply(_message, arguments)
-    }
-    this.$off = function() {
-        return _message.off.apply(_message, arguments)
-    }
-    this.$emit = function() {
-        return _message.emit.apply(_message, arguments)
-    }
+
 
     var el = options.el
     var hasReplaceOption = util.hasOwn(options, 'replace') 
@@ -193,22 +202,26 @@ function Real(options) {
     var _data = _getData(options._data)
     this.$data = util.extend(data, props, _data) 
 
-    util.objEach(options.methods, function (key, m) {
-        vm.$methods[key] = vm[key] = util.bind(m, vm)
-    })
+    if (optimiseOpt.bindMethods === false) {
+        this.$methods = options.methods
+    } else {
+        util.objEach(options.methods, function (key, m) {
+            vm.$methods[key] = vm[key] = util.bind(m, vm)
+        })
+    }
     // created lifecycle
     _safelyCall(conf[CATCH_KEY], _created, vm)
     this.$el = el
     // binding watcher
     try {
-        util.objEach(options.watch || [], function (expr, handler) {
+        util.objEach(options.watch || {}, function (expr, handler) {
             vm.$watchers.push(new Watcher(vm, expr, handler))
         })
     } catch(e) {
         consoler.error('Watch catch error:', e)
     }
     try {
-        var $compiledEl = this.$compile(el)
+        var $compiledEl = this.$compile(el, null, precompile, compileCache)
         isReplaced && (this.$el = $compiledEl)
     } finally {
 
@@ -216,9 +229,25 @@ function Real(options) {
         try {
             _safelyCall(conf[CATCH_KEY], _ready, vm)
         } finally {
-            _message.emit('ready')
+            _message && _message.emit('ready')
         }
     }
+}
+/**
+* Event message
+*/
+Real.prototype.$on = function() {
+    if (this._message) {
+        return this._message.on.apply(this._message, arguments)
+    } else {
+        return noop
+    }
+}
+Real.prototype.$off = function() {
+    return this._message && this._message.off.apply(this._message, arguments)
+}
+Real.prototype.$emit = function() {
+    return this._message && this._message.emit.apply(this._message, arguments)
 }
 /**
  * @private
@@ -257,7 +286,19 @@ Real.prototype.$root = function () {
  * @param  {Element} | {String} el The HTMLElement of HTML template need to compile
  * @return {Element} | {DocumentFragment}
  */
-Real.prototype.$compile = function (el, scope) {
+Real.prototype.$compile = function (el, scope, precompile, compileCache) {
+
+    var useCache = !!compileCache
+    compileCache = compileCache || {}
+    if (precompile) {
+        precompile.scopes = []
+        precompile.directives = []
+    } else {
+        precompile = {}        
+    }
+    precompile.scopeChilds = 0
+    precompile.components = 0
+
     if (util.type(el) == 'string') el = _fragmentWrap(el)
 
     var NS = conf.namespace
@@ -267,50 +308,51 @@ Real.prototype.$compile = function (el, scope) {
     var vm = this
 
     // compile directives of the VM
-    var _diretives = util.extend({}, buildInDirectives, buildInScopedDirectives, _externalDirectives)
-    var attSels = util.keys(_diretives)
-    var scopedDecKeys = util.keys(buildInScopedDirectives)
-    var scopedDec = scopedDecKeys.concat(_scopedDirectives)
-    var allScopedDec = [componentDec].concat(util.map(scopedDec, function (name) {
-        return conf.namespace + name
-    }))
+    var _diretives = _allDiretives
+    var _scopeDirts =  _allScopedDecWithCompoentKeys
+    var scopedDec = compileCache.scopes || _allScopedDecKeys
     var querySelectorAll = Query(
         el, 
-        allScopedDec, 
+        _scopeDirts, 
         // normal attribute directives
-        util.map(attSels, function (name) {
+        util.map(_allDiretiveKeys, function (name) {
             return conf.namespace + name
         })
     )
 
-    if (supportQuerySelector) {
+    var scopedElements = scopedDec.length ? querySelectorAll(util.map(scopedDec, function (name) {
+        return '[' + conf.namespace + name + ']'
+    })) : []
+    var scopedChilds = []
+    if (supportQuerySelector && (!useCache || compileCache.scopeChilds) ) {
         // nested component
         // Block selector cartesian product
-        var scopeSelectors = allScopedDec
         var selectors = []
         // Selector's cartesian product
-        util.forEach(scopeSelectors, function (dec1) {
-            return util.forEach(scopeSelectors, function (dec2) {
+        util.forEach(_scopeDirts, function (dec1) {
+            return util.forEach(_scopeDirts, function (dec2) {
                 selectors.push('[' + dec1 + '] [' + dec2 + ']')
             })
         })
-        var scopedChilds = util.slice(el.querySelectorAll(selectors))
+        scopedChilds = selectors.length ? util.slice(el.querySelectorAll(selectors)) : []
+        precompile.scopeChilds = scopedChilds.length
     }
-    var scopedElements = querySelectorAll(util.map(scopedDec, function (name) {
-        return '[' + conf.namespace + name + ']'
-    }))
 
-    var componentElements = querySelectorAll(['[' + componentDec + ']'])
+    var componentElements = !useCache || compileCache.components 
+        ? querySelectorAll(['[' + componentDec + ']'])
+        : []
+
     var compileComponent = function (tar) {
+        precompile.components ++
         // prevent cross DOM level parsing or repeat parse
         if (tar._component) return
         // build in scoped directive is first
-        if (util.some(scopedDecKeys, function (k) {
+        if (util.some(_allBuildInScopedDecKeys, function (k) {
             return !!_getAttribute(tar, NS + k)
         })) {
             return
         }
-        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
+        if (supportQuerySelector && scopedChilds && ~util.indexOf(scopedChilds, tar)) return
         var cname = _getAttribute(tar, componentDec)
         if (!cname) {
             return consoler.error(componentDec + ' missing component id.', tar)
@@ -444,6 +486,7 @@ Real.prototype.$compile = function (el, scope) {
         util.some(scopedDec, function(dname) {
             var dec = conf.namespace + dname
             if (util.hasAttribute(tar, dec)) {
+                precompile.scopes && precompile.scopes.push(dname)
                 instanceScopedDirective(tar, dec, dname)
                 return true
             }
@@ -453,14 +496,17 @@ Real.prototype.$compile = function (el, scope) {
     /**
      * compile normal atributes directives
      */
-    util.forEach(util.keys(_diretives), function (dname) {
+    util.forEach(compileCache.directives || util.keys(_diretives), function (dname) {
 
+        var rawName = dname
         var def = _diretives[dname]
         dname = NS + dname
         var bindings = util.slice(querySelectorAll(['[' + dname + ']']))
         // compile directive of container 
         if (util.hasAttribute(el, dname)) bindings.unshift(el)
-
+        if (bindings.length) {
+            precompile.directives && precompile.directives.push(rawName)
+        }
         util.forEach(bindings, function (tar) {
             // save all directives as node properties
             var drefs = tar._diretives || []
@@ -651,6 +697,16 @@ Real.component = function (id, options) {
 Real.directive = function (id, def) {
     if (def.scoped) _scopedDirectives.push(id) 
     _externalDirectives[id] = def
+    setAllDirective()
+}
+function setAllDirective() {
+    _allDiretives = util.extend({}, buildInDirectives, buildInScopedDirectives, _externalDirectives)
+    _allDiretiveKeys = util.keys(_allDiretives)
+    _allBuildInScopedDecKeys = util.keys(buildInScopedDirectives)
+    _allScopedDecKeys = _allBuildInScopedDecKeys.concat(_scopedDirectives)
+    _allScopedDecWithCompoentKeys = [conf.namespace + 'component'].concat(util.map(_allScopedDecKeys, function (name) {
+        return conf.namespace + name
+    }))
 }
 /**
  * Support config:

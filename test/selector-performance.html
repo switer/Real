@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+</head>
+<body>
+	<div id="app"></div>
+	<script>
+		function test(count, selector) {
+			var c = count
+			var app = document.getElementById('app')
+			var frag = document.createDocumentFragment()
+			while(count --) {
+				var el = document.createElement('div')
+				if (count <= 100) {
+					el.setAttribute('r-show', '{}')
+				} else {
+					el.setAttribute('r-if', '{}')
+				}
+				frag.appendChild(el)
+			}
+			app.appendChild(frag)
+			console.time(`${selector} => ${c}`)
+			app.querySelector(selector)
+			console.timeEnd(`${selector} => ${c}`)
+			app.innerHTML = ''
+		}
+		test(10000, '[r-show],[r-if]')
+		test(10000, '[r-show],[r-if],[r-html],[r-component],[r-component] [r-show],[r-if],[r-html]')
+	</script>
+</body>
+</html>
