@@ -439,13 +439,17 @@ this.$update('show', false)
 - **r-for** `(since v2.0.0)`
   
   `r-key` is necessary, it's value could be `key-path` or "`*this`" or "`*index`", but must be unique. 
+  `r-listid` give a global unique list id, using for reuse compiled result.
   "`*index`" mean using index of the arry as key. Build-in values:
-    `$value` is current value of list item. `$index` is current item's index.
+    `$value` is current value of list item. 
+    `$index` is current item's index.
+
   ```html
   <!-- items => {name: 'xxx', id: 'xxx'} -->
   <div r-component="c-item" 
     r-for="{items}"
     r-key="name"
+    r-listid="test_list"
   ><span r-text>{$index}: {id}</span></div>
   ```
 
