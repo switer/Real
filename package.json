@@ -1,6 +1,6 @@
 {
   "name": "real",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Web components framework that using in server-side render. Ω support IE6 +",
   "main": "real.js",
   "scripts": {
