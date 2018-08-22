@@ -249,7 +249,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            cidValue = this.$id
 	        }
 	        // expose cid to DOM for debug
-	        _setAttribute(el, cidKey, cidValue)
+	        // _setAttribute(el, cidKey, cidValue)
 	    }
 
 	    this.$methods = {}
@@ -348,7 +348,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @return {Element} | {DocumentFragment}
 	 */
 	Real.prototype.$compile = function (el, scope, precompile, compileCache) {
-
 	    var useCache = !!compileCache
 	    compileCache = compileCache || {}
 	    if (precompile) {
@@ -380,29 +379,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return conf.namespace + name
 	        })
 	    )
-
 	    var scopedElements = scopedDec.length ? querySelectorAll(util.map(scopedDec, function (name) {
 	        return '[' + conf.namespace + name + ']'
 	    })) : []
-	    var scopedChilds = []
-	    if (supportQuerySelector && (!useCache || compileCache.scopeChilds) ) {
-	        // nested component
-	        // Block selector cartesian product
-	        var selectors = []
-	        // Selector's cartesian product
-	        util.forEach(_scopeDirts, function (dec1) {
-	            return util.forEach(_scopeDirts, function (dec2) {
-	                selectors.push('[' + dec1 + '] [' + dec2 + ']')
-	            })
-	        })
-	        scopedChilds = selectors.length ? util.slice(el.querySelectorAll(selectors)) : []
-	        precompile.scopeChilds = scopedChilds.length
-	    }
 
 	    var componentElements = !useCache || compileCache.components 
 	        ? querySelectorAll(['[' + componentDec + ']'])
 	        : []
 
+
+	    var scopedChilds = []
+	    if (supportQuerySelector && (scopedElements.length + componentElements.length) && (!useCache || compileCache.scopeChilds) ) {
+	        // nested component
+	        // Block selector cartesian product
+	        var selectors = []
+	        if (precompile.scopeChildSelectors) {
+	            selectors = precompile.scopeChildSelectors
+	        } else {
+	            // Selector's cartesian product
+	            util.forEach(_scopeDirts, function (dec1) {
+	                return util.forEach(_scopeDirts, function (dec2) {
+	                    selectors.push('[' + dec1 + '] [' + dec2 + ']')
+	                })
+	            })
+	        }
+	        scopedChilds = selectors.length ? util.slice(el.querySelectorAll(selectors)) : []
+	        precompile.scopeChildSelectors = selectors
+	        precompile.scopeChilds = scopedChilds.length
+	    }
 	    var compileComponent = function (tar) {
 	        precompile.components ++
 	        // prevent cross DOM level parsing or repeat parse
@@ -413,7 +417,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        })) {
 	            return
 	        }
-	        if (supportQuerySelector && scopedChilds && ~util.indexOf(scopedChilds, tar)) return
+	        if (scopedChilds && scopedChilds.length && ~util.indexOf(scopedChilds, tar)) return
 	        var cname = _getAttribute(tar, componentDec)
 	        if (!cname) {
 	            return consoler.error(componentDec + ' missing component id.', tar)
@@ -527,7 +531,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	     */
 	    function instanceScopedDirective(tar, dec, dname) {
 	        // don't compile child scope
-	        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
+	        if (scopedChilds && scopedChilds.length && ~util.indexOf(scopedChilds, tar)) return
 
 	        var drefs = tar._diretives || []
 	        // prevent repetitive binding
@@ -1261,6 +1265,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    },
 	    extend: function(obj) {
+	        if (Object.assign) {
+	            return Object.assign.apply(Object, arguments)
+	        }
 	        if (this.type(obj) != 'object') return obj;
 	        var source, prop;
 	        for (var i = 1, length = arguments.length; i < length; i++) {
@@ -1357,7 +1364,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var n
 
 	        if (_t == 'array') {
-	            n = util.map(obj, function (item) {
+	            n = this.map(obj, function (item) {
 	                return that.immutable(item)
 	            })
 	        } else if (_t == 'object') {
@@ -1376,12 +1383,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        if (_t <= 0) return next !== pre
 
-	        if (this.type(next) == 'array' && this.type(pre) == 'array') {
+	        var nt = this.type(next)
+	        var pt = this.type(pre)
+
+	        if (nt == 'array' && pt == 'array') {
 	            if (next.length !== pre.length) return true
 	            return util.some(next, function(item, index) {
 	                return that.diff(item, pre[index], _t - 1)
 	            })
-	        } else if (this.type(next) == 'object' && this.type(pre) == 'object') {
+	        } else if (nt == 'object' && pt == 'object') {
 	            var nkeys = util.keys(next)
 	            var pkeys = util.keys(pre)
 	            if (nkeys.length != pkeys.length) return true
@@ -1780,6 +1790,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var keypath = __webpack_require__(8)
 	var delegate = __webpack_require__(12)
 	var CLASS_KEY = 'CLASS'.toLowerCase()
+	var htmlExprCache = {}
+	var textExprCache = {}
 	function noop () {}
 	function _templateShouldUpdate(vm) {
 	    return util.some(vm._expressions, function(exp, index) {
@@ -1873,7 +1885,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        bind: function (opt) {
 	            // if express is not empty will set innerHTML with expression result.
 	            // Otherwise render content template then set innerHTML.
-	            var reg = Expression.exprRegexp
 	            var isReplace = opt == 'replace' || opt != 'inner'
 	            var usingAttrExpr = opt != 'replace' && opt != 'inner' && !!opt
 	            var template = this.$el.innerHTML
@@ -1883,12 +1894,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	                expr = ''
 	                consoler.warn('Content template should not empty of "' + conf.namespace + 'html".', this.$el)
 	            }
-	            var veilExpr = Expression.veil(expr)
-	            var expressions = this._expressions = util.map(veilExpr.match(reg) || [], function (exp) {
-	                return Expression.angleBrackets(Expression.strip(exp))
-	            }) || [expr]
 
-	            var parts = util.split(veilExpr, reg)
+	            var htmlCache = htmlExprCache[expr]
+	            var parts, expressions
+	            if (!htmlCache) {
+	                var reg = Expression.exprRegexp
+	                var veilExpr = Expression.veil(expr)
+	                expressions = this._expressions = util.map(veilExpr.match(reg) || [], function (exp) {
+	                    return Expression.angleBrackets(Expression.strip(exp))
+	                }) || [expr]
+	                parts = util.split(veilExpr, reg)
+	                htmlCache = htmlExprCache[expr] = {
+	                    expressions: expressions,
+	                    parts: parts
+	                }
+	            }
+	            expressions = this._expressions = htmlCache.expressions
+	            parts = htmlCache.parts
+
 	            var caches = this._caches = new Array(expressions.length)
 	            var that = this
 
@@ -1903,14 +1926,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    if (!v[0]) caches[index] = v[1]
 	                })
 	                // get content
-	                var frags = []
+	                var str = ''
 	                util.forEach(parts, function(item, index) {
-	                    frags.push(item)
+	                    str += emptyStr(item)
 	                    if (index < expressions.length) {
-	                        frags.push(caches[index])
+	                        str += emptyStr(caches[index])
 	                    }
 	                })
-	                return Expression.unveil(frags.join(''))
+	                return Expression.unveil(str)
 	            }
 
 	            if (!isReplace) {
@@ -1982,13 +2005,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	        bind: function (opt) {
 	            var isReplace = opt == 'replace' || opt != 'inner'
 	            var usingAttrExpr = opt != 'replace' && opt != 'inner' && !!opt
-	            var reg = Expression.exprRegexp
 	            var expr = this.expr = usingAttrExpr ? opt : this.$el.innerHTML
-	            var veilExpr = Expression.veil(expr)
-	            var expressions = this._expressions = util.map(veilExpr.match(reg) || [], function (exp) {
-	                return Expression.angleBrackets(Expression.strip(exp))
-	            }) || [veilExpr]
-	            var parts = util.split(veilExpr, reg)
+	            var textCache = textExprCache[expr]
+	            var parts, expressions
+	            if (!textCache) {
+	                var reg = Expression.exprRegexp
+	                var veilExpr = Expression.veil(expr)
+	                var expressions = this._expressions = util.map(veilExpr.match(reg) || [], function (exp) {
+	                    return Expression.angleBrackets(Expression.strip(exp))
+	                }) || [veilExpr]
+	                var parts = util.split(veilExpr, reg)
+	                textCache = textExprCache[expr] = {
+	                    expressions: expressions,
+	                    parts: parts
+	                }
+	            }
+	            expressions = this._expressions = textCache.expressions
+	            parts = textCache.parts
+
 	            var caches = this._caches = new Array(expressions.length)
 	            var that = this
 
@@ -2001,14 +2035,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    if (!v[0]) caches[index] = v[1]
 	                })
 	                // get content
-	                var frags = []
+	                var str = ''
 	                util.forEach(parts, function(item, index) {
-	                    frags.push(item)
+	                    str += emptyStr(item)
 	                    if (index < expressions.length) {
-	                        frags.push(caches[index])
+	                        str += emptyStr(caches[index])
 	                    }
 	                })
-	                var result = Expression.unveil(frags.join(''))
+	                var result = Expression.unveil(str)
 	                if (isReplace) {
 	                    // TODO, Number Mobile bug, trying to using replaceChild
 	                    $textNode.nodeValue = util.entity(result)
@@ -2283,6 +2317,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this._$el = null
 	    }
 	}
+	function emptyStr(v) {
+	    if (v === undefined || v == null) return ''
+	    else return v
+	}
 	module.exports = ds
 
 /***/ },
@@ -2454,6 +2492,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var keypath = __webpack_require__(8)
 	var consoler = __webpack_require__(7)
 	var conf = __webpack_require__(5)
+	/**
+	 * 缓存编译结果
+	 */
+	var listCompileResults = {}
 	module.exports = function(Real) {
 	    var ds = {}
 	    var FOR_KEY = 'FOR'.toLowerCase()
@@ -2461,7 +2503,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        bind: function(v) {
 	            var $el = $(this.$el)
 	            var keyName = conf.namespace + 'key'
+	            var listIdName = conf.namespace + 'listid'
 	            this._key = $el.attr(keyName)
+	            this._listId = $el.attr(listIdName)
+
 	            var tagExpr = this._tagExpr = '<'+ conf.namespace + 'for="' + this.$rawExpr+'" '+ keyName + '="' + this._key+'"/>'
 	            if (!this._key) {
 	                consoler.error('Missing attribute, the directive need specify "' +
@@ -2469,20 +2514,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	            this._isSelfStrKey = this._key === '*this'
 	            this._isIndexKey = this._key === '*index'
-	            this.$before = document.createComment('<for ' + tagExpr  + '">')
-	            this.$after = document.createComment('</for>')
+	            this.$after = document.createComment('<for ' + tagExpr  + '">')
 	            if (this.$el.parentNode) {
-	                var frag = document.createDocumentFragment()
-	                frag.appendChild(this.$before)
-	                frag.appendChild(this.$after)
-	                $el.replace(frag)
+	                $el.replace(this.$after)
 	            } else {
 	                consoler.error('ElementNode of the directive must not the root node. ', tagExpr)
 	            }
-	            $el.removeAttr(keyName)
+	            // $el.removeAttr(keyName)
+	            // $el.removeAttr(listIdName)
 	            // first update
 	            this.diff(v)
-
 	            this._compileCache = null
 	        },
 	        /**
@@ -2495,182 +2536,175 @@ return /******/ (function(modules) { // webpackBootstrap
 	                this._v = v
 	                if (!this._pending) {
 	                    this._pending = true
-	                    ;(function() {
-	                        try {
-	                            var lastVms = that._vms || []
-	                            var lastVmMap = that._vmMap || {}
-	                            var parentVm = that.$vm
-	                            var removedVms = []
-	                            var changedVms = []
-	                            var insertedVms = []
-	                            var vms = that._vms = []
-	                            var vmMap = that._vmMap = {}
-	                            var lastInsertIndex = -1
-	                            var continuedChangeOffset = 0
-	                            var lastChangeIndex = -1
-	                            var isContinuedInsert = true
-	                            var isContinuedChange = true
-	                            var cursor = 0
+	                    try {
+	                        var lastVms = that._vms || []
+	                        var lastVmMap = that._vmMap || {}
+	                        var parentVm = that.$vm
+	                        var removedVms = []
+	                        var changedVms = []
+	                        var insertedVms = []
+	                        var vms = that._vms = new Array(that._v.length)
+	                        var vmMap = that._vmMap = {}
+	                        var lastInsertIndex = -1
+	                        var continuedChangeOffset = 0
+	                        var lastChangeIndex = -1
+	                        var isContinuedInsert = true
+	                        var isContinuedChange = true
+	                        var cursor = 0
 
-	                            util.forEach(that._v, function(data, index) {
-	                                var isObj = util.isObj(data)
-	                                var key
-	                                if (that._isIndexKey) {
-	                                    key = index
-	                                } else if (!isObj || that._isSelfStrKey) {
-	                                    key = data + ''
-	                                } else {
-	                                    key = keypath.get(data, that._key)
-	                                }
-	                                var vm = lastVmMap[key]
-	                                if (vm) {
-	                                    vm = vm.vm
-	                                }
-	                                var p = {
-	                                    key: key,
-	                                    vm: vm
-	                                }
-	                                if (vmMap[key]) {
-	                                    // duplicative
-	                                    consoler.warn('Key for the directive is not unique { "'+ key + '" :', data, '}. ', that._tagExpr)
-	                                    return vms
-	                                }
-	                                if (vm) {
-
-	                                    var _i = vm.$data.$index
-	                                    index = cursor
-	                                    // detect is continue changed VMS by increasing index and fixed offset
-	                                    if (vm.$data.$index !== index) {
-	                                        // TODO update POS
-	                                        changedVms.push(p)
-	                                        if (isContinuedChange) {
-	                                            if (lastChangeIndex < 0) {
-	                                                continuedChangeOffset = index - _i
-	                                                lastChangeIndex = index
-	                                            } else {
-	                                                if (lastChangeIndex + 1 != index || continuedChangeOffset != index - _i) {
-	                                                    // break
-	                                                    isContinuedChange = false
-	                                                } else {
-	                                                    lastChangeIndex = index
-	                                                }
-	                                            }
-	                                        }
-	                                    }
-	                                    util.extend(vm.$data, parentVm.$data, isObj ? data : null, {
-	                                        $index: index,
-	                                        $value: data,
-	                                        $parent: parentVm.$data
-	                                    })
-	                                    vm.$update()
-	                                    vms.push(p)
-	                                    cursor ++
-	                                } else {
-	                                    index = cursor
-	                                    var el = that.$el.cloneNode(true)
-	                                    var data = util.extend({}, parentVm.$data, isObj ? data : null, {
-	                                        $index: index,
-	                                        $value: data,
-	                                        $parent: parentVm.$data
-	                                    })
-	                                    
-	                                    // create new VM
-	                                    var useCache = !!that._compileCache
-	                                    if (!useCache) {
-	                                        that._compileCache = {}
-	                                    }
-	                                    vm = new Real({
-	                                        lite: true,
-	                                        parent: parentVm,
-	                                        el: el,
-	                                        optimise: {
-	                                            precompile: useCache ? null : that._compileCache,
-	                                            compileCache: useCache ? that._compileCache : null,
-	                                            bindMethods: false,
-	                                            noMessage: true
-	                                        },
-	                                        methods: parentVm.$methods,
-	                                        data: data
-	                                    })
-	                                    if (isContinuedInsert) {
-	                                        if (lastInsertIndex < 0) {
-	                                            lastInsertIndex = index
-	                                        } else {
-	                                            if (lastInsertIndex + 1 != index) {
-	                                                // break
-	                                                isContinuedInsert = false
-	                                            } else {
-	                                                lastInsertIndex = index
-	                                            }
-	                                        }
-	                                    }
-	                                    p.vm = vm
-	                                    vms.push(p)
-	                                    insertedVms.push(p)
-	                                    cursor ++
-	                                }
-	                                vmMap[key] = p
-	                                return vms
-	                            })
-	                            /**
-	                             * remove
-	                             */
-	                            util.forEach(lastVms, function(item) {
-	                                if (!vmMap[item.key]) {
-	                                    removedVms.push(item)
-	                                }
-	                            })
-	                            var changedCount = changedVms.length
-	                            var insertedCount = insertedVms.length
-	                            var removedCount = removedVms.length
-	                            // debug
-	                            // consoler.log(
-	                            //     '+', insertedCount, isContinuedInsert, ' / ', 
-	                            //     '-', removedCount, ' / ', 
-	                            //     '$', changedCount, isContinuedChange, continuedChangeOffset)
-	                            var patch = function() {
-	                                var onlyRemoved
-	                                if (!insertedCount) {
-	                                    if (!changedCount && !removedCount) {
-	                                        // debug
-	                                        // consoler.log('#1')
-	                                        // no change
-	                                        return
-	                                    } else if (removedCount && (!changedCount || (-1*continuedChangeOffset == removedCount && isContinuedChange))) {
-	                                        // debug
-	                                        // consoler.log('#2')
-	                                        // only removedVMs
-	                                        onlyRemoved = true
-	                                    }
-	                                } else {
-	                                    if (isContinuedInsert && (!changedCount || isContinuedChange)) {
-	                                        // debug
-	                                        // consoler.log('#3')
-	                                        onlyRemoved = true
-	                                        // insert only and effect on changedVMs
-	                                        mountVMs(
-	                                            insertedVms, 
-	                                            lastInsertIndex + 1 < vms.length 
-	                                                ? vms[lastInsertIndex + 1].vm.$el
-	                                                : that.$after
-	                                        )
-	                                    }
-	                                }
-	                                // remove in batch
-	                                util.forEach(removedVms, function(item) {
-	                                    detroyVM(item.vm)
-	                                })
-	                                if (!onlyRemoved) {
-	                                    // update pos at all items
-	                                    mountVMs(vms, that.$after)
-	                                }
+	                        util.forEach(that._v, function(data, index) {
+	                            var isObj = util.isObj(data)
+	                            var key
+	                            if (that._isIndexKey) {
+	                                key = index
+	                            } else if (!isObj || that._isSelfStrKey) {
+	                                key = data + ''
+	                            } else {
+	                                key = keypath.get(data, that._key)
 	                            }
-	                            patch()
-	                        } finally {
-	                            that._pending = false
+	                            var vm = lastVmMap[key]
+	                            if (vm) {
+	                                vm = vm.vm
+	                            }
+	                            var p = {
+	                                key: key,
+	                                vm: vm
+	                            }
+	                            if (vmMap[key]) {
+	                                // duplicative
+	                                consoler.warn('Key for the directive is not unique { "'+ key + '" :', data, '}. ', that._tagExpr)
+	                                return vms
+	                            }
+	                            if (vm) {
+	                                var _i = vm.$data.$index
+	                                index = cursor
+	                                // detect is continue changed VMS by increasing index and fixed offset
+	                                if (vm.$data.$index !== index) {
+	                                    // TODO update POS
+	                                    changedVms.push(p)
+	                                    if (isContinuedChange) {
+	                                        if (lastChangeIndex < 0) {
+	                                            continuedChangeOffset = index - _i
+	                                            lastChangeIndex = index
+	                                        } else {
+	                                            if (lastChangeIndex + 1 != index || continuedChangeOffset != index - _i) {
+	                                                // break
+	                                                isContinuedChange = false
+	                                            } else {
+	                                                lastChangeIndex = index
+	                                            }
+	                                        }
+	                                    }
+	                                }
+	                                util.extend(vm.$data, parentVm.$data, isObj ? data : null, {
+	                                    $index: index,
+	                                    $value: data,
+	                                    $parent: parentVm.$data
+	                                })
+	                                vm.$update()
+	                                vms[index] = p
+	                                cursor ++
+	                            } else {
+	                                index = cursor
+	                                var el = that.$el.cloneNode(true)
+	                                var data = util.extend({}, parentVm.$data, isObj ? data : null, {
+	                                    $index: index,
+	                                    $value: data,
+	                                    $parent: parentVm.$data
+	                                })
+
+	                                /**
+	                                 * If `listId` and compile result exit, use it
+	                                 */
+	                                if (!that._compileCache && that._listId && listCompileResults[that._listId]) {
+	                                    that._compileCache = listCompileResults[that._listId]
+	                                }
+	                                // create new VM
+	                                var useCache = !!that._compileCache
+	                                if (!useCache) {
+	                                    that._compileCache = {}
+	                                }
+	                                vm = new Real({
+	                                    lite: true,
+	                                    parent: parentVm,
+	                                    el: el,
+	                                    optimise: {
+	                                        precompile: useCache ? null : that._compileCache,
+	                                        compileCache: useCache ? that._compileCache : null,
+	                                        bindMethods: false,
+	                                        noMessage: true
+	                                    },
+	                                    methods: parentVm.$methods,
+	                                    data: data
+	                                })
+	                                /**
+	                                 * cache compile result
+	                                 */
+	                                if (that._listId && !listCompileResults[that._listId]) {
+	                                    listCompileResults[that._listId] = that._compileCache
+	                                }
+
+	                                if (isContinuedInsert) {
+	                                    if (lastInsertIndex < 0) {
+	                                        lastInsertIndex = index
+	                                    } else {
+	                                        if (lastInsertIndex + 1 != index) {
+	                                            // break
+	                                            isContinuedInsert = false
+	                                        } else {
+	                                            lastInsertIndex = index
+	                                        }
+	                                    }
+	                                }
+	                                p.vm = vm
+	                                vms[index] = p
+	                                insertedVms.push(p)
+	                                cursor ++
+	                            }
+	                            vmMap[key] = p
+	                            return vms
+	                        })
+	                        /**
+	                         * remove
+	                         */
+	                        util.forEach(lastVms, function(item) {
+	                            if (!vmMap[item.key]) {
+	                                removedVms.push(item)
+	                            }
+	                        })
+	                        var changedCount = changedVms.length
+	                        var insertedCount = insertedVms.length
+	                        var removedCount = removedVms.length
+	                        var onlyRemoved
+	                        if (!insertedCount) {
+	                            if (!changedCount && !removedCount) {
+	                                return
+	                            } else if (removedCount && (!changedCount || (-1*continuedChangeOffset == removedCount && isContinuedChange))) {
+	                                onlyRemoved = true
+	                            }
+	                        } else {
+	                            if (isContinuedInsert && (!changedCount || isContinuedChange)) {
+	                                onlyRemoved = true
+	                                // insert only and effect on changedVMs
+	                                mountVMs(
+	                                    insertedVms, 
+	                                    lastInsertIndex + 1 < vms.length 
+	                                        ? vms[lastInsertIndex + 1].vm.$el
+	                                        : that.$after
+	                                )
+	                            }
 	                        }
-	                        // console.timeEnd('r-for:render' + _c)
-	                    })()
+	                        // remove in batch
+	                        util.forEach(removedVms, function(item) {
+	                            detroyVM(item.vm)
+	                        })
+	                        if (!onlyRemoved) {
+	                            // update pos at all items
+	                            mountVMs(vms, that.$after)
+	                        }
+	                    } finally {
+	                        that._pending = false
+	                    }
 	                }
 	            } else {
 	                consoler.warn('The directive only support Array value. ', this._tagExpr)

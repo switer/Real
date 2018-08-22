@@ -188,7 +188,7 @@ function Real(options) {
             cidValue = this.$id
         }
         // expose cid to DOM for debug
-        _setAttribute(el, cidKey, cidValue)
+        // _setAttribute(el, cidKey, cidValue)
     }
 
     this.$methods = {}
@@ -287,7 +287,6 @@ Real.prototype.$root = function () {
  * @return {Element} | {DocumentFragment}
  */
 Real.prototype.$compile = function (el, scope, precompile, compileCache) {
-
     var useCache = !!compileCache
     compileCache = compileCache || {}
     if (precompile) {
@@ -319,29 +318,34 @@ Real.prototype.$compile = function (el, scope, precompile, compileCache) {
             return conf.namespace + name
         })
     )
-
     var scopedElements = scopedDec.length ? querySelectorAll(util.map(scopedDec, function (name) {
         return '[' + conf.namespace + name + ']'
     })) : []
-    var scopedChilds = []
-    if (supportQuerySelector && (!useCache || compileCache.scopeChilds) ) {
-        // nested component
-        // Block selector cartesian product
-        var selectors = []
-        // Selector's cartesian product
-        util.forEach(_scopeDirts, function (dec1) {
-            return util.forEach(_scopeDirts, function (dec2) {
-                selectors.push('[' + dec1 + '] [' + dec2 + ']')
-            })
-        })
-        scopedChilds = selectors.length ? util.slice(el.querySelectorAll(selectors)) : []
-        precompile.scopeChilds = scopedChilds.length
-    }
 
     var componentElements = !useCache || compileCache.components 
         ? querySelectorAll(['[' + componentDec + ']'])
         : []
 
+
+    var scopedChilds = []
+    if (supportQuerySelector && (scopedElements.length + componentElements.length) && (!useCache || compileCache.scopeChilds) ) {
+        // nested component
+        // Block selector cartesian product
+        var selectors = []
+        if (precompile.scopeChildSelectors) {
+            selectors = precompile.scopeChildSelectors
+        } else {
+            // Selector's cartesian product
+            util.forEach(_scopeDirts, function (dec1) {
+                return util.forEach(_scopeDirts, function (dec2) {
+                    selectors.push('[' + dec1 + '] [' + dec2 + ']')
+                })
+            })
+        }
+        scopedChilds = selectors.length ? util.slice(el.querySelectorAll(selectors)) : []
+        precompile.scopeChildSelectors = selectors
+        precompile.scopeChilds = scopedChilds.length
+    }
     var compileComponent = function (tar) {
         precompile.components ++
         // prevent cross DOM level parsing or repeat parse
@@ -352,7 +356,7 @@ Real.prototype.$compile = function (el, scope, precompile, compileCache) {
         })) {
             return
         }
-        if (supportQuerySelector && scopedChilds && ~util.indexOf(scopedChilds, tar)) return
+        if (scopedChilds && scopedChilds.length && ~util.indexOf(scopedChilds, tar)) return
         var cname = _getAttribute(tar, componentDec)
         if (!cname) {
             return consoler.error(componentDec + ' missing component id.', tar)
@@ -466,7 +470,7 @@ Real.prototype.$compile = function (el, scope, precompile, compileCache) {
      */
     function instanceScopedDirective(tar, dec, dname) {
         // don't compile child scope
-        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
+        if (scopedChilds && scopedChilds.length && ~util.indexOf(scopedChilds, tar)) return
 
         var drefs = tar._diretives || []
         // prevent repetitive binding
