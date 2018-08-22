@@ -341,9 +341,9 @@ Real.prototype.$compile = function (el, scope, precompile, compileCache) {
                     selectors.push('[' + dec1 + '] [' + dec2 + ']')
                 })
             })
+            precompile.scopeChildSelectors = selectors
         }
         scopedChilds = selectors.length ? util.slice(el.querySelectorAll(selectors)) : []
-        precompile.scopeChildSelectors = selectors
         precompile.scopeChilds = scopedChilds.length
     }
     var compileComponent = function (tar) {

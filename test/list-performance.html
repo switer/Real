@@ -10,9 +10,9 @@
 			<div>
 				<span r-show="{$value.id > 100}">Title1</span>
 				<span r-show="{$value.id < 100}">Hello world</span>
-				<div r-for="{$value.sub}" r-key="*this" r-listid="1">
+				<!-- <div r-for="{$value.sub}" r-key="*this" r-listid="1">
 					<div r-text>{$value}</div>
-				</div>
+				</div> -->
 			</div>
 		</div>
 	</div>
@@ -48,9 +48,9 @@
 			<div>
 				<span v-show="item.id > 100">Title2</span>
 				<span v-show="item.id < 100">Hello world</span>
-				<div v-for="subitem in item.sub">
+				<!-- <div v-for="subitem in item.sub">
 					{{subitem}}
-				</div>
+				</div> -->
 			</div>
 		</div>
 	</div>

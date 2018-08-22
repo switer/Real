@@ -1,5 +1,5 @@
 /**
-* Real v2.1.1
+* Real v2.1.0
 * (c) 2015 switer
 * Released under the MIT License.
 */
@@ -402,9 +402,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    selectors.push('[' + dec1 + '] [' + dec2 + ']')
 	                })
 	            })
+	            precompile.scopeChildSelectors = selectors
 	        }
 	        scopedChilds = selectors.length ? util.slice(el.querySelectorAll(selectors)) : []
-	        precompile.scopeChildSelectors = selectors
 	        precompile.scopeChilds = scopedChilds.length
 	    }
 	    var compileComponent = function (tar) {
