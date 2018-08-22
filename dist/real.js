@@ -250,7 +250,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var _data = _getData(options._data)
 	    this.$data = util.extend(data, props, _data) 
 
-	    if (optimiseOpt.bindMethods == false) {
+	    if (optimiseOpt.bindMethods === false) {
 	        this.$methods = options.methods
 	    } else {
 	        util.objEach(options.methods, function (key, m) {
@@ -269,9 +269,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        consoler.error('Watch catch error:', e)
 	    }
 	    try {
-	        // console.time('compile')
 	        var $compiledEl = this.$compile(el, null, optimiseOpt.precompile, optimiseOpt.compileCache)
-	        // console.timeEnd('compile')
 	        isReplaced && (this.$el = $compiledEl)
 	    } finally {
 
@@ -333,6 +331,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @return {Element} | {DocumentFragment}
 	 */
 	Real.prototype.$compile = function (el, scope, precompile, compileCache) {
+
 	    var useCache = !!compileCache
 	    compileCache = compileCache || {}
 	    if (precompile) {
@@ -341,6 +340,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    } else {
 	        precompile = {}        
 	    }
+	    precompile.scopeChilds = 0
 	    precompile.components = 0
 
 	    if (util.type(el) == 'string') el = _fragmentWrap(el)
@@ -352,7 +352,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var vm = this
 
 	    // compile directives of the VM
-	    var _diretives = compileCache.directives || _allDiretives
+	    var _diretives = _allDiretives
 	    var _scopeDirts =  _allScopedDecWithCompoentKeys
 	    var scopedDec = compileCache.scopes || _allScopedDecKeys
 	    var querySelectorAll = Query(
@@ -367,7 +367,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var scopedElements = scopedDec.length ? querySelectorAll(util.map(scopedDec, function (name) {
 	        return '[' + conf.namespace + name + ']'
 	    })) : []
-	    if (supportQuerySelector && scopedElements.length) {
+	    var scopedChilds = []
+	    if (supportQuerySelector && (!useCache || compileCache.scopeChilds) ) {
 	        // nested component
 	        // Block selector cartesian product
 	        var selectors = []
@@ -377,10 +378,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	                selectors.push('[' + dec1 + '] [' + dec2 + ']')
 	            })
 	        })
-	        var scopedChilds = selectors.length ? util.slice(el.querySelectorAll(selectors)) : []
+	        scopedChilds = selectors.length ? util.slice(el.querySelectorAll(selectors)) : []
+	        precompile.scopeChilds = scopedChilds.length
 	    }
 
-	    var componentElements = useCache && compileCache.components 
+	    var componentElements = !useCache || compileCache.components 
 	        ? querySelectorAll(['[' + componentDec + ']'])
 	        : []
 
@@ -394,7 +396,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        })) {
 	            return
 	        }
-	        if (supportQuerySelector && ~util.indexOf(scopedChilds, tar)) return
+	        if (supportQuerySelector && scopedChilds && ~util.indexOf(scopedChilds, tar)) return
 	        var cname = _getAttribute(tar, componentDec)
 	        if (!cname) {
 	            return consoler.error(componentDec + ' missing component id.', tar)
@@ -538,7 +540,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    /**
 	     * compile normal atributes directives
 	     */
-	    util.forEach(util.keys(_diretives), function (dname) {
+	    util.forEach(compileCache.directives || util.keys(_diretives), function (dname) {
 
 	        var rawName = dname
 	        var def = _diretives[dname]
