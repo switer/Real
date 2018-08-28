@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+</head>
+<body>
+	<div id="app">
+		<div>
+			<div r-if="{true}"></div>
+			<div r-show="{true}"></div>
+			<div r-if="{true}"></div>
+		</div>
+	</div>
+	<script>
+		!function () {
+			var app = document.getElementById('app')
+			var node = app.children[0]
+			var html = node.outerHTML
+			var count = 10000
+			var count2 = 10000
+			var wrap = document.createElement('div')
+			var wrap2 = document.createElement('div')
+			console.time('cloneNode')
+			var els = []
+			while(count --) {
+				var el = document.createElement('div')
+				// el.appendChild(document.createElement('div'))
+				wrap.appendChild(el)
+			}
+			console.timeEnd('cloneNode')
+			console.time('innerHTML')
+			var innerHTML = ''
+			while(count2 --) {
+				innerHTML += '<div></div>'
+			}
+			wrap2.innerHTML = innerHTML
+			console.timeEnd('innerHTML')
+			
+		}()
+	</script>
+</body>
+</html>
