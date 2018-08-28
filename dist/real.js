@@ -1406,6 +1406,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	        return next !== pre
 	    },
+	    cloneAndDiff: function(next, pre, result) {
+	        var that = this
+	        var nt = this.type(next)
+	        var pt = this.type(pre)
+	        if (nt == 'array' && pt == 'array') {
+	            if (next.length !== pre.length) {
+	                result.diff = true
+	            }
+	            return util.map(next, function(item, index) {
+	                return that.cloneAndDiff(item, pre[index], result)
+	            })
+	        } else if (nt == 'object' && pt == 'object') {
+	            var nkeys = util.keys(next)
+	            var payload = {}
+	            util.forEach(nkeys, function(k) {
+	                if (!pre.hasOwnProperty(k)) {
+	                    result.diff = true
+	                }
+	                payload[k] = that.cloneAndDiff(next[k], pre[k], result)
+	            })
+	            return payload
+	        } else {
+	            result.diff = true
+	            return next
+	        }
+	        return next !== pre
+	    },
 	    slice: function (a) {
 	        if (!a || !a.length) return []
 	        if (a.slice) return a.slice(0)
@@ -2503,6 +2530,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var ds = {}
 	    var FOR_KEY = 'FOR'.toLowerCase()
 	    ds[FOR_KEY] = {
+	        mutable: true,
 	        bind: function(v) {
 	            var $el = this.$el
 	            var listIdName = conf.namespace + 'listid'
@@ -2848,6 +2876,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var shouldUpdate = def.shouldUpdate
 	    var afterUpdate = def.afterUpdate
 	    var isConst = def.constant
+	    var mutable = !!def.mutable
 	    var needReady = def.needReady
 	    var prev
 
@@ -2856,10 +2885,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        d[k] = v
 	    })
 	    // support custom diff method
-	    var diffMethod = this.$diff = _diff
-	    if (def.diff) {
-	        diffMethod = def.diff
-	    }
+	    this.$diff = _diff
+	    var customDiff = def.diff
 	    /**
 	     *  update handler
 	     */
@@ -2873,17 +2900,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	                upda && upda.call(d)
 	            }
 	        } else {
-	            var nexv = d.$exec(expr) // [error, result]
+	            var nexv = d.$exec(expr, mutable || !customDiff) // [error, result]
 	            var r = nexv[1]
-
-	            if (!nexv[0] && diffMethod.call(d, r, prev)) {
-	                hasDiff = true
-
-	                // shouldUpdate(nextValue, preValue)
-	                if (!shouldUpdate || shouldUpdate.call(d, r, prev)) {
+	            var payload = {}
+	            if (!nexv[0]) {
+	                if (customDiff) {
+	                    hasDiff = customDiff.call(d, r, prev)
+	                } else {
+	                    r = util.cloneAndDiff(r, prev, payload)
+	                    hasDiff = !!payload.diff
+	                }
+	                if (hasDiff && (!shouldUpdate || shouldUpdate.call(d, r, prev))) {
 	                    var p = prev
 	                    prev = r
-	                    // update(nextValue, preValue)
 	                    upda && upda.call(d, r, p)
 	                }
 	            }
@@ -2896,7 +2925,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	     */
 	    var hasError
 	    if (isExpr && !isConst) {
-	        prev =  d.$exec(expr)
+	        prev =  d.$exec(expr, mutable)
 	        hasError = prev[0]
 	        prev = prev[1]
 	    } else {

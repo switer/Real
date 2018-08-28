@@ -33,7 +33,7 @@
 				}
 			},
 			ready: function () {
-				var count = 1000
+				var count = 500
 				var list = []
 				while(count --) {
 					list.push({
@@ -79,13 +79,14 @@
 				}
 			},
 			mounted: function () {
-				var count = 1000
+				var count = 500
 				var list = []
 				while(count --) {
-					list.push({
+					var item = {
 						id: count,
 						sub: [1,2,3]
-					})
+					}
+					list.push(item)
 				}
 				console.time('Vue:render')
 				this.$data.list = list
