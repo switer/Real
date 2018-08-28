@@ -85,4 +85,29 @@ describe('# Instance', function () {
         assert.equal(c.$el.className, 'container')
         assert.equal(c.$el.getAttribute('data-name'), 'holder')
     })
+    it('options: watch', function (done) {
+        var results = [[3], [10, 3]]
+        var c = new Reve({
+            template: '<div></div>',
+            data: ()=>{
+                return {
+                    a: 1,
+                    b: 2
+                }
+            },
+            watch: {
+                'a + b': function (next, last) {
+                    var r = results.shift()
+                    assert.equal(next, r[0])
+                    assert.equal(last, r[1])
+                    if (!results.length) {
+                        done()
+                    }
+                }
+            }
+        })
+        setTimeout(function () {
+            c.$set('b', 9)
+        }, 50)
+    })
 })

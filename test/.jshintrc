@@ -1,0 +1,8 @@
+{
+	"scripturl": true,
+    "globals": {
+        "it": true,
+        "assert": true,
+        "describe": true
+    }
+}

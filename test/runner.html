@@ -17,6 +17,7 @@
     <div id="app"></div>
     <script src="../dist/real.js"></script>
     <script>
+        window.Reve = window.Real
         if(navigator.userAgent.match('PhantomJS')) {
             Reve.consoler.error = function() {}
             Reve.consoler.errorTrace = function() {}
@@ -30,6 +31,7 @@
     <script src="./spec-directive.js"></script>
     <script src="./spec-classmethod.js"></script>
     <script src="./spec-instancemethod.js"></script>
+    <script src="./spec-scoped.js"></script>
     <script>
         if (window.mochaPhantomJS) { mochaPhantomJS.run(); }
         else { mocha.run(); }

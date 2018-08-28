@@ -65,4 +65,31 @@ describe('# Instance Methods', function () {
         c.$off('event', handler)
         c.$emit('event')
     })
+    it('$watch', function (done) {
+        var c = new Reve({
+            template: '<div></div>',
+            data: ()=>{
+                return {
+                    a: 1,
+                    b: 2,
+                    c: 4,
+                    d: 5
+                }
+            }
+        })
+        c.$watch('a + b', function (v) {
+            assert.equal(v, 3)
+        })
+        c.$watch('b - a', function (v) {
+            assert.equal(v, 1)
+        })
+        var results = [9, 10]
+        c.$watch('c + d', function (v) {
+            assert.equal(results.shift(), v)
+            if (!results.length) done()
+        })  
+        setTimeout(function () {
+            c.$set('d', 6)
+        }, 20)
+    })
 })

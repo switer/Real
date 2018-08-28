@@ -1,8 +1,8 @@
 {
   "name": "real",
-  "version": "1.7.0",
+  "version": "2.1.3",
   "description": "Web components framework that using in server-side render. Ω support IE6 +",
-  "main": "reve.js",
+  "main": "real.js",
   "scripts": {
     "pt": "./node_modules/.bin/mocha-phantomjs ./test/runner.html",
     "test": "npm run pt && npm start",

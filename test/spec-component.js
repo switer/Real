@@ -6,6 +6,7 @@ describe('# Component', function () {
         var c = new Reve({
             template: '<div r-component="header" r-ref="header"></div>'
         })
+        console.log(c)
         assert.equal(c.$components[0].$name, 'header')
         assert(typeof c.$components[0].$id == 'number')
         assert.equal(c.$refs.header.$el.getAttribute('_r-component'), 'header')

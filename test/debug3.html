@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>debug</title>
+    <script src="./vue.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <section class="mod_panel none" v-for="task in tasks">
+            <div class="none" :class='{none:task.list.length==0}'>
+                <p class="mod_panel_title " >{{task.typeName}}</p>
+                <ul class="mod_list">
+                    <li v-for="(item, index) in task.list">
+                        <div class="mod_list_img"><img :src="item.strImage" width="45"></div>
+                        <div class="mod_list_info">
+                            <h4>{{item.strDesc}} {{item.iTaskId==100003?item.time:''}}</h4>
+                            <p class="add_value none" :class="{none:item.iTaskType==4}">{{item.iRewardFValue?"粉丝值+"+item.iRewardFValue:""}}{{hideKick?'':(item.iProps?" 心跳+"+item.iProps+" ":"")}}</p>
+                            <p class="add_value none" :class="{none:item.iTaskType!=4}" v-on="{click:goTastIntro}">丰厚粉丝值{{hideKick?'':'、心跳奖励'}}。<span>任务秘籍<i class="icon_arrow"></i></span></p>
+                            <div class="progress_tips none" :class="{none:item.iTaskType==4}" >完成{{item.iTaskDone}}/{{item.iTaskCount}}</div>
+                            <div class="mod_progress none" :class="{none:item.iTaskType==4}"><span class='mod_progress_delayshow' :style="{width: (from && from=='page')?(iTaskId!=100003?((item.iTaskDone/item.iTaskCount)*100 + '%') : (item.progress + '%')):''}"></span></div>
+                        </div>
+                        <div class="mod_list_action">
+                            <button class="mod_btn mod_btn_outline" v-on="{click:doAction}" :class="{disabled: item.status==1||disableTask}"> {{item.status==1?(btnText1||'已完成'):(item.btnText0||'去完成')}} </button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+    </div>
+    <script>
+    new Vue({
+        el: '#app',
+        data: function() {
+            return {
+                hideKick: false,
+                from: '',
+                disableTask: false,
+                tasks: [{ "typeName": "必修任务", "list": [{ "iTaskType": 1, "iTaskId": 100009, "iRewardVCoin": 0, "iRewardFValue": 7, "iWeight": 0, "strDesc": "签到", "iTaskCount": 1, "strImage": "https://vm.gtimg.cn/tencentvideo/vstyle/mobile/app/style/img/fan/task_checkin.png", "iTaskDone": 0, "dwStatus": 0, "iType": 0, "iProps": 4, "progress": 0, "time": 0, "btnText0": "去签到", "btnText1": "已完成", "status": 0 }] }, { "typeName": "浏览任务", "list": [{ "iTaskType": 2, "iTaskId": 100003, "iRewardVCoin": 0, "iRewardFValue": 5, "iWeight": 0, "strDesc": "浏览5分钟", "iTaskCount": 1, "strImage": "https://vm.gtimg.cn/tencentvideo/vstyle/mobile/app/style/img/fan/task_scan.png", "iTaskDone": 0, "dwStatus": 0, "iType": 0, "iProps": 2, "progress": 0, "time": 0, "toast": "快浏览${star} doki圈的最新内容吧", "btnText0": "去浏览", "btnText1": "已完成", "status": 0 }, { "iTaskType": 2, "iTaskId": 100002, "iRewardVCoin": 0, "iRewardFValue": 5, "iWeight": 0, "strDesc": "观看相关视频", "iTaskCount": 2, "strImage": "https://vm.gtimg.cn/tencentvideo/vstyle/mobile/app/style/img/fan/task_watchvideo.png", "iTaskDone": 0, "dwStatus": 0, "iType": 0, "iProps": 2, "progress": 0, "time": 0, "toast": "快来观看这些精彩视频吧", "btnText0": "去观看", "btnText1": "已完成", "status": 0 }] }, { "typeName": "互动任务", "list": [{ "iTaskType": 3, "iTaskId": 100010, "iRewardVCoin": 0, "iRewardFValue": 5, "iWeight": 0, "strDesc": "分享帖子", "iTaskCount": 2, "strImage": "https://vm.gtimg.cn/tencentvideo/vstyle/mobile/app/style/img/fan/task_share.png", "iTaskDone": 0, "dwStatus": 0, "iType": 0, "iProps": 2, "progress": 0, "time": 0, "toast": "选择一个优质的帖子分享给朋友吧！然后返回腾讯视频即可获得粉丝值", "btnText0": "去分享", "btnText1": "已完成", "status": 0 }, { "iTaskType": 3, "iTaskId": 100004, "iRewardVCoin": 0, "iRewardFValue": 3, "iWeight": 0, "strDesc": "点赞", "iTaskCount": 5, "strImage": "https://vm.gtimg.cn/tencentvideo/vstyle/mobile/app/style/img/fan/task_like.png", "iTaskDone": 0, "dwStatus": 0, "iType": 0, "iProps": 2, "progress": 0, "time": 0, "toast": "给优秀的帖子点个赞吧", "btnText0": "去点赞", "btnText1": "已完成", "status": 0 }, { "iTaskType": 3, "iTaskId": 100005, "iRewardVCoin": 0, "iRewardFValue": 3, "iWeight": 0, "strDesc": "评论", "iTaskCount": 5, "strImage": "https://vm.gtimg.cn/tencentvideo/vstyle/mobile/app/style/img/fan/task_comment.png", "iTaskDone": 0, "dwStatus": 0, "iType": 0, "iProps": 2, "progress": 0, "time": 0, "toast": "在感兴趣的帖子下面评论一下吧，认识几个新伙伴", "btnText0": "去评论", "btnText1": "已完成", "status": 0 }] }, { "typeName": "创作任务", "list": [] }]
+            }
+        },
+        methods: {
+            goTastIntro: function () {},
+            doAction: function () {}
+        }
+    })
+    </script>
+</body>
+
+</html>

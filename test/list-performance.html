@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+</head>
+<body>
+	<div id="app">
+		<div r-for="{list}" r-key="id" r-listid="1">
+			<div>
+				<span r-show="{$value.id > 100}">Title1</span>
+				<span r-show="{$value.id < 100}">Hello world</span>
+				<span r-show="{$value.id > 100}">Title1</span>
+				<span r-show="{$value.id < 100}">Hello world</span>
+				<div r-for="{$value.sub}" r-key="*this" r-listid="2">
+					<div r-text>
+						{$value}
+						{$value}
+						{$value}
+						{$value}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script src="../dist/real.js"></script>
+	<script>
+		var app = new Real({
+			el: '#app',
+			data: function () {
+				return {
+					list: []
+				}
+			},
+			ready: function () {
+				var count = 1000
+				var list = []
+				while(count --) {
+					list.push({
+						id: count,
+						sub: [1,2,3]
+					})
+				}
+				this.$data.list = list
+				console.time('Real:render')
+				this.$update()
+				console.timeEnd('Real:render')
+			},
+			methods: {
+			}
+		})
+	</script>
+	<div id="app2">
+		<div v-for="item in list" :key="item.id">
+			<div>
+				<span v-show="item.id > 100">Title2</span>
+				<span v-show="item.id < 100">Hello world</span>
+				<span v-show="item.id > 100">Title2</span>
+				<span v-show="item.id < 100">Hello world</span>
+				<div v-for="subitem in item.sub">
+					<div>
+						{{subitem}}
+						{{subitem}}
+						{{subitem}}
+						{{subitem}}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script src="./vue.js"></script>
+ 	<script>
+		document.getElementById('app').style.display = 'none'
+		var app2 = new Vue({
+			el: '#app2',
+			data: function () {
+				return {
+					list: []
+				}
+			},
+			mounted: function () {
+				var count = 1000
+				var list = []
+				while(count --) {
+					var item = {
+						id: count,
+						sub: [1,2,3]
+					}
+					list.push(item)
+				}
+				console.time('Vue:render')
+				this.$data.list = list
+				console.timeEnd('Vue:render')
+			}
+		})
+	</script> 
+</body>
+</html>
